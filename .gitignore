@@ -1,0 +1,30 @@
+## ==========================================
+## V-Closet Enterprise .NET Gitignore Template
+## ==========================================
+
+# 1. Block .NET Build, Output, and Publish Folders
+**/[Bb]in/
+**/[Oo]bj/
+**/[Pp]ublish/
+**/[Oo]ut/
+TestResults/
+
+# 2. Block IDE Configurations
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.suo
+*.userprefs
+*.ide/
+
+# 3. Block Local Secrets (CRITICAL)
+.env
+
+# 4. Block OS & Cache Files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini

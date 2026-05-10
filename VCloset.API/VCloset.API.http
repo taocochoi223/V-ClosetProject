@@ -1,0 +1,6 @@
+@VCloset.API_HostAddress = http://localhost:5070
+
+GET {{VCloset.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
