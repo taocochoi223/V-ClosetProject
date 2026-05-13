@@ -31,7 +31,11 @@ var dataSource = dataSourceBuilder.Build();
 builder.Services.AddDbContext<VClosetVersion30Context>(options =>
     options.UseNpgsql(dataSource));
 
+builder.Services.AddHttpContextAccessor();
+
 // Register Application Services
+builder.Services.AddScoped<IStorageService, LocalStorageService>();
+builder.Services.AddScoped<IWardrobeService, WardrobeService>();
 builder.Services.AddHttpClient<IBackgroundRemovalService, PhotoroomService>();
 
 
@@ -49,6 +53,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseStaticFiles(); // Allow serving images from wwwroot
 
 app.UseHttpsRedirection();
 
