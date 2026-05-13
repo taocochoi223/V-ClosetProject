@@ -8,7 +8,6 @@ using VCloset.Application.Interfaces;
 using VCloset.Infrastructure.Repositories;
 using VCloset.Infrastructure.Services;
 
-
 // Load env vars from the root .env file
 DotEnv.Load(options: new DotEnvOptions(probeForEnv: true));
 
@@ -34,20 +33,20 @@ builder.Services.AddDbContext<VClosetVersion30Context>(options =>
     options.UseNpgsql(dataSource));
 
 builder.Services.AddDistributedMemoryCache();
-
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
 
+// Base Application Services
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
-
-// [CHỌN GỬI MAIL]: Bật dòng dưới để gửi qua GMAIL (Không cần mua domain, gửi được cho mọi người khi code local)
 builder.Services.AddScoped<IEmailService, SmtpEmailService>();
-
-// [CHỌN GỬI MAIL]: Bật dòng dưới để gửi qua RESEND (Sử dụng khi deploy lên Cloud và cấu hình tên miền riêng)
-// builder.Services.AddScoped<IEmailService, ResendEmailService>();
-
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+
+// Module 2 - Smart Inventory Services
+builder.Services.AddScoped<IStorageService, LocalStorageService>();
+builder.Services.AddScoped<IWardrobeService, WardrobeService>();
+builder.Services.AddHttpClient<IBackgroundRemovalService, PhotoroomService>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -62,6 +61,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseStaticFiles(); // Allow serving images from wwwroot
 
 app.UseHttpsRedirection();
 
