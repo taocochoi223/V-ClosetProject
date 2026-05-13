@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using VCloset.Infrastructure.Data;
 using VCloset.Domain.Enums;
 using Npgsql;
+using VCloset.Application.Interfaces;
+using VCloset.Infrastructure.Services;
 
 // Load env vars from the root .env file
 DotEnv.Load(options: new DotEnvOptions(probeForEnv: true));
@@ -28,6 +30,9 @@ var dataSource = dataSourceBuilder.Build();
 
 builder.Services.AddDbContext<VClosetVersion30Context>(options =>
     options.UseNpgsql(dataSource));
+
+// Register Application Services
+builder.Services.AddHttpClient<IBackgroundRemovalService, PhotoroomService>();
 
 
 
