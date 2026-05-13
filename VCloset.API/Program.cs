@@ -5,6 +5,7 @@ using VCloset.Infrastructure.Data;
 using VCloset.Domain.Enums;
 using Npgsql;
 using VCloset.Application.Interfaces;
+using VCloset.Infrastructure.Repositories;
 using VCloset.Infrastructure.Services;
 
 // Load env vars from the root .env file
@@ -31,14 +32,21 @@ var dataSource = dataSourceBuilder.Build();
 builder.Services.AddDbContext<VClosetVersion30Context>(options =>
     options.UseNpgsql(dataSource));
 
+builder.Services.AddDistributedMemoryCache();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient();
 
-// Register Application Services
+// Base Application Services
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+builder.Services.AddScoped<IEmailService, SmtpEmailService>();
+builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+
+// Module 2 - Smart Inventory Services
 builder.Services.AddScoped<IStorageService, LocalStorageService>();
 builder.Services.AddScoped<IWardrobeService, WardrobeService>();
 builder.Services.AddHttpClient<IBackgroundRemovalService, PhotoroomService>();
-
-
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
