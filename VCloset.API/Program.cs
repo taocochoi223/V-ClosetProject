@@ -48,6 +48,10 @@ builder.Services.AddScoped<IStorageService, LocalStorageService>();
 builder.Services.AddScoped<IWardrobeService, WardrobeService>();
 builder.Services.AddHttpClient<IBackgroundRemovalService, PhotoroomService>();
 
+// Đăng ký Module 4
+builder.Services.AddScoped<ICanvasService, CanvasService>();
+
+
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
