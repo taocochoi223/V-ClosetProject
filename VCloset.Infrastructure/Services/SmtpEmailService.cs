@@ -8,10 +8,10 @@ namespace VCloset.Infrastructure.Services;
 
 public class SmtpEmailService : IEmailService
 {
-    private readonly string _smtpHost;
+    private readonly string _smtpHost = string.Empty;
     private readonly int _smtpPort;
-    private readonly string _fromEmail;
-    private readonly string _smtpPassword;
+    private readonly string _fromEmail = string.Empty;
+    private readonly string _smtpPassword = string.Empty;
 
     public SmtpEmailService()
     {
