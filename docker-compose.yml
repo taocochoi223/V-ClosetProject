@@ -1,6 +1,26 @@
 version: '3.8'
 
 services:
+  # 🗄️ PostgreSQL Database Service
+  db:
+    image: postgres:16-alpine
+    container_name: vcloset-db-container
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: a
+      POSTGRES_DB: V-Closet_Version_3.0
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./v_closet_version_3.0.sql:/docker-entrypoint-initdb.d/1-init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d V-Closet_Version_3.0"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   # 🌐 V-Closet Web API Service
   api:
     image: vcloset-api:latest
@@ -8,6 +28,9 @@ services:
     build:
       context: .
       dockerfile: VCloset.API/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
     env_file:
       - .env
     ports:
@@ -16,3 +39,6 @@ services:
       - ./uploads:/app/wwwroot/uploads
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+
+volumes:
+  pgdata:
