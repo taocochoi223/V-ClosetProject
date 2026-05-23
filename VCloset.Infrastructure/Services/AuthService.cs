@@ -1,9 +1,11 @@
+using Google.Apis.Auth;
 using Microsoft.Extensions.Caching.Distributed;
 using System;
 using System.Threading.Tasks;
 using VCloset.Application.DTOs;
 using VCloset.Application.Interfaces;
 using VCloset.Domain.Entities;
+using VCloset.Domain.Enums;
 
 namespace VCloset.Infrastructure.Services;
 
@@ -32,7 +34,7 @@ public class AuthService : IAuthService
 
         if (existingUser != null)
         {
-            if (existingUser.IsEmailVerified) 
+            if (existingUser.IsEmailVerified)
                 throw new InvalidOperationException("EMAIL_ALREADY_EXISTS");
 
             existingUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
@@ -126,25 +128,22 @@ public class AuthService : IAuthService
         var user = await _unitOfWork.Users.FindAsync(u => u.Email == request.Email);
         if (user == null || !user.IsActive) return false;
 
-        var resetToken = Guid.NewGuid().ToString();
+        var otpCode = new Random().Next(100000, 999999).ToString();
         var cacheOptions = new DistributedCacheEntryOptions
         {
             AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(15)
         };
-        await _cache.SetStringAsync($"RESET:{resetToken}", request.Email, cacheOptions);
+        await _cache.SetStringAsync($"RESET_OTP:{request.Email}", otpCode, cacheOptions);
 
-        // Link đặt lại mật khẩu trỏ về cổng chạy BE phục vụ việc test trực tiếp (ví dụ cổng 5070)
-        var resetLink = $"https://localhost:7098/api/auth/reset-password-form?token={resetToken}";
-
-        return await _emailService.SendPasswordResetLinkAsync(request.Email, resetLink);
+        return await _emailService.SendForgotPasswordOtpEmailAsync(request.Email, otpCode);
     }
 
     public async Task<bool> ResetPasswordAsync(ResetPasswordRequest request)
     {
-        var email = await _cache.GetStringAsync($"RESET:{request.Token}");
-        if (string.IsNullOrEmpty(email)) return false;
+        var savedOtp = await _cache.GetStringAsync($"RESET_OTP:{request.Email}");
+        if (string.IsNullOrEmpty(savedOtp) || savedOtp != request.OtpCode) return false;
 
-        var user = await _unitOfWork.Users.FindAsync(u => u.Email == email);
+        var user = await _unitOfWork.Users.FindAsync(u => u.Email == request.Email);
         if (user == null) return false;
 
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
@@ -152,7 +151,83 @@ public class AuthService : IAuthService
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync();
 
-        await _cache.RemoveAsync($"RESET:{request.Token}");
+        await _cache.RemoveAsync($"RESET_OTP:{request.Email}");
         return true;
+    }
+
+    public async Task<AuthResponse?> GoogleLoginAsync(GoogleLoginRequest request)
+    {
+        try
+        {
+            var settings = new GoogleJsonWebSignature.ValidationSettings()
+            {
+                Audience = new List<string>()
+                {
+                    Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID") ?? ""
+                }
+            };
+
+            GoogleJsonWebSignature.Payload payload = await GoogleJsonWebSignature.ValidateAsync(request.IdToken, settings);
+
+            var user = await _unitOfWork.Users.FindAsync(u => u.Email == payload.Email || u.GoogleId == payload.Subject);
+
+            if(user == null)
+            {
+                user = new User()
+                {
+                    Id = Guid.NewGuid(),
+                    Email = payload.Email,
+                    DisplayName = payload.Name,
+                    GoogleId = payload.Subject,
+                    AvatarUrl = payload.Picture,
+                    AuthProvider = AuthProvider.Google,
+                    IsActive = true,
+                    IsEmailVerified = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                await _unitOfWork.Users.AddAsync(user);
+                await _unitOfWork.SaveChangesAsync();
+            }else if (string.IsNullOrEmpty(user.GoogleId))
+            {
+                user.GoogleId = payload.Subject;
+                user.AuthProvider = AuthProvider.Google;
+
+                if (string.IsNullOrEmpty(user.AvatarUrl))
+                {
+                    user.AvatarUrl = payload.Picture;
+                }
+                
+                user.UpdatedAt = DateTime.UtcNow;
+
+                _unitOfWork.Users.Update(user);
+                await _unitOfWork.SaveChangesAsync();
+            }
+
+            if (!user.IsActive) return null;
+
+            var accessToken = _jwtService.GenerateAccessToken(user);
+            var refreshToken = _jwtService.GenerateRefreshToken();
+
+            return new AuthResponse
+            {
+                AccessToken = accessToken,
+                RefreshToken = refreshToken,
+                Email = user.Email,
+                DisplayName = user.DisplayName
+            };
+        }
+        catch (InvalidJwtException ex)
+        {
+            Console.WriteLine($"\n[LỖI GOOGLE TOKEN]: {ex.Message}\n");
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"\n[LỖI CHUNG]: {ex.Message}\n");
+            return null;
+        }
+
     }
 }

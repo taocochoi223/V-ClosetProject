@@ -22,6 +22,8 @@ services:
     build:
       context: .
       dockerfile: VCloset.API/Dockerfile
+    env_file:
+      - .env
     ports:
       - "5070:8080" # Map host port 5070 to container port 8080 (the default .NET 8 port)
     environment:

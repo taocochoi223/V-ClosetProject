@@ -56,6 +56,37 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+// Auto-create database tables on startup if they don't exist
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<VClosetVersion30Context>();
+
+        // [HACK]: Fake apply the InitialCreate migration so it doesn't crash on existing Supabase tables
+        try
+        {
+            var conn = context.Database.GetDbConnection();
+            conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "CREATE TABLE IF NOT EXISTS \"__EFMigrationsHistory\" (\"MigrationId\" character varying(150) NOT NULL, \"ProductVersion\" character varying(32) NOT NULL, CONSTRAINT \"PK___EFMigrationsHistory\" PRIMARY KEY (\"MigrationId\"));";
+            cmd.ExecuteNonQuery();
+            cmd.CommandText = "INSERT INTO \"__EFMigrationsHistory\" (\"MigrationId\", \"ProductVersion\") VALUES ('20260523062128_InitialCreate', '8.0.4') ON CONFLICT DO NOTHING;";
+            cmd.ExecuteNonQuery();
+            conn.Close();
+        }
+        catch { }
+
+        context.Database.Migrate();
+        Console.WriteLine("[INFO] Database Checked/Created Successfully via Code-First.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[ERROR] An error occurred creating the DB: {ex.Message}");
+    }
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
