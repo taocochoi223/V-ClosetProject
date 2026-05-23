@@ -8,8 +8,8 @@
     <ProjectReference Include="..\VCloset.Application\VCloset.Application.csproj" />
     <ProjectReference Include="..\VCloset.Domain\VCloset.Domain.csproj" />
   </ItemGroup>
-
   <ItemGroup>
+    <PackageReference Include="AWSSDK.S3" Version="3.7.307.31" />
     <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
     <PackageReference Include="dotenv.net" Version="4.0.2" />
     <PackageReference Include="Google.Apis.Auth" Version="1.74.0" />
