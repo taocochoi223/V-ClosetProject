@@ -70,17 +70,17 @@ public class SmtpEmailService : IEmailService
         return await SendEmailAsync(toEmail, subject, html);
     }
 
-    public async Task<bool> SendPasswordResetLinkAsync(string toEmail, string resetLink)
+    public async Task<bool> SendForgotPasswordOtpEmailAsync(string toEmail, string otpCode)
     {
-        string subject = "V-Closet: Yêu cầu đặt lại mật khẩu";
+        string subject = "V-Closet: Mã xác thực OTP đặt lại mật khẩu";
         string html = $@"
             <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;'>
                 <h2 style='color: #4F46E5;'>Yêu cầu đặt lại mật khẩu</h2>
-                <p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản V-Closet của bạn. Vui lòng nhấn vào nút dưới đây để thiết lập mật khẩu mới:</p>
+                <p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản V-Closet của bạn. Vui lòng sử dụng mã OTP dưới đây để xác nhận yêu cầu của bạn:</p>
                 <div style='text-align: center; margin: 30px 0;'>
-                    <a href='{resetLink}' style='background-color: #4F46E5; color: white; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;'>Đặt lại mật khẩu</a>
+                    <span style='font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #4F46E5; background-color: #EEF2F6; padding: 10px 20px; border-radius: 5px;'>{otpCode}</span>
                 </div>
-                <p style='color: #666; font-size: 13px;'>Đường dẫn này có hiệu lực trong vòng 15 phút. Nếu bạn không yêu cầu đổi mật khẩu, vui lòng bỏ qua email này.</p>
+                <p style='color: #666; font-size: 13px;'>Mã OTP này có hiệu lực trong vòng 15 phút. Nếu bạn không yêu cầu đổi mật khẩu, vui lòng bỏ qua email này để bảo vệ tài khoản.</p>
             </div>";
         return await SendEmailAsync(toEmail, subject, html);
     }

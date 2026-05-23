@@ -6,11 +6,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\VCloset.Application\VCloset.Application.csproj" />
+    <ProjectReference Include="..\VCloset.Domain\VCloset.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
     <PackageReference Include="dotenv.net" Version="4.0.2" />
+    <PackageReference Include="Google.Apis.Auth" Version="1.74.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.4">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
