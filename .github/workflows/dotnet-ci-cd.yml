@@ -41,41 +41,24 @@ jobs:
       run: dotnet test VClosetSolution.sln --configuration Release --no-build --verbosity normal
 
   # =======================================================
-  # 🐳 JOB 2: Continuous Deployment (CD) - CHỈ DEPLOY PRODUCTION KHI MERGE VÀO MAIN/MASTER
+  # 🚀 JOB 2: Continuous Deployment (CD) - DEPLOY TO VIETTEL VPS
   # =======================================================
-  docker-build-and-push:
-    name: 🐳 Dockerize & Deploy Production
+  deploy-to-viettel:
+    name: 🚀 Deploy to Viettel VPS
     needs: build-and-test
     runs-on: ubuntu-latest
-    # CHỈ kích hoạt deploy khi có sự kiện PUSH trực tiếp vào nhánh MAIN hoặc MASTER
+    # CHỈ kích hoạt deploy khi push vào nhánh main hoặc master
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
-    # Nạp Secrets vào biến môi trường Job-level để bảo mật và sử dụng hợp lệ trong câu lệnh IF
-    env:
-      DOCKER_USER: ${{ secrets.DOCKER_USERNAME }}
 
     steps:
-    - name: 📥 Checkout repository
-      uses: actions/checkout@v4
-
-    - name: ⚙️ Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
-    # Đăng nhập vào Docker Hub sử dụng Secrets bảo mật của GitHub (Chỉ chạy nếu có cấu hình tài khoản)
-    - name: 🔑 Log in to Docker Hub
-      if: env.DOCKER_USER != ''
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-
-    - name: 🚀 Build and Push Production Docker Image
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        file: VCloset.API/Dockerfile
-        # Chỉ thực hiện push lên Docker Hub khi đã cấu hình GitHub Secrets
-        push: ${{ env.DOCKER_USER != '' }}
-        # Gắn nhãn thông minh dựa trên biến môi trường DOCKER_USER
-        tags: |
-          ${{ env.DOCKER_USER != '' && format('{0}/vcloset-api:latest', env.DOCKER_USER) || 'vcloset-api:latest' }}
-          ${{ env.DOCKER_USER != '' && format('{0}/vcloset-api:{1}', env.DOCKER_USER, github.sha) || format('vcloset-api:{0}', github.sha) }}
+      - name: 🚀 Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          script: |
+            cd V-ClosetProject
+            git pull origin main
+            docker compose down
+            docker compose up -d --build
