@@ -51,6 +51,9 @@ builder.Services.AddHttpClient<IBackgroundRemovalService, PhotoroomService>();
 // Đăng ký Module 4
 builder.Services.AddScoped<ICanvasService, CanvasService>();
 
+// Đăng ký Module 10 - Notifications
+builder.Services.AddScoped<INotificationService, NotificationService>();
+
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
