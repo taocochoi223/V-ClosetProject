@@ -1,20 +1,6 @@
 version: '3.8'
 
 services:
-  # 🛢️ PostgreSQL Database Service
-  db:
-    image: postgres:16-alpine
-    container_name: vcloset-postgres
-    restart: always
-    environment:
-      - POSTGRES_DB=V-Closet_Version_3.0
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=devpassword
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
   # 🌐 V-Closet Web API Service
   api:
     image: vcloset-api:latest
@@ -25,13 +11,8 @@ services:
     env_file:
       - .env
     ports:
-      - "5070:8080" # Map host port 5070 to container port 8080 (the default .NET 8 port)
+      - "5070:8080" # Map host port 5070 to container port 8080
+    volumes:
+      - ./uploads:/app/wwwroot/uploads
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      # Connect to the db service inside the docker network
-      - ConnectionStrings__MyCnn=Host=db;Port=5432;Database=V-Closet_Version_3.0;Username=postgres;Password=devpassword
-    depends_on:
-      - db
-
-volumes:
-  postgres_data:
