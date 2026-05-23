@@ -44,7 +44,23 @@ builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 // Module 2 - Smart Inventory Services
-builder.Services.AddScoped<IStorageService, LocalStorageService>();
+var s3AccessKey = Environment.GetEnvironmentVariable("S3_ACCESS_KEY") ?? builder.Configuration["S3_ACCESS_KEY"];
+var s3SecretKey = Environment.GetEnvironmentVariable("S3_SECRET_KEY") ?? builder.Configuration["S3_SECRET_KEY"];
+var s3ServiceUrl = Environment.GetEnvironmentVariable("S3_SERVICE_URL") ?? builder.Configuration["S3_SERVICE_URL"];
+var s3BucketName = Environment.GetEnvironmentVariable("S3_BUCKET_NAME") ?? builder.Configuration["S3_BUCKET_NAME"];
+
+if (!string.IsNullOrEmpty(s3AccessKey) && 
+    !string.IsNullOrEmpty(s3SecretKey) && 
+    !string.IsNullOrEmpty(s3ServiceUrl) && 
+    !string.IsNullOrEmpty(s3BucketName))
+{
+    builder.Services.AddScoped<IStorageService, S3StorageService>();
+}
+else
+{
+    builder.Services.AddScoped<IStorageService, LocalStorageService>();
+}
+
 builder.Services.AddScoped<IWardrobeService, WardrobeService>();
 builder.Services.AddHttpClient<IBackgroundRemovalService, PhotoroomService>();
 
