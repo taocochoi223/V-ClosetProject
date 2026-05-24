@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using VCloset.Application.DTOs;
 using VCloset.Application.Interfaces;
 using VCloset.Domain.Entities;
@@ -22,14 +22,16 @@ public class CanvasService : ICanvasService
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            // 1. Xử lý lưu ảnh snapshot (nếu có)
+            dto.Items ??= new List<CanvasItemDto>();
+            await NormalizeCanvasItemsAsync(userId, dto.Items);
+
             string? imageUrl = null;
             if (snapshotStream != null)
             {
-                imageUrl = await _storageService.UploadFileAsync(snapshotStream, "outfit_snapshot.png", "image/png");
+                var snapshotFileName = $"outfit_snapshot_{DateTime.UtcNow:yyyyMMdd_HHmmss}.png";
+                imageUrl = await _storageService.UploadFileAsync(snapshotStream, snapshotFileName, "image/png");
             }
 
-            // 2. Tạo Outfit gốc
             var outfit = new CanvasOutfit
             {
                 UserInternalId = userId,
@@ -40,9 +42,8 @@ public class CanvasService : ICanvasService
             };
 
             _context.CanvasOutfits.Add(outfit);
-            await _context.SaveChangesAsync(); // Lưu để lấy OutfitInternalId
+            await _context.SaveChangesAsync();
 
-            // 3. Lưu danh sách các món đồ (Items) trên canvas
             foreach (var itemDto in dto.Items)
             {
                 var item = new CanvasOutfitItem
@@ -78,6 +79,74 @@ public class CanvasService : ICanvasService
         }
     }
 
+    private async Task NormalizeCanvasItemsAsync(int userId, List<CanvasItemDto> items)
+    {
+        if (items.Count == 0) return;
+
+        var wardrobeUuidIds = items
+            .Where(i => !i.WardrobeItemInternalId.HasValue && i.WardrobeItemId.HasValue)
+            .Select(i => i.WardrobeItemId!.Value)
+            .Distinct()
+            .ToList();
+
+        Dictionary<Guid, int> wardrobeMapByUuid = new();
+        if (wardrobeUuidIds.Count > 0)
+        {
+            var wardrobePairs = await _context.WardrobeItems
+                .Where(w => w.UserInternalId == userId && w.IsActive && wardrobeUuidIds.Contains(w.Id))
+                .Select(w => new { w.Id, w.InternalId })
+                .ToListAsync();
+
+            wardrobeMapByUuid = wardrobePairs.ToDictionary(x => x.Id, x => x.InternalId);
+            if (wardrobeMapByUuid.Count != wardrobeUuidIds.Count)
+            {
+                throw new InvalidOperationException("Some selected wardrobe items are invalid or inaccessible.");
+            }
+        }
+
+        var directInternalIds = items
+            .Where(i => i.WardrobeItemInternalId.HasValue)
+            .Select(i => i.WardrobeItemInternalId!.Value)
+            .Distinct()
+            .ToList();
+
+        if (directInternalIds.Count > 0)
+        {
+            var allowedInternalIds = await _context.WardrobeItems
+                .Where(w => w.UserInternalId == userId && w.IsActive && directInternalIds.Contains(w.InternalId))
+                .Select(w => w.InternalId)
+                .ToListAsync();
+
+            if (allowedInternalIds.Count != directInternalIds.Count)
+            {
+                throw new InvalidOperationException("Some selected wardrobe items are invalid or inaccessible.");
+            }
+        }
+
+        for (var index = 0; index < items.Count; index++)
+        {
+            var item = items[index];
+
+            if (!item.WardrobeItemInternalId.HasValue && item.WardrobeItemId.HasValue)
+            {
+                item.WardrobeItemInternalId = wardrobeMapByUuid[item.WardrobeItemId.Value];
+            }
+
+            var hasWardrobeSource = item.WardrobeItemInternalId.HasValue;
+            var hasAffiliateSource = item.AffiliateProductInternalId.HasValue;
+
+            if (hasWardrobeSource == hasAffiliateSource)
+            {
+                throw new InvalidOperationException($"Item at index {index} must have exactly one source.");
+            }
+
+            if (item.Scale <= 0)
+            {
+                item.Scale = 1;
+            }
+        }
+    }
+
     public async Task<List<OutfitResponseDto>> GetUserOutfitsAsync(int userId)
     {
         return await _context.CanvasOutfits
@@ -106,7 +175,6 @@ public class CanvasService : ICanvasService
         }
     }
 
-    //public Task<OutfitResponseDto?> GetOutfitByIdAsync(Guid outfitId) => throw new NotImplementedException();
     public async Task<OutfitResponseDto?> GetOutfitByIdAsync(Guid outfitId)
     {
         return await _context.CanvasOutfits
@@ -122,12 +190,12 @@ public class CanvasService : ICanvasService
             .FirstOrDefaultAsync();
     }
 
-    //public Task DeleteOutfitAsync(int userId, Guid outfitId) => throw new NotImplementedException();
     public async Task DeleteOutfitAsync(int userId, Guid outfitId)
     {
         var outfit = await _context.CanvasOutfits
             .FirstOrDefaultAsync(o => o.Id == outfitId && o.UserInternalId == userId);
         if (outfit == null) return;
+
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
@@ -135,6 +203,7 @@ public class CanvasService : ICanvasService
             {
                 await _storageService.DeleteFileAsync(outfit.CanvasSnapshotUrl);
             }
+
             _context.CanvasOutfits.Remove(outfit);
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();

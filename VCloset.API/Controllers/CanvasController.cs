@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 using VCloset.Application.DTOs;
 using VCloset.Application.Interfaces;
 
@@ -27,6 +28,14 @@ public class OutfitsController : ControllerBase
         int mockUserId = 1;
         try
         {
+            if ((dto.Items == null || dto.Items.Count == 0) && !string.IsNullOrWhiteSpace(dto.ItemsJson))
+            {
+                dto.Items = JsonSerializer.Deserialize<List<CanvasItemDto>>(
+                    dto.ItemsJson,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                ) ?? new List<CanvasItemDto>();
+            }
+
             using var stream = snapshot?.OpenReadStream();
             var result = await _canvasService.CreateOutfitAsync(mockUserId, dto, stream);
 
