@@ -19,8 +19,28 @@ public class UsersController : ControllerBase
     }
 
     [Authorize]
-    [HttpPut("profile")]
-    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
+    [HttpGet("me")]
+    public async Task<IActionResult> GetMyProfile()
+    {
+        try
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+
+            var profile = await _userService.GetMyProfileAsync(userId);
+            if (profile == null) return NotFound("Người dùng không tồn tại");
+
+            return Ok(profile);
+        }
+        catch (System.Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [Authorize]
+    [HttpPut("me")]
+    public async Task<IActionResult> UpdateMyProfile([FromBody] UpdateProfileRequest request)
     {
         try
         {
