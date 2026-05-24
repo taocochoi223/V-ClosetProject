@@ -1,7 +1,9 @@
 version: '3.8'
 
 services:
-  # 🗄️ PostgreSQL Database Service
+  # ====================================================
+  # 🗄️ PostgreSQL Database — KHÔNG bao giờ restart khi deploy
+  # ====================================================
   db:
     image: postgres:16-alpine
     container_name: vcloset-db-container
@@ -21,10 +23,12 @@ services:
       timeout: 5s
       retries: 5
 
-  # 🌐 V-Closet Web API Service
-  api:
-    image: vcloset-api:latest
-    container_name: vcloset-api-container
+  # ====================================================
+  # 🔵 API Blue — instance 1
+  # ====================================================
+  api-blue:
+    image: vcloset-api:blue
+    container_name: vcloset-api-blue
     build:
       context: .
       dockerfile: VCloset.API/Dockerfile
@@ -33,12 +37,59 @@ services:
         condition: service_healthy
     env_file:
       - .env
-    ports:
-      - "5070:8080" # Map host port 5070 to container port 8080
+    expose:
+      - "8080"       # Không expose ra host, chỉ nội bộ docker network
     volumes:
       - ./uploads:/app/wwwroot/uploads
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_ENVIRONMENT=Production
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # ====================================================
+  # 🟢 API Green — instance 2
+  # ====================================================
+  api-green:
+    image: vcloset-api:green
+    container_name: vcloset-api-green
+    build:
+      context: .
+      dockerfile: VCloset.API/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    expose:
+      - "8080"
+    volumes:
+      - ./uploads:/app/wwwroot/uploads
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # ====================================================
+  # 🌐 Nginx Load Balancer — đứng trước, nhận traffic từ bên ngoài
+  # ====================================================
+  nginx:
+    image: nginx:alpine
+    container_name: vcloset-nginx
+    restart: always
+    ports:
+      - "5070:80"    # Host port 5070 → Nginx port 80
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - api-blue
 
 volumes:
   pgdata:

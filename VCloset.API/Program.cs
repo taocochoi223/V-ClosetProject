@@ -44,6 +44,9 @@ builder.Services.AddDistributedMemoryCache();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
 
+// Health Check — dùng cho Blue-Green deploy script
+builder.Services.AddHealthChecks();
+
 // Kích hoạt dịch vụ SignalR
 builder.Services.AddSignalR();
 
@@ -204,6 +207,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Health Check endpoint — Docker dùng để biết container đã sẵn sàng chưa
+app.MapHealthChecks("/health");
 
 // Khai báo Endpoint Route cho Hub SignalR
 app.MapHub<NotificationHub>("/notificationHub");
