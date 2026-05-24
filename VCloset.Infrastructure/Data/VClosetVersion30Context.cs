@@ -58,6 +58,8 @@ public partial class VClosetVersion30Context : DbContext
 
     public virtual DbSet<PostComment> PostComments { get; set; }
 
+    public virtual DbSet<UserFollower> UserFollowers { get; set; }
+
     public virtual DbSet<PostLike> PostLikes { get; set; }
 
     public virtual DbSet<PostReport> PostReports { get; set; }
@@ -108,6 +110,21 @@ public partial class VClosetVersion30Context : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<UserFollower>(entity =>
+        {
+            entity.ToTable("user_followers");
+
+            entity.HasOne(d => d.Follower)
+                .WithMany()
+                .HasForeignKey(d => d.FollowerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(d => d.Following)
+                .WithMany()
+                .HasForeignKey(d => d.FollowingId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
         modelBuilder
             .HasPostgresEnum("ai_job_status", new[] { "pending", "processing", "completed", "failed" })
             .HasPostgresEnum("auth_provider", new[] { "local", "google" })

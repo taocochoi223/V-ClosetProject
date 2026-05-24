@@ -11,4 +11,5 @@ public class UpdateProfileRequest
     public string? Address { get; set; }
     public string? Gender { get; set; }
     public string? Country { get; set; }
+    public string? DisplayName { get; set; } = string.Empty;
 }
