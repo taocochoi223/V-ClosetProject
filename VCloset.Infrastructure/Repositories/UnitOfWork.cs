@@ -18,6 +18,12 @@ public class UnitOfWork : IUnitOfWork
 
     public IGenericRepository<User> Users => _users ??= new GenericRepository<User>(_context);
 
+    private IGenericRepository<RefreshToken>? _refreshTokens;
+    public IGenericRepository<RefreshToken> RefreshTokens => _refreshTokens ??= new GenericRepository<RefreshToken>(_context);
+
+    private IGenericRepository<CustomerProfile>? _customerProfiles;
+    public IGenericRepository<CustomerProfile> CustomerProfiles => _customerProfiles ??= new GenericRepository<CustomerProfile>(_context);
+
     public async Task<int> SaveChangesAsync()
     {
         return await _context.SaveChangesAsync();

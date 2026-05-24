@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using VCloset.Application.DTOs;
+using VCloset.Application.DTOs.Auth.Requests;
 using VCloset.Application.Interfaces;
 
 namespace VCloset.API.Controllers;
@@ -83,4 +84,87 @@ public class AuthController : ControllerBase
             return Unauthorized(new { message = "Xác thực Google thất bại hoặc Token không hợp lệ." });
         return Ok(new { message = "Đăng nhập Google thành công", data = response });
     }
+
+    [HttpPost("resend-otp")]
+    public async Task<IActionResult> ResendOtp([FromBody] ResendOtpRequest request)
+    {
+        try
+        {
+            await _authService.ResendOtpAsync(request);
+            return Ok("Mã OTP mới đã được gửi đến Email của bạn.");
+        }
+        catch (System.Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    [HttpPost("change-password")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+    {
+        try
+        {
+            // Lấy ID của user đang đăng nhập từ Token
+            var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+
+            await _authService.ChangePasswordAsync(userId, request);
+            return Ok("Đổi mật khẩu thành công!");
+        }
+        catch (System.Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    [HttpGet("me")]
+    public IActionResult GetMyProfile()
+    {
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var email = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
+        var name = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
+
+        return Ok(new
+        {
+            Id = userId,
+            Email = email,
+            DisplayName = name
+        });
+    }
+
+    [HttpPost("refresh-token")]
+    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
+    {
+        try
+        {
+            var response = await _authService.RefreshTokenAsync(request);
+            return Ok(response);
+        }
+        catch (System.Exception ex)
+        {
+            return Unauthorized(ex.Message);
+        }
+    }
+
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
+    {
+        try
+        {
+            var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+
+            await _authService.LogoutAsync(userId, request.RefreshToken);
+            return Ok("Đăng xuất thành công!");
+        }
+        catch (System.Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+
 }

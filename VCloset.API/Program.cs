@@ -1,11 +1,13 @@
 // Trigger production deployment test
 using dotenv.net;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using VCloset.Infrastructure.Data;
-using VCloset.Domain.Enums;
 using Npgsql;
 using VCloset.Application.Interfaces;
+using VCloset.Domain.Enums;
+using VCloset.Infrastructure.Data;
 using VCloset.Infrastructure.Repositories;
+using VCloset.Infrastructure.Security;
 using VCloset.Infrastructure.Services;
 
 
@@ -40,14 +42,14 @@ builder.Services.AddHttpClient();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 
-// [CHỌN GỬI MAIL]: Bật dòng dưới để gửi qua GMAIL (Không cần mua domain, gửi được cho mọi người khi code local)
-builder.Services.AddScoped<IEmailService, SmtpEmailService>();
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
-// [CHỌN GỬI MAIL]: Bật dòng dưới để gửi qua RESEND (Sử dụng khi deploy lên Cloud và cấu hình tên miền riêng)
-// builder.Services.AddScoped<IEmailService, ResendEmailService>();
+builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

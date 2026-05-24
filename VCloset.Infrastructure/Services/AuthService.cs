@@ -1,8 +1,10 @@
 using Google.Apis.Auth;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.IdentityModel.Tokens.Experimental;
 using System;
 using System.Threading.Tasks;
 using VCloset.Application.DTOs;
+using VCloset.Application.DTOs.Auth.Requests;
 using VCloset.Application.Interfaces;
 using VCloset.Domain.Entities;
 using VCloset.Domain.Enums;
@@ -90,45 +92,55 @@ public class AuthService : IAuthService
         await _cache.RemoveAsync($"OTP:{request.Email}");
 
         var accessToken = _jwtService.GenerateAccessToken(user);
-        var refreshToken = _jwtService.GenerateRefreshToken();
+        var refreshToken = await GenerateAndSaveRefreshTokenAsync(user.InternalId);
+
+        var profile = await _unitOfWork.CustomerProfiles.FindAsync(c => c.UserInternalId == user.InternalId);
 
         return new AuthResponse
         {
             AccessToken = accessToken,
             RefreshToken = refreshToken,
             Email = user.Email,
-            DisplayName = user.DisplayName
+            DisplayName = user.DisplayName,
+            IsOnboardingCompleted = profile?.IsOnboardingCompleted ?? false
         };
     }
 
     public async Task<AuthResponse?> LoginAsync(LoginRequest request)
     {
         var user = await _unitOfWork.Users.FindAsync(u => u.Email == request.Email);
-        if (user == null) return null;
+        if (user == null) 
+            return null;
 
-        if (!user.IsActive || !user.IsEmailVerified) return null;
+        if (!user.IsActive || !user.IsEmailVerified) 
+            return null;
 
         if (string.IsNullOrEmpty(user.PasswordHash) || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             return null;
 
         var accessToken = _jwtService.GenerateAccessToken(user);
-        var refreshToken = _jwtService.GenerateRefreshToken();
+        var refreshToken = await GenerateAndSaveRefreshTokenAsync(user.InternalId);
+
+        var profile = await _unitOfWork.CustomerProfiles.FindAsync(c => c.UserInternalId == user.InternalId);
 
         return new AuthResponse
         {
             AccessToken = accessToken,
             RefreshToken = refreshToken,
             Email = user.Email,
-            DisplayName = user.DisplayName
+            DisplayName = user.DisplayName,
+            IsOnboardingCompleted = profile?.IsOnboardingCompleted ?? false
         };
     }
 
     public async Task<bool> ForgotPasswordAsync(ForgotPasswordRequest request)
     {
         var user = await _unitOfWork.Users.FindAsync(u => u.Email == request.Email);
-        if (user == null || !user.IsActive) return false;
+        if (user == null || !user.IsActive) 
+            return false;
 
         var otpCode = new Random().Next(100000, 999999).ToString();
+
         var cacheOptions = new DistributedCacheEntryOptions
         {
             AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(15)
@@ -141,10 +153,13 @@ public class AuthService : IAuthService
     public async Task<bool> ResetPasswordAsync(ResetPasswordRequest request)
     {
         var savedOtp = await _cache.GetStringAsync($"RESET_OTP:{request.Email}");
-        if (string.IsNullOrEmpty(savedOtp) || savedOtp != request.OtpCode) return false;
+        if (string.IsNullOrEmpty(savedOtp) || savedOtp != request.OtpCode) 
+            return false;
 
         var user = await _unitOfWork.Users.FindAsync(u => u.Email == request.Email);
-        if (user == null) return false;
+
+        if (user == null) 
+            return false;
 
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
         user.UpdatedAt = DateTime.UtcNow;
@@ -208,14 +223,17 @@ public class AuthService : IAuthService
             if (!user.IsActive) return null;
 
             var accessToken = _jwtService.GenerateAccessToken(user);
-            var refreshToken = _jwtService.GenerateRefreshToken();
+            var refreshToken = await GenerateAndSaveRefreshTokenAsync(user.InternalId);
+
+            var profile = await _unitOfWork.CustomerProfiles.FindAsync(c => c.UserInternalId == user.InternalId);
 
             return new AuthResponse
             {
                 AccessToken = accessToken,
                 RefreshToken = refreshToken,
                 Email = user.Email,
-                DisplayName = user.DisplayName
+                DisplayName = user.DisplayName,
+                IsOnboardingCompleted = profile?.IsOnboardingCompleted ?? false
             };
         }
         catch (InvalidJwtException ex)
@@ -229,5 +247,104 @@ public class AuthService : IAuthService
             return null;
         }
 
+    }
+
+    public async Task<bool> ResendOtpAsync(ResendOtpRequest request)
+    {
+        var user = await _unitOfWork.Users.FindAsync(u => u.Email == request.Email);
+        if (user == null) throw new Exception("Tài khoản không tồn tại");
+        if (user.IsEmailVerified) throw new Exception("Tài khoản đã được kích hoạt");
+
+        var otp = new Random().Next(100000, 999999).ToString();
+        await _cache.SetStringAsync($"OTP:{request.Email}", otp, new DistributedCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
+        });
+
+        var emailSent = await _emailService.SendOtpEmailAsync(user.Email, otp);
+
+        if (!emailSent) throw new InvalidOperationException("EMAIL_SEND_FAILED");
+        return true;
+
+    }
+
+    public async Task<bool> ChangePasswordAsync(int userId, ChangePasswordRequest request)
+    {
+        var user = await _unitOfWork.Users.GetByIdAsync(userId);
+        if (user == null) throw new Exception("Tài khoản không tồn tại");
+        if(!BCrypt.Net.BCrypt.Verify(request.OldPassword, user.PasswordHash)) throw new Exception("Mật khẩu cũ không đúng");
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        user.UpdatedAt = DateTime.UtcNow;
+
+        _unitOfWork.Users.Update(user);
+        await _unitOfWork.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<AuthResponse> RefreshTokenAsync(RefreshTokenRequest request)
+    {
+        var principal = _jwtService.GetPrincipalFromExpiredToken(request.AccessToken);
+        var userIdString = principal.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out int userId))
+            throw new Exception("Access Token không hợp lệ.");
+
+        var tokenRecord = await _unitOfWork.RefreshTokens.FindAsync(t =>
+            t.TokenHash == request.RefreshToken &&
+            t.UserInternalId == userId);
+
+        if (tokenRecord == null || tokenRecord.ExpiresAt <= DateTime.UtcNow || tokenRecord.RevokedAt != null)
+            throw new Exception("Refresh Token không hợp lệ hoặc đã hết hạn.");
+
+        _unitOfWork.RefreshTokens.Delete(tokenRecord);
+
+        var user = await _unitOfWork.Users.GetByIdAsync(userId);
+        if (user == null) throw new Exception("Không tìm thấy người dùng.");
+
+        var newAccessToken = _jwtService.GenerateAccessToken(user);
+        var newRefreshToken = await GenerateAndSaveRefreshTokenAsync(user.InternalId);
+
+        var profile = await _unitOfWork.CustomerProfiles.FindAsync(c => c.UserInternalId == user.InternalId);
+
+        return new AuthResponse
+        {
+            AccessToken = newAccessToken,
+            RefreshToken = newRefreshToken,
+            Email = user.Email,
+            DisplayName = user.DisplayName,
+            IsOnboardingCompleted = profile?.IsOnboardingCompleted ?? false
+        };
+    }
+
+    public async Task<bool> LogoutAsync(int userId, string refreshToken)
+    {
+        
+        var tokenRecord = await _unitOfWork.RefreshTokens.FindAsync(t =>
+            t.TokenHash == refreshToken &&
+            t.UserInternalId == userId);
+
+        if (tokenRecord != null)
+        {
+            _unitOfWork.RefreshTokens.Delete(tokenRecord);
+            await _unitOfWork.SaveChangesAsync();
+        }
+        return true;
+    }
+
+
+
+    private async Task<string> GenerateAndSaveRefreshTokenAsync(int userInternalId)
+    {
+        var refreshToken = _jwtService.GenerateRefreshToken();
+        var tokenEntity = new RefreshToken
+        {
+            UserInternalId = userInternalId,
+            TokenHash = refreshToken,
+            ExpiresAt = DateTime.UtcNow.AddDays(30), 
+            CreatedAt = DateTime.UtcNow
+        };
+        await _unitOfWork.RefreshTokens.AddAsync(tokenEntity);
+        await _unitOfWork.SaveChangesAsync();
+        return refreshToken;
     }
 }
