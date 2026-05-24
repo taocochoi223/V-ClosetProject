@@ -214,4 +214,15 @@ public class CanvasService : ICanvasService
             throw;
         }
     }
+
+    public async Task UpdateTitleAsync(int userId, Guid outfitId, string title)
+    {
+        var outfit = await _context.CanvasOutfits
+            .FirstOrDefaultAsync(o => o.Id == outfitId && o.UserInternalId == userId);
+        if (outfit != null)
+        {
+            outfit.Title = title;
+            await _context.SaveChangesAsync();
+        }
+    }
 }

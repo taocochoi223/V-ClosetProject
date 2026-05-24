@@ -1,4 +1,4 @@
-﻿using VCloset.Application.DTOs;
+using VCloset.Application.DTOs;
 
 namespace VCloset.Application.Interfaces;
 
@@ -9,5 +9,6 @@ public interface ICanvasService
     Task<OutfitResponseDto?> GetOutfitByIdAsync(Guid outfitId);
     Task DeleteOutfitAsync(int userId, Guid outfitId);
     Task UpdatePrivacyAsync(int userId, Guid outfitId, bool isPublic);
+    Task UpdateTitleAsync(int userId, Guid outfitId, string title);
 }
 

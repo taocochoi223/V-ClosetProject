@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -37,5 +37,10 @@ public class OutfitResponseDto
     public string? CanvasSnapshotUrl { get; set; }
     public bool IsPublic { get; set; }
     public DateTime CreatedAt { get; set; }
+}
+
+public class UpdateOutfitTitleDto
+{
+    public string Title { get; set; } = string.Empty;
 }
 

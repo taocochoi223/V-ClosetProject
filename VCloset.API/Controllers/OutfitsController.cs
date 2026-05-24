@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 using VCloset.Application.DTOs;
 using VCloset.Application.Interfaces;
@@ -6,7 +6,7 @@ using VCloset.Application.Interfaces;
 namespace VCloset.API.Controllers;
 
 [ApiController]
-[Route("api/outfits")] // Đổi thành danh từ số nhiều, đại diện cho Resource
+[Route("api/Outfits")]
 [Produces("application/json")]
 public class OutfitsController : ControllerBase
 {
@@ -83,5 +83,29 @@ public class OutfitsController : ControllerBase
         int mockUserId = 1;
         await _canvasService.UpdatePrivacyAsync(mockUserId, id, isPublic);
         return NoContent(); // Quy chuẩn: Cập nhật thành công không trả về data thì dùng 204
+    }
+
+    /// <summary>
+    /// Cập nhật tiêu đề bộ đồ
+    /// </summary>
+    [HttpPut("{id:guid}/title")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> UpdateTitle(Guid id, [FromBody] UpdateOutfitTitleDto dto)
+    {
+        int mockUserId = 1;
+        await _canvasService.UpdateTitleAsync(mockUserId, id, dto.Title);
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Xóa bộ đồ
+    /// </summary>
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        int mockUserId = 1;
+        await _canvasService.DeleteOutfitAsync(mockUserId, id);
+        return NoContent();
     }
 }
