@@ -65,6 +65,8 @@ done
 
 if [ $COUNT -eq $RETRIES ]; then
     echo "❌ Health check thất bại sau 60 giây! Rollback..."
+    echo "📋 Logs của container '$INACTIVE':"
+    docker logs "vcloset-api-$INACTIVE" --tail 100
     docker compose stop "api-$INACTIVE"
     exit 1
 fi
