@@ -132,6 +132,7 @@ public class AuthService : IAuthService
         {
             AccessToken = accessToken,
             RefreshToken = refreshToken,
+            Role = user.Role.ToString(),
             UserId = user.InternalId,
             Email = user.Email,
             DisplayName = user.DisplayName,
