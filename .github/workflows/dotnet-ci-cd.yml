@@ -59,6 +59,7 @@ jobs:
           password: ${{ secrets.VPS_PASSWORD }}
           script: |
             cd V-ClosetProject
+            git reset --hard HEAD
             git pull origin main
             chmod +x deploy.sh
             ./deploy.sh
