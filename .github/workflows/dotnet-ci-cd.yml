@@ -62,5 +62,6 @@ jobs:
             git reset --hard HEAD
             git pull origin main
             chmod +x deploy.sh
+            docker compose up -d nginx
             ./deploy.sh
 
