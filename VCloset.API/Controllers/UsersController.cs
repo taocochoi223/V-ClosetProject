@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using VCloset.Application.DTOs;
 using VCloset.Application.Interfaces;
+using VCloset.Infrastructure.Security;
 
 namespace VCloset.API.Controllers;
 
@@ -56,4 +57,138 @@ public class UsersController : ControllerBase
             return BadRequest(ex.Message);
         }
     }
+
+    [Authorize]
+    [HttpPost("me/avatar")]
+    public async Task<IActionResult> UpdateAvatar(IFormFile file)
+    {
+        try
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+
+            var newAvatarUrl = await _userService.UpdateAvatarAsync(userId, file);
+
+            return Ok(new { AvatarUrl = newAvatarUrl, Message = "Cập nhật ảnh đại diện thành công!" });
+        }
+        catch (System.Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [Authorize]
+    [HttpGet("{targetUserId:guid}")]
+    public async Task<IActionResult> GetPublicProfile(Guid targetUserId)
+    {
+        try
+        {
+            var profile = await _userService.GetPublicProfileAsync(targetUserId);
+
+            if (profile == null) return NotFound("Không tìm thấy người dùng này.");
+
+            return Ok(profile);
+        }
+        catch (System.Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+    [Authorize]
+    [HttpPost("{targetUserId:guid}/follow")]
+    public async Task<IActionResult> FollowUser(Guid targetUserId)
+    {
+        try
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+
+            var success = await _userService.FollowUserAsync(userId, targetUserId);
+            
+            if (!success) return BadRequest("Không thể theo dõi người dùng này.");
+
+            return Ok(new { Message = "Đã theo dõi thành công." });
+        }
+        catch (System.Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [Authorize]
+    [HttpDelete("{targetUserId:guid}/follow")]
+    public async Task<IActionResult> UnfollowUser(Guid targetUserId)
+    {
+        try
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+
+            var success = await _userService.UnfollowUserAsync(userId, targetUserId);
+            
+            if (!success) return BadRequest("Không thể bỏ theo dõi người dùng này.");
+
+            return Ok(new { Message = "Đã bỏ theo dõi thành công." });
+        }
+        catch (System.Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+    [Authorize]
+    [HttpGet("me/followers")]
+    public async Task<IActionResult> GetMyFollowers()
+    {
+        try
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+
+            var followers = await _userService.GetMyFollowersAsync(userId);
+            return Ok(followers);
+        }
+        catch (System.Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [Authorize]
+    [HttpGet("me/following")]
+    public async Task<IActionResult> GetMyFollowing()
+    {
+        try
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+
+            var followings = await _userService.GetMyFollowingAsync(userId);
+            return Ok(followings);
+        }
+        catch (System.Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+    [Authorize]
+    [HttpDelete("me")]
+    public async Task<IActionResult> DeactivateMyAccount()
+    {
+        try
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+
+            var success = await _userService.DeactivateMyAccountAsync(userId);
+            if (!success) return BadRequest("Không thể xóa tài khoản, hoặc tài khoản đã bị vô hiệu hóa.");
+
+            return Ok(new { Message = "Tài khoản của bạn đã được vô hiệu hóa thành công." });
+        }
+        catch (System.Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
 }
+

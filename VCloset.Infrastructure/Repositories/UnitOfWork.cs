@@ -24,6 +24,21 @@ public class UnitOfWork : IUnitOfWork
     private IGenericRepository<CustomerProfile>? _customerProfiles;
     public IGenericRepository<CustomerProfile> CustomerProfiles => _customerProfiles ??= new GenericRepository<CustomerProfile>(_context);
 
+    private IGenericRepository<UserFollower>? _userFollowers;
+    public IGenericRepository<UserFollower> UserFollowers => _userFollowers ??= new GenericRepository<UserFollower>(_context);
+
+    private IGenericRepository<AdminProfile>? _adminProfiles;
+    public IGenericRepository<AdminProfile> AdminProfiles => _adminProfiles ??= new GenericRepository<AdminProfile>(_context);
+
+    private IGenericRepository<PermissionLevel>? _permissionLevels;
+    public IGenericRepository<PermissionLevel> PermissionLevels => _permissionLevels ??= new GenericRepository<PermissionLevel>(_context);
+
+    private IGenericRepository<UserBanLog>? _userBanLogs;
+    public IGenericRepository<UserBanLog> UserBanLogs => _userBanLogs ??= new GenericRepository<UserBanLog>(_context);
+
+    private IGenericRepository<AdminPermission>? _adminPermissions;
+    public IGenericRepository<AdminPermission> AdminPermissions => _adminPermissions ??= new GenericRepository<AdminPermission>(_context);
+
     public async Task<int> SaveChangesAsync()
     {
         return await _context.SaveChangesAsync();
