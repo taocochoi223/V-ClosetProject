@@ -32,7 +32,7 @@ echo "🎯 Slot sẽ deploy lên: $INACTIVE"
 # ── Bước 2: Build image mới vào slot INACTIVE ──────────────
 echo ""
 echo "🔨 [1/5] Building image mới cho slot '$INACTIVE'..."
-docker build -t "vcloset-api:$INACTIVE" .
+docker build -f VCloset.API/Dockerfile -t "vcloset-api:$INACTIVE" .
 
 # ── Bước 3: Start container INACTIVE ───────────────────────
 echo ""
