@@ -13,10 +13,12 @@ namespace VCloset.Infrastructure.Services;
 public class NotificationService : INotificationService
 {
     private readonly VClosetVersion30Context _context;
+    private readonly INotificationHubService _hubService;
 
-    public NotificationService(VClosetVersion30Context context)
+    public NotificationService(VClosetVersion30Context context, INotificationHubService hubService)
     {
         _context = context;
+        _hubService = hubService;
     }
 
     public async Task<NotificationResponseDto> SendNotificationAsync(int userId, string type, string title, string body, string? referenceType, int? referenceId)
@@ -36,6 +38,10 @@ public class NotificationService : INotificationService
 
         _context.Notifications.Add(notification);
         await _context.SaveChangesAsync();
+
+        // Real-time Push Alert: Gửi số lượng tin nhắn chưa đọc mới cho Flutter
+        var newCount = await GetUnreadCountAsync(userId);
+        await _hubService.SendUnreadCountAlertAsync(userId, newCount);
 
         return MapToDto(notification);
     }
@@ -74,6 +80,10 @@ public class NotificationService : INotificationService
         {
             notification.IsRead = true;
             await _context.SaveChangesAsync();
+
+            // Real-time Push Alert: Cập nhật giảm số lượng tin chưa đọc
+            var newCount = await GetUnreadCountAsync(userId);
+            await _hubService.SendUnreadCountAlertAsync(userId, newCount);
         }
 
         return true;
@@ -93,6 +103,10 @@ public class NotificationService : INotificationService
         }
 
         await _context.SaveChangesAsync();
+
+        // Real-time Push Alert: Gửi số lượng tin chưa đọc mới (= 0)
+        await _hubService.SendUnreadCountAlertAsync(userId, 0);
+
         return true;
     }
 
@@ -103,8 +117,18 @@ public class NotificationService : INotificationService
 
         if (notification == null) return false;
 
+        bool wasUnread = !notification.IsRead;
+
         _context.Notifications.Remove(notification);
         await _context.SaveChangesAsync();
+
+        // Real-time Push Alert: Cập nhật lại số lượng nếu xóa tin chưa đọc
+        if (wasUnread)
+        {
+            var newCount = await GetUnreadCountAsync(userId);
+            await _hubService.SendUnreadCountAlertAsync(userId, newCount);
+        }
+
         return true;
     }
 

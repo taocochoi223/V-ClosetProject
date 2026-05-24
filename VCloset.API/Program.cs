@@ -7,6 +7,8 @@ using Npgsql;
 using VCloset.Application.Interfaces;
 using VCloset.Infrastructure.Repositories;
 using VCloset.Infrastructure.Services;
+using VCloset.API.Hubs;
+using VCloset.API.Services;
 
 // Load env vars from the root .env file
 DotEnv.Load(options: new DotEnvOptions(probeForEnv: true));
@@ -35,6 +37,9 @@ builder.Services.AddDbContext<VClosetVersion30Context>(options =>
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
+
+// Kích hoạt dịch vụ SignalR
+builder.Services.AddSignalR();
 
 // Base Application Services
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -67,9 +72,21 @@ builder.Services.AddHttpClient<IBackgroundRemovalService, PhotoroomService>();
 // Đăng ký Module 4
 builder.Services.AddScoped<ICanvasService, CanvasService>();
 
-// Đăng ký Module 10 - Notifications
+// Đăng ký Module 10 - Notifications (Database & SignalR Real-Time)
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<INotificationHubService, NotificationHubService>();
 
+// Cấu hình chính sách CORS hỗ trợ SignalR (Cực kỳ quan trọng để kết nối với Web và di động)
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("SignalRPolicy", policy =>
+    {
+        policy.AllowAnyHeader()
+              .AllowAnyMethod()
+              .SetIsOriginAllowed(_ => true) // Cho phép tất cả các nguồn (Origins) kết nối
+              .AllowCredentials(); // Bắt buộc phải có để SignalR truyền nhận thông tin kết nối
+    });
+});
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -118,11 +135,16 @@ if (app.Environment.IsDevelopment())
 
 app.UseStaticFiles(); // Allow serving images from wwwroot
 
+// Kích hoạt CORS trước khi định tuyến và phân quyền
+app.UseCors("SignalRPolicy");
+
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
 app.MapControllers();
 
-app.Run();
+// Khai báo Endpoint Route cho Hub SignalR
+app.MapHub<NotificationHub>("/notificationHub");
 
+app.Run();
