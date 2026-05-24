@@ -68,6 +68,7 @@ else
 
 builder.Services.AddScoped<IWardrobeService, WardrobeService>();
 builder.Services.AddHttpClient<IBackgroundRemovalService, PhotoroomService>();
+builder.Services.AddHttpClient<IVirtualTryOnService, FashnTryOnService>();
 
 // Đăng ký Module 4
 builder.Services.AddScoped<ICanvasService, CanvasService>();
