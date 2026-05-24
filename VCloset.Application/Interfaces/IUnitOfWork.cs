@@ -10,4 +10,9 @@ public interface IUnitOfWork : IDisposable
     Task<int> SaveChangesAsync();
     IGenericRepository<RefreshToken> RefreshTokens { get; }
     IGenericRepository<CustomerProfile> CustomerProfiles { get; }
+    IGenericRepository<UserFollower> UserFollowers { get; }
+    IGenericRepository<AdminProfile> AdminProfiles { get; }
+    IGenericRepository<PermissionLevel> PermissionLevels { get; }
+    IGenericRepository<UserBanLog> UserBanLogs { get; }
+    IGenericRepository<AdminPermission> AdminPermissions { get; }
 }
