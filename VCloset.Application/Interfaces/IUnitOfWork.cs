@@ -15,4 +15,5 @@ public interface IUnitOfWork : IDisposable
     IGenericRepository<PermissionLevel> PermissionLevels { get; }
     IGenericRepository<UserBanLog> UserBanLogs { get; }
     IGenericRepository<AdminPermission> AdminPermissions { get; }
+    IGenericRepository<BrandProfile> BrandProfiles { get; }
 }
