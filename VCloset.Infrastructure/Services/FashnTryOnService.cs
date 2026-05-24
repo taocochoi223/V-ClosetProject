@@ -37,11 +37,7 @@ public class FashnTryOnService : IVirtualTryOnService
             Inputs = new FashnInputs
             {
                 ModelImage = modelImageUrl,
-                ProductImage = productImageUrl,
-                Category = mappedCategory,
-                RestoreBackground = restoreBackground,
-                CoverFeet = true,
-                AdjustHands = true
+                ProductImage = productImageUrl
             }
         };
 
@@ -138,18 +134,6 @@ public class FashnTryOnService : IVirtualTryOnService
 
         [JsonPropertyName("product_image")]
         public string ProductImage { get; set; } = null!;
-
-        [JsonPropertyName("category")]
-        public string Category { get; set; } = "auto";
-
-        [JsonPropertyName("restore_background")]
-        public bool RestoreBackground { get; set; } = true;
-
-        [JsonPropertyName("cover_feet")]
-        public bool CoverFeet { get; set; } = true;
-
-        [JsonPropertyName("adjust_hands")]
-        public bool AdjustHands { get; set; } = true;
     }
 
     private class FashnRunResponse
