@@ -11,7 +11,6 @@ namespace VCloset.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
-
     public AuthController(IAuthService authService)
     {
         _authService = authService;
@@ -105,7 +104,6 @@ public class AuthController : ControllerBase
     {
         try
         {
-            // Lấy ID của user đang đăng nhập từ Token
             var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
 
@@ -116,22 +114,6 @@ public class AuthController : ControllerBase
         {
             return BadRequest(ex.Message);
         }
-    }
-
-    [Microsoft.AspNetCore.Authorization.Authorize]
-    [HttpGet("me")]
-    public IActionResult GetMyProfile()
-    {
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        var email = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
-        var name = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
-
-        return Ok(new
-        {
-            Id = userId,
-            Email = email,
-            DisplayName = name
-        });
     }
 
     [HttpPost("refresh-token")]

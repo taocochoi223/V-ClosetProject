@@ -14,6 +14,35 @@ public class UserService : IUserService
         _unitOfWork = unitOfWork;
     }
 
+    public async Task<UserProfileResponse?> GetMyProfileAsync(int userId)
+    {
+        var user = await _unitOfWork.Users.GetByIdAsync(userId);
+        if (user == null) return null;
+
+        var profile = await _unitOfWork.CustomerProfiles.FindAsync(c => c.UserInternalId == userId);
+
+        return new UserProfileResponse
+        {
+            UserId = user.InternalId,
+            Email = user.Email,
+            DisplayName = user.DisplayName,
+            AvatarUrl = user.AvatarUrl,
+            Role = user.Role.ToString(),
+            
+            HeightCm = profile?.HeightCm,
+            WeightKg = profile?.WeightKg,
+            DateOfBirth = profile?.DateOfBirth,
+            PhoneNumber = profile?.PhoneNumber,
+            Address = profile?.Address,
+            Gender = profile?.Gender,
+            Country = profile?.Country,
+            BodyShape = profile?.BodyShape?.ToString(),
+            MannequinImageUrl = profile?.MannequinImageUrl,
+            WardrobeItemCount = profile?.WardrobeItemCount ?? 0,
+            IsOnboardingCompleted = profile?.IsOnboardingCompleted ?? false
+        };
+    }
+
     public async Task<bool> UpdateMyProfileAsync(int userId, UpdateProfileRequest request)
     {
         var profile = await _unitOfWork.CustomerProfiles.FindAsync(c => c.UserInternalId == userId);

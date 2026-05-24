@@ -100,8 +100,10 @@ public class AuthService : IAuthService
         {
             AccessToken = accessToken,
             RefreshToken = refreshToken,
+            UserId = user.InternalId,
             Email = user.Email,
             DisplayName = user.DisplayName,
+            AvatarUrl = user.AvatarUrl,
             IsOnboardingCompleted = profile?.IsOnboardingCompleted ?? false
         };
     }
@@ -127,8 +129,10 @@ public class AuthService : IAuthService
         {
             AccessToken = accessToken,
             RefreshToken = refreshToken,
+            UserId = user.InternalId,
             Email = user.Email,
             DisplayName = user.DisplayName,
+            AvatarUrl = user.AvatarUrl,
             IsOnboardingCompleted = profile?.IsOnboardingCompleted ?? false
         };
     }
@@ -231,8 +235,10 @@ public class AuthService : IAuthService
             {
                 AccessToken = accessToken,
                 RefreshToken = refreshToken,
+                UserId = user.InternalId,
                 Email = user.Email,
                 DisplayName = user.DisplayName,
+                AvatarUrl = user.AvatarUrl,
                 IsOnboardingCompleted = profile?.IsOnboardingCompleted ?? false
             };
         }
@@ -310,8 +316,10 @@ public class AuthService : IAuthService
         {
             AccessToken = newAccessToken,
             RefreshToken = newRefreshToken,
+            UserId = user.InternalId,
             Email = user.Email,
             DisplayName = user.DisplayName,
+            AvatarUrl = user.AvatarUrl,
             IsOnboardingCompleted = profile?.IsOnboardingCompleted ?? false
         };
     }
