@@ -12,11 +12,13 @@ public class CreateOutfitDto
     public bool IsPublic { get; set; }
     // Danh sách các item trên canvas
     public List<CanvasItemDto> Items { get; set; } = new();
+    public string? ItemsJson { get; set; }
 }
 
 public class CanvasItemDto
 {
     // Item này là đồ cá nhân hay đồ Shopee?
+    public Guid? WardrobeItemId { get; set; }
     public int? WardrobeItemInternalId { get; set; }
     public int? AffiliateProductInternalId { get; set; }
 
