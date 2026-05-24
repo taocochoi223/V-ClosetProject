@@ -74,16 +74,16 @@ public class TryOnController : ControllerBase
 
         try
         {
-            // 1. Upload ảnh sản phẩm lên S3
+            // 1. Upload ảnh sản phẩm lên S3 (temp-tryon folder)
             using var garmentStream = garmentFile.OpenReadStream();
-            var garmentUrl = await _storageService.UploadFileAsync(garmentStream, garmentFile.FileName, garmentFile.ContentType);
+            var garmentUrl = await _storageService.UploadFileAsync(garmentStream, garmentFile.FileName, garmentFile.ContentType, "temp-tryon");
 
             // 2. Xác định ảnh người mẫu
             string modelUrl;
             if (modelFile != null && modelFile.Length > 0)
             {
                 using var modelStream = modelFile.OpenReadStream();
-                modelUrl = await _storageService.UploadFileAsync(modelStream, modelFile.FileName, modelFile.ContentType);
+                modelUrl = await _storageService.UploadFileAsync(modelStream, modelFile.FileName, modelFile.ContentType, "temp-tryon");
             }
             else
             {

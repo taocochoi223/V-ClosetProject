@@ -18,11 +18,11 @@ public class LocalStorageService : IStorageService
         _httpContextAccessor = httpContextAccessor;
     }
 
-    public async Task<string> UploadFileAsync(Stream fileStream, string fileName, string contentType)
+    public async Task<string> UploadFileAsync(Stream fileStream, string fileName, string contentType, string folder = "uploads")
     {
-        // Define path: wwwroot/uploads
+        // Define path: wwwroot/folder
         var webRoot = _env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-        var uploadsFolder = Path.Combine(webRoot, "uploads");
+        var uploadsFolder = Path.Combine(webRoot, folder);
         
         if (!Directory.Exists(uploadsFolder))
         {
@@ -41,18 +41,21 @@ public class LocalStorageService : IStorageService
         // Build URL
         var request = _httpContextAccessor.HttpContext?.Request;
         var baseUrl = request != null ? $"{request.Scheme}://{request.Host}" : "";
+        var folderClean = folder.TrimEnd('/');
         
-        return $"{baseUrl}/uploads/{uniqueFileName}";
+        return $"{baseUrl}/{folderClean}/{uniqueFileName}";
     }
 
     public Task DeleteFileAsync(string fileUrl)
     {
         try 
         {
+            if (string.IsNullOrEmpty(fileUrl)) return Task.CompletedTask;
+            
             var uri = new Uri(fileUrl);
-            var fileName = Path.GetFileName(uri.LocalPath);
+            var path = uri.LocalPath.TrimStart('/'); // e.g. uploads/filename.png
             var webRoot = _env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-            var filePath = Path.Combine(webRoot, "uploads", fileName);
+            var filePath = Path.Combine(webRoot, path.Replace('/', Path.DirectorySeparatorChar));
             
             if (File.Exists(filePath))
             {

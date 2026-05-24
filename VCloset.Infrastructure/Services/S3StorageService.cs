@@ -41,10 +41,11 @@ public class S3StorageService : IStorageService
         _s3Client = new AmazonS3Client(accessKey, secretKey, config);
     }
 
-    public async Task<string> UploadFileAsync(Stream fileStream, string fileName, string contentType)
+    public async Task<string> UploadFileAsync(Stream fileStream, string fileName, string contentType, string folder = "uploads")
     {
         var uniqueFileName = $"{Guid.NewGuid()}_{fileName}";
-        var key = $"uploads/{uniqueFileName}";
+        var folderClean = folder.TrimEnd('/');
+        var key = $"{folderClean}/{uniqueFileName}";
 
         var request = new PutObjectRequest
         {
