@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Net;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using VCloset.Domain.Enums;
@@ -14,9 +15,11 @@ using VCloset.Infrastructure.Data;
 namespace VCloset.Infrastructure.Migrations
 {
     [DbContext(typeof(VClosetVersion30Context))]
-    partial class VClosetVersion30ContextModelSnapshot : ModelSnapshot
+    [Migration("20260524044704_AddPersonalProfileFields")]
+    partial class AddPersonalProfileFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1003,11 +1006,6 @@ namespace VCloset.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("chat_banned_until");
 
-                    b.Property<string>("Country")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("country");
-
                     b.Property<DateTime?>("DateOfBirth")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("date_of_birth");
@@ -1034,12 +1032,6 @@ namespace VCloset.Infrastructure.Migrations
                         .HasDefaultValue(false)
                         .HasColumnName("is_chat_banned")
                         .HasComment("TRUE = b? kho� chat. K?t h?p chat_banned_until ph�n bi?t t?m th?i/vinh vi?n.");
-
-                    b.Property<bool>("IsOnboardingCompleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("is_onboarding_completed");
 
                     b.Property<bool>("IsPostBanned")
                         .ValueGeneratedOnAdd()

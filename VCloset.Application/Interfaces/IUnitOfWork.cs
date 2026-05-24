@@ -8,4 +8,6 @@ public interface IUnitOfWork : IDisposable
 {
     IGenericRepository<User> Users { get; }
     Task<int> SaveChangesAsync();
+    IGenericRepository<RefreshToken> RefreshTokens { get; }
+    IGenericRepository<CustomerProfile> CustomerProfiles { get; }
 }

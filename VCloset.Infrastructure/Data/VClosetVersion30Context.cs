@@ -1,4 +1,4 @@
-﻿using Npgsql;
+using Npgsql;
 using VCloset.Domain.Enums;
 using Microsoft.Extensions.Configuration;
 using System.IO;
@@ -723,6 +723,12 @@ public partial class VClosetVersion30Context : DbContext
             entity.Property(e => e.WeightKg)
                 .HasPrecision(5, 2)
                 .HasColumnName("weight_kg");
+            entity.Property(e => e.DateOfBirth).HasColumnName("date_of_birth");
+            entity.Property(e => e.PhoneNumber).HasMaxLength(20).HasColumnName("phone_number");
+            entity.Property(e => e.Address).HasMaxLength(500).HasColumnName("address");
+            entity.Property(e => e.Gender).HasMaxLength(20).HasColumnName("gender");
+            entity.Property(e => e.Country).HasMaxLength(100).HasColumnName("country");
+            entity.Property(e => e.IsOnboardingCompleted).HasColumnName("is_onboarding_completed").HasDefaultValue(false);
 
             entity.HasOne(d => d.UserInternal).WithOne(p => p.CustomerProfile)
                 .HasForeignKey<CustomerProfile>(d => d.UserInternalId)

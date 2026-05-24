@@ -5,9 +5,7 @@ using System.Collections.Generic;
 
 namespace VCloset.Domain.Entities;
 
-/// <summary>
-/// B?ng g?c t�i kho?n. internal_id l� PK th?t d�ng cho FK. id UUID ch? d�ng cho API/URL.
-/// </summary>
+
 public partial class User
 {
     public int InternalId { get; set; }

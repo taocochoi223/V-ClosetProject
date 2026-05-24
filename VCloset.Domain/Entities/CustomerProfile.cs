@@ -1,4 +1,4 @@
-﻿using VCloset.Domain.Enums;
+using VCloset.Domain.Enums;
 using System.ComponentModel.DataAnnotations.Schema;
 using System;
 using System.Collections.Generic;
@@ -20,28 +20,31 @@ public partial class CustomerProfile
 
     public decimal? WeightKg { get; set; }
 
+    public DateTime? DateOfBirth { get; set; }
+
+    public string? PhoneNumber { get; set; }
+
+    public string? Address { get; set; }
+
+    public string? Gender { get; set; }
+
     public string? MannequinImageUrl { get; set; }
 
     public DateTime? MannequinGeneratedAt { get; set; }
 
-    /// <summary>
-    /// Cache d? check gi?i h?n freemium 50 items m� kh�ng COUNT(*).
-    /// </summary>
     public int WardrobeItemCount { get; set; }
 
-    /// <summary>
-    /// TRUE = b? kho� chat. K?t h?p chat_banned_until ph�n bi?t t?m th?i/vinh vi?n.
-    /// </summary>
     public bool IsChatBanned { get; set; }
 
-    /// <summary>
-    /// TRUE = b? kho� dang b�i. K?t h?p post_banned_until ph�n bi?t t?m th?i/vinh vi?n.
-    /// </summary>
     public bool IsPostBanned { get; set; }
 
     public DateTime? ChatBannedUntil { get; set; }
 
     public DateTime? PostBannedUntil { get; set; }
+
+    public bool IsOnboardingCompleted { get; set; }
+    
+    public string? Country { get; set; }
 
     public DateTime UpdatedAt { get; set; }
 

@@ -1,11 +1,13 @@
 // Trigger production deployment test
 using dotenv.net;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using VCloset.Infrastructure.Data;
-using VCloset.Domain.Enums;
 using Npgsql;
 using VCloset.Application.Interfaces;
+using VCloset.Domain.Enums;
+using VCloset.Infrastructure.Data;
 using VCloset.Infrastructure.Repositories;
+using VCloset.Infrastructure.Security;
 using VCloset.Infrastructure.Services;
 using VCloset.API.Hubs;
 using VCloset.API.Services;
@@ -44,9 +46,13 @@ builder.Services.AddSignalR();
 // Base Application Services
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
+
 builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 // Module 2 - Smart Inventory Services
 var s3AccessKey = Environment.GetEnvironmentVariable("S3_ACCESS_KEY") ?? builder.Configuration["S3_ACCESS_KEY"];
