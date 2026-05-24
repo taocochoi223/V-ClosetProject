@@ -39,6 +39,9 @@ public class UnitOfWork : IUnitOfWork
     private IGenericRepository<AdminPermission>? _adminPermissions;
     public IGenericRepository<AdminPermission> AdminPermissions => _adminPermissions ??= new GenericRepository<AdminPermission>(_context);
 
+    private IGenericRepository<BrandProfile>? _brandProfiles;
+    public IGenericRepository<BrandProfile> BrandProfiles => _brandProfiles ??= new GenericRepository<BrandProfile>(_context);
+
     public async Task<int> SaveChangesAsync()
     {
         return await _context.SaveChangesAsync();

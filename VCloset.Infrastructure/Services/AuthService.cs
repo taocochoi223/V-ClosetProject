@@ -87,9 +87,12 @@ public class AuthService : IAuthService
         user.IsEmailVerified = true;
         user.UpdatedAt = DateTime.UtcNow;
         _unitOfWork.Users.Update(user);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync(); // Lúc này user.InternalId đã có giá trị thật
 
         await _cache.RemoveAsync($"OTP:{request.Email}");
+
+        // Tạo profile theo role (nếu chưa có)
+        await CreateProfileIfNotExistsAsync(user);
 
         var accessToken = _jwtService.GenerateAccessToken(user);
         var refreshToken = await GenerateAndSaveRefreshTokenAsync(user.InternalId);
@@ -207,8 +210,12 @@ public class AuthService : IAuthService
                 };
 
                 await _unitOfWork.Users.AddAsync(user);
-                await _unitOfWork.SaveChangesAsync();
-            }else if (string.IsNullOrEmpty(user.GoogleId))
+                await _unitOfWork.SaveChangesAsync(); // Lúc này user.InternalId đã có giá trị thật
+
+                // Tạo profile theo role
+                await CreateProfileIfNotExistsAsync(user);
+            }
+            else if (string.IsNullOrEmpty(user.GoogleId))
             {
                 user.GoogleId = payload.Subject;
                 user.AuthProvider = AuthProvider.Google;
@@ -223,6 +230,7 @@ public class AuthService : IAuthService
                 _unitOfWork.Users.Update(user);
                 await _unitOfWork.SaveChangesAsync();
             }
+
 
             if (!user.IsActive) return null;
 
@@ -355,4 +363,90 @@ public class AuthService : IAuthService
         await _unitOfWork.SaveChangesAsync();
         return refreshToken;
     }
+
+    private async Task CreateProfileIfNotExistsAsync(User user)
+    {
+        switch (user.Role)
+        {
+            case UserRole.Admin:
+            case UserRole.Moderator:
+            {
+                var existing = await _unitOfWork.AdminProfiles.FindAsync(a => a.UserInternalId == user.InternalId);
+                if (existing != null) return;
+
+                var allLevels = await _unitOfWork.PermissionLevels.GetAllAsync();
+                var lowestLevel = allLevels.OrderBy(l => l.Id).FirstOrDefault();
+
+                var adminProfile = new AdminProfile
+                {
+                    Id = Guid.NewGuid(),
+                    UserInternalId = user.InternalId,
+                    PermissionLevel = (short)(lowestLevel?.Id ?? 1),
+                    Department = null,
+                    Notes = null,
+                    CreatedAt = DateTime.UtcNow
+                };
+                await _unitOfWork.AdminProfiles.AddAsync(adminProfile);
+                await _unitOfWork.SaveChangesAsync();
+                break;
+            }
+
+            case UserRole.BrandPartner:
+            {
+                var existing = await _unitOfWork.BrandProfiles.FindAsync(b => b.UserInternalId == user.InternalId);
+                if (existing != null) return;
+
+                var brandProfile = new BrandProfile
+                {
+                    Id = Guid.NewGuid(),
+                    UserInternalId = user.InternalId,
+                    BrandName = user.DisplayName,
+                    LogoUrl = null,
+                    WebsiteUrl = null,
+                    ContactPhone = null,
+                    TaxCode = null,
+                    CreditBalance = 0,
+                    Status = Domain.Enums.BrandStatus.Pending,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                await _unitOfWork.BrandProfiles.AddAsync(brandProfile);
+                await _unitOfWork.SaveChangesAsync();
+                break;
+            }
+
+            case UserRole.Customer:
+            default:
+            {
+                var existing = await _unitOfWork.CustomerProfiles.FindAsync(c => c.UserInternalId == user.InternalId);
+                if (existing != null) return;
+
+                var customerProfile = new CustomerProfile
+                {
+                    Id = Guid.NewGuid(),
+                    UserInternalId = user.InternalId,
+                    HeightCm = null,
+                    WeightKg = null,
+                    DateOfBirth = null,
+                    PhoneNumber = null,
+                    Address = null,
+                    Gender = null,
+                    Country = null,
+                    MannequinImageUrl = null,
+                    MannequinGeneratedAt = null,
+                    WardrobeItemCount = 0,
+                    IsChatBanned = false,
+                    IsPostBanned = false,
+                    ChatBannedUntil = null,
+                    PostBannedUntil = null,
+                    IsOnboardingCompleted = false,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                await _unitOfWork.CustomerProfiles.AddAsync(customerProfile);
+                await _unitOfWork.SaveChangesAsync();
+                break;
+            }
+        }
+    }
 }
+

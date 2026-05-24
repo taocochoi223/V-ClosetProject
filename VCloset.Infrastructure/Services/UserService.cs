@@ -51,18 +51,27 @@ public class UserService : IUserService
     public async Task<bool> UpdateMyProfileAsync(int userId, UpdateProfileRequest request)
     {
         var profile = await _unitOfWork.CustomerProfiles.FindAsync(c => c.UserInternalId == userId);
-        
+
+        bool isNew = false;
         if (profile == null)
         {
+            // Fallback: tạo mới nếu chưa có (lẽ ra đã được tạo khi đăng ký)
             profile = new VCloset.Domain.Entities.CustomerProfile
             {
+                Id = Guid.NewGuid(),
                 UserInternalId = userId,
+                WardrobeItemCount = 0,
+                IsChatBanned = false,
+                IsPostBanned = false,
+                IsOnboardingCompleted = false,
                 UpdatedAt = DateTime.UtcNow
             };
             await _unitOfWork.CustomerProfiles.AddAsync(profile);
+            await _unitOfWork.SaveChangesAsync(); // SaveChanges trước để InternalId có giá trị thật
+            isNew = true;
         }
 
-        if(!string.IsNullOrEmpty(request.DisplayName))
+        if (!string.IsNullOrEmpty(request.DisplayName))
         {
             var user = await _unitOfWork.Users.GetByIdAsync(userId);
             if (user != null)
@@ -82,11 +91,14 @@ public class UserService : IUserService
         profile.IsOnboardingCompleted = true;
         profile.UpdatedAt = DateTime.UtcNow;
 
-        _unitOfWork.CustomerProfiles.Update(profile);
-        await _unitOfWork.SaveChangesAsync();
+        // Chỉ gọi Update() nếu entity KHÔNG phải vừa mới AddAsync() — tránh lỗi EF Core temporary key
+        if (!isNew)
+            _unitOfWork.CustomerProfiles.Update(profile);
 
+        await _unitOfWork.SaveChangesAsync();
         return true;
     }
+
 
     public async Task<string> UpdateAvatarAsync(int userId, IFormFile file)
     {
