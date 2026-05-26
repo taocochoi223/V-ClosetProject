@@ -16,6 +16,10 @@ public class AuthController : ControllerBase
         _authService = authService;
     }
 
+    /// <summary>
+    /// API Đăng ký tài khoản mới (Mặc định vai trò Customer).
+    /// Hệ thống sẽ gửi một mã kích hoạt OTP tới Email đăng ký.
+    /// </summary>
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
@@ -38,6 +42,10 @@ public class AuthController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// API Xác thực mã OTP để kích hoạt tài khoản.
+    /// Trả về Access Token, Refresh Token và thông tin User sau khi xác thực thành công.
+    /// </summary>
     [HttpPost("verify-otp")]
     public async Task<IActionResult> VerifyOtp([FromBody] VerifyOtpRequest request)
     {
@@ -46,6 +54,10 @@ public class AuthController : ControllerBase
         return Ok(response);
     }
 
+    /// <summary>
+    /// API Đăng nhập tài khoản cục bộ (Local Login bằng Email và Mật khẩu).
+    /// Trả về Access Token, Refresh Token, Vai trò (Role) và thông tin cơ bản của User.
+    /// </summary>
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
@@ -64,6 +76,10 @@ public class AuthController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// API Yêu cầu quên mật khẩu.
+    /// Hệ thống sẽ gửi một mã OTP khôi phục mật khẩu tới Email được yêu cầu.
+    /// </summary>
     [HttpPost("forgot-password")]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
     {
@@ -71,6 +87,9 @@ public class AuthController : ControllerBase
         return Ok("Nếu email tồn tại trên hệ thống, một mã xác thực OTP đã được gửi đi.");
     }
 
+    /// <summary>
+    /// API Đặt lại mật khẩu mới bằng mã OTP đã nhận qua Email.
+    /// </summary>
     [HttpPost("reset-password")]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
     {
@@ -79,6 +98,10 @@ public class AuthController : ControllerBase
         return Ok("Đặt lại mật khẩu thành công! Bạn có thể đăng nhập bằng mật khẩu mới.");
     }
 
+    /// <summary>
+    /// API Đăng nhập / Đăng ký nhanh bằng Google Account (Sử dụng Google ID Token).
+    /// Hệ thống tự động tạo tài khoản Customer mới nếu Email Google chưa đăng ký trên hệ thống.
+    /// </summary>
     [HttpPost("google-login")]
     public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
     {
@@ -94,6 +117,9 @@ public class AuthController : ControllerBase
         return Ok(new { message = "Đăng nhập Google thành công", data = response });
     }
 
+    /// <summary>
+    /// API Yêu cầu gửi lại mã kích hoạt OTP tới Email đăng ký.
+    /// </summary>
     [HttpPost("resend-otp")]
     public async Task<IActionResult> ResendOtp([FromBody] ResendOtpRequest request)
     {
@@ -108,6 +134,9 @@ public class AuthController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// API Đổi mật khẩu của người dùng (Yêu cầu đăng nhập).
+    /// </summary>
     [Microsoft.AspNetCore.Authorization.Authorize]
     [HttpPost("change-password")]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
@@ -126,6 +155,9 @@ public class AuthController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// API Làm mới Access Token bằng Refresh Token (Gia hạn phiên đăng nhập không cần nhập lại mật khẩu).
+    /// </summary>
     [HttpPost("refresh-token")]
     public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
     {
@@ -140,6 +172,10 @@ public class AuthController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// API Đăng xuất (Yêu cầu đăng nhập).
+    /// Hệ thống sẽ thu hồi và xóa Refresh Token hiện tại ra khỏi cơ sở dữ liệu.
+    /// </summary>
     [Microsoft.AspNetCore.Authorization.Authorize]
     [HttpPost("logout")]
     public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
@@ -157,6 +193,4 @@ public class AuthController : ControllerBase
             return BadRequest(ex.Message);
         }
     }
-
-
 }

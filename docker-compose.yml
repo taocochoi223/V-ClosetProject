@@ -87,7 +87,7 @@ services:
     container_name: vcloset-nginx
     restart: always
     ports:
-      - "5070:80"    # Host port 5070 → Nginx port 80
+      - "80:80"    # Host port 80 → Nginx port 80 (đón traffic từ tên miền)
     volumes:
       - ./nginx:/etc/nginx/conf.d
     depends_on:
