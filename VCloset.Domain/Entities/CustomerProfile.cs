@@ -51,5 +51,14 @@ public partial class CustomerProfile
     public virtual User UserInternal { get; set; } = null!;
     [Column("body_shape")]
     public BodyShapeType? BodyShape { get; set; }
+
+    [Column("lifestyle")]
+    public string? Lifestyle { get; set; }
+
+    [Column("eye_color")]
+    public string? EyeColor { get; set; }
+
+    [Column("hair")]
+    public string? Hair { get; set; }
 }
 

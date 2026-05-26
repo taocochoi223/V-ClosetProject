@@ -12,4 +12,7 @@ public class UpdateProfileRequest
     public string? Gender { get; set; }
     public string? Country { get; set; }
     public string? DisplayName { get; set; } = string.Empty;
+    public string? Lifestyle { get; set; }
+    public string? EyeColor { get; set; }
+    public string? Hair { get; set; }
 }

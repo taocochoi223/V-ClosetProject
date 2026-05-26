@@ -44,7 +44,10 @@ public class UserService : IUserService
             BodyShape = profile?.BodyShape?.ToString(),
             MannequinImageUrl = profile?.MannequinImageUrl,
             WardrobeItemCount = profile?.WardrobeItemCount ?? 0,
-            IsOnboardingCompleted = profile?.IsOnboardingCompleted ?? false
+            IsOnboardingCompleted = profile?.IsOnboardingCompleted ?? false,
+            Lifestyle = profile?.Lifestyle,
+            EyeColor = profile?.EyeColor,
+            Hair = profile?.Hair
         };
     }
 
@@ -87,6 +90,9 @@ public class UserService : IUserService
         if (!string.IsNullOrEmpty(request.Address)) profile.Address = request.Address;
         if (!string.IsNullOrEmpty(request.Gender)) profile.Gender = request.Gender;
         if (!string.IsNullOrEmpty(request.Country)) profile.Country = request.Country;
+        if (!string.IsNullOrEmpty(request.Lifestyle)) profile.Lifestyle = request.Lifestyle;
+        if (!string.IsNullOrEmpty(request.EyeColor)) profile.EyeColor = request.EyeColor;
+        if (!string.IsNullOrEmpty(request.Hair)) profile.Hair = request.Hair;
 
         profile.IsOnboardingCompleted = true;
         profile.UpdatedAt = DateTime.UtcNow;

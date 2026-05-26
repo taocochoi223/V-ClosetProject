@@ -25,4 +25,7 @@ public class UserProfileResponse
     public string? MannequinImageUrl { get; set; }
     public int WardrobeItemCount { get; set; }
     public bool IsOnboardingCompleted { get; set; }
+    public string? Lifestyle { get; set; }
+    public string? EyeColor { get; set; }
+    public string? Hair { get; set; }
 }
