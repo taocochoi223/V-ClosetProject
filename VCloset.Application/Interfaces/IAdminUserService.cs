@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using VCloset.Application.DTOs.Admin.Requests;
 using VCloset.Application.DTOs.Admin.Responses;
+using VCloset.Domain.Enums;
 
 namespace VCloset.Application.Interfaces;
 
@@ -13,4 +14,9 @@ public interface IAdminUserService
     Task DeactivateUserAsync(int adminUserId, Guid targetUserId);
     Task CreateUserWithPermissionsAsync(int creatorAdminId, CreateUserRequest request);
     Task<PagedUsersResponse> GetUsersAsync(int callerAdminId, int page, int pageSize, string? search, string? roleFilter, bool? isActive, bool? isBanned);
+    Task GrantPermissionAsync(int adminUserId, Guid targetUserId, string permissionCode);
+    Task RevokePermissionAsync(int adminUserId, Guid targetUserId, string permissionCode);
+    Task ReactivateUserAsync(int adminUserId, Guid targetUserId);
+    Task ResetPermissionsToDefaultAsync(int adminUserId, Guid targetUserId);
+    Task UpdateUserRoleAsync(int adminUserId, Guid targetUserId, UserRole newRole);
 }

@@ -441,6 +441,349 @@ public class AdminUserService : IAdminUserService
         };
     }
 
+    public async Task GrantPermissionAsync(int adminUserId, Guid targetUserId, string permissionCode)
+    {
+        // 1. Kiểm tra người gọi có phải là SuperAdmin không
+        var callerProfile = await _unitOfWork.AdminProfiles.FindAsync(ap => ap.UserInternalId == adminUserId);
+        if (callerProfile == null || callerProfile.PermissionLevel != 3)
+        {
+            throw new UnauthorizedAccessException("Chỉ có SuperAdmin mới được cấp quyền cho người dùng khác.");
+        }
+
+        // 2. Tìm người dùng mục tiêu
+        var targetUser = await _unitOfWork.Users.FindAsync(u => u.Id == targetUserId);
+        if (targetUser == null)
+            throw new Exception("Không tìm thấy người dùng mục tiêu.");
+
+        if (targetUser.Role != UserRole.Admin && targetUser.Role != UserRole.Moderator)
+        {
+            throw new Exception("Chỉ được cấp quyền cho tài khoản có vai trò Admin hoặc Moderator.");
+        }
+
+        // Không được tự cấp cho mình
+        if (targetUser.InternalId == adminUserId)
+        {
+            throw new Exception("Không thể tự cấp quyền cho chính bản thân mình.");
+        }
+
+        // 3. Tìm mã quyền
+        var permission = await _context.Permissions.FirstOrDefaultAsync(p => p.Code.ToLower() == permissionCode.ToLower());
+        if (permission == null)
+            throw new Exception($"Không tìm thấy mã quyền '{permissionCode}' trong hệ thống.");
+
+        // 4. Kiểm tra xem đã có quyền này chưa
+        var existingPermission = await _unitOfWork.AdminPermissions.FindAsync(ap => 
+            ap.UserInternalId == targetUser.InternalId && ap.PermissionId == permission.Id);
+        
+        if (existingPermission != null)
+        {
+            throw new Exception("Người dùng này đã được cấp quyền này trước đó.");
+        }
+
+        // 5. Cấp quyền mới
+        var newPermission = new AdminPermission
+        {
+            UserInternalId = targetUser.InternalId,
+            PermissionId = permission.Id,
+            GrantedByInternal = adminUserId,
+            GrantedAt = DateTime.UtcNow
+        };
+
+        await _unitOfWork.AdminPermissions.AddAsync(newPermission);
+        await _unitOfWork.SaveChangesAsync();
+    }
+
+    public async Task RevokePermissionAsync(int adminUserId, Guid targetUserId, string permissionCode)
+    {
+        // 1. Kiểm tra người gọi có phải là SuperAdmin không
+        var callerProfile = await _unitOfWork.AdminProfiles.FindAsync(ap => ap.UserInternalId == adminUserId);
+        if (callerProfile == null || callerProfile.PermissionLevel != 3)
+        {
+            throw new UnauthorizedAccessException("Chỉ có SuperAdmin mới được thu hồi quyền của người dùng khác.");
+        }
+
+        // 2. Tìm người dùng mục tiêu
+        var targetUser = await _unitOfWork.Users.FindAsync(u => u.Id == targetUserId);
+        if (targetUser == null)
+            throw new Exception("Không tìm thấy người dùng mục tiêu.");
+
+        // Không được tự thu hồi của mình
+        if (targetUser.InternalId == adminUserId)
+        {
+            throw new Exception("Không thể tự thu hồi quyền của chính bản thân mình.");
+        }
+
+        // 3. Tìm mã quyền
+        var permission = await _context.Permissions.FirstOrDefaultAsync(p => p.Code.ToLower() == permissionCode.ToLower());
+        if (permission == null)
+            throw new Exception($"Không tìm thấy mã quyền '{permissionCode}' trong hệ thống.");
+
+        // 4. Tìm bản ghi quyền để xóa
+        var existingPermission = await _unitOfWork.AdminPermissions.FindAsync(ap => 
+            ap.UserInternalId == targetUser.InternalId && ap.PermissionId == permission.Id);
+
+        if (existingPermission == null)
+        {
+            throw new Exception("Người dùng này hiện không có quyền này để thu hồi.");
+        }
+
+        _unitOfWork.AdminPermissions.Delete(existingPermission);
+        await _unitOfWork.SaveChangesAsync();
+    }
+
+    public async Task ReactivateUserAsync(int adminUserId, Guid targetUserId)
+    {
+        var targetUser = await _unitOfWork.Users.FindAsync(u => u.Id == targetUserId);
+        if (targetUser == null)
+            throw new Exception("Không tìm thấy người dùng mục tiêu.");
+
+        if (targetUser.IsActive)
+            throw new Exception("Tài khoản người dùng này vẫn đang hoạt động.");
+
+        // Chỉ SuperAdmin mới được phép kích hoạt lại Admin khác
+        if (targetUser.Role == UserRole.Admin)
+        {
+            var callerProfile = await _unitOfWork.AdminProfiles.FindAsync(ap => ap.UserInternalId == adminUserId);
+            if (callerProfile == null || callerProfile.PermissionLevel != 3)
+            {
+                throw new UnauthorizedAccessException("Chỉ có SuperAdmin mới được kích hoạt lại tài khoản Admin khác.");
+            }
+        }
+
+        targetUser.IsActive = true;
+        targetUser.UpdatedAt = DateTime.UtcNow;
+
+        _unitOfWork.Users.Update(targetUser);
+        await _unitOfWork.SaveChangesAsync();
+    }
+
+    public async Task ResetPermissionsToDefaultAsync(int adminUserId, Guid targetUserId)
+    {
+        // 1. Kiểm tra người gọi có phải là SuperAdmin không
+        var callerProfile = await _unitOfWork.AdminProfiles.FindAsync(ap => ap.UserInternalId == adminUserId);
+        if (callerProfile == null || callerProfile.PermissionLevel != 3)
+        {
+            throw new UnauthorizedAccessException("Chỉ có SuperAdmin mới được khôi phục quyền mặc định.");
+        }
+
+        // 2. Tìm người dùng mục tiêu
+        var targetUser = await _unitOfWork.Users.FindAsync(u => u.Id == targetUserId);
+        if (targetUser == null)
+            throw new Exception("Không tìm thấy người dùng mục tiêu.");
+
+        if (targetUser.Role != UserRole.Admin && targetUser.Role != UserRole.Moderator)
+        {
+            throw new Exception("Chỉ hỗ trợ khôi phục quyền cho tài khoản có vai trò Admin hoặc Moderator.");
+        }
+
+        // Không được tự reset cho mình
+        if (targetUser.InternalId == adminUserId)
+        {
+            throw new Exception("Không thể tự khôi phục quyền mặc định cho chính bản thân mình.");
+        }
+
+        // 3. Xoá toàn bộ quyền hiện tại
+        var userPermissions = await _unitOfWork.AdminPermissions.FindAllAsync(ap => ap.UserInternalId == targetUser.InternalId);
+        foreach (var userPerm in userPermissions)
+        {
+            _unitOfWork.AdminPermissions.Delete(userPerm);
+        }
+
+        // 4. Lấy danh sách quyền mặc định của vai trò đó từ DB
+        short defaultLevelId = targetUser.Role == UserRole.Admin ? (short)2 : (short)1;
+        var permissionLevel = await _context.PermissionLevels
+            .Include(pl => pl.Permissions)
+            .FirstOrDefaultAsync(pl => pl.Id == defaultLevelId);
+
+        if (permissionLevel != null)
+        {
+            foreach (var perm in permissionLevel.Permissions)
+            {
+                var adminPermission = new AdminPermission
+                {
+                    UserInternalId = targetUser.InternalId,
+                    PermissionId = perm.Id,
+                    GrantedByInternal = adminUserId,
+                    GrantedAt = DateTime.UtcNow
+                };
+                await _unitOfWork.AdminPermissions.AddAsync(adminPermission);
+            }
+        }
+
+        await _unitOfWork.SaveChangesAsync();
+    }
+
+    public async Task UpdateUserRoleAsync(int adminUserId, Guid targetUserId, UserRole newRole)
+    {
+        // 1. Kiểm tra người gọi có phải là SuperAdmin không
+        var callerProfile = await _unitOfWork.AdminProfiles.FindAsync(ap => ap.UserInternalId == adminUserId);
+        if (callerProfile == null || callerProfile.PermissionLevel != 3)
+        {
+            throw new UnauthorizedAccessException("Chỉ có SuperAdmin mới được thay đổi vai trò của người dùng.");
+        }
+
+        // 2. Tìm người dùng mục tiêu
+        var targetUser = await _unitOfWork.Users.FindAsync(u => u.Id == targetUserId);
+        if (targetUser == null)
+            throw new Exception("Không tìm thấy người dùng mục tiêu.");
+
+        // Không được tự thay đổi role của mình
+        if (targetUser.InternalId == adminUserId)
+        {
+            throw new Exception("Không thể tự thay đổi vai trò của chính bản thân mình.");
+        }
+
+        var oldRole = targetUser.Role;
+        if (oldRole == newRole)
+        {
+            return; // Không thay đổi gì
+        }
+
+        // 3. Xử lý Profile cũ (xoá hoặc cập nhật)
+        if (oldRole == UserRole.Admin || oldRole == UserRole.Moderator)
+        {
+            if (newRole != UserRole.Admin && newRole != UserRole.Moderator)
+            {
+                var adminProfile = await _unitOfWork.AdminProfiles.FindAsync(ap => ap.UserInternalId == targetUser.InternalId);
+                if (adminProfile != null)
+                {
+                    _unitOfWork.AdminProfiles.Delete(adminProfile);
+                }
+
+                var permissions = await _unitOfWork.AdminPermissions.FindAllAsync(ap => ap.UserInternalId == targetUser.InternalId);
+                foreach (var p in permissions)
+                {
+                    _unitOfWork.AdminPermissions.Delete(p);
+                }
+            }
+        }
+        else if (oldRole == UserRole.Customer)
+        {
+            var customerProfile = await _unitOfWork.CustomerProfiles.FindAsync(cp => cp.UserInternalId == targetUser.InternalId);
+            if (customerProfile != null)
+            {
+                _unitOfWork.CustomerProfiles.Delete(customerProfile);
+            }
+        }
+        else if (oldRole == UserRole.BrandPartner)
+        {
+            var brandProfile = await _unitOfWork.BrandProfiles.FindAsync(bp => bp.UserInternalId == targetUser.InternalId);
+            if (brandProfile != null)
+            {
+                _unitOfWork.BrandProfiles.Delete(brandProfile);
+            }
+        }
+
+        // 4. Khởi tạo Profile mới và gán quyền tương ứng
+        if (newRole == UserRole.Admin || newRole == UserRole.Moderator)
+        {
+            short permLevelId = newRole == UserRole.Admin ? (short)2 : (short)1;
+
+            var adminProfile = await _unitOfWork.AdminProfiles.FindAsync(ap => ap.UserInternalId == targetUser.InternalId);
+            if (adminProfile == null)
+            {
+                adminProfile = new AdminProfile
+                {
+                    Id = Guid.NewGuid(),
+                    UserInternalId = targetUser.InternalId,
+                    PermissionLevel = permLevelId,
+                    Department = null,
+                    Notes = $"Thay đổi vai trò bởi SuperAdmin ID: {adminUserId}",
+                    CreatedAt = DateTime.UtcNow
+                };
+                await _unitOfWork.AdminProfiles.AddAsync(adminProfile);
+            }
+            else
+            {
+                adminProfile.PermissionLevel = permLevelId;
+                _unitOfWork.AdminProfiles.Update(adminProfile);
+            }
+
+            // Reset và gán quyền mặc định của vai trò mới
+            var existingPermissions = await _unitOfWork.AdminPermissions.FindAllAsync(ap => ap.UserInternalId == targetUser.InternalId);
+            foreach (var p in existingPermissions)
+            {
+                _unitOfWork.AdminPermissions.Delete(p);
+            }
+
+            var permissionLevel = await _context.PermissionLevels
+                .Include(pl => pl.Permissions)
+                .FirstOrDefaultAsync(pl => pl.Id == permLevelId);
+
+            if (permissionLevel != null)
+            {
+                foreach (var perm in permissionLevel.Permissions)
+                {
+                    var adminPermission = new AdminPermission
+                    {
+                        UserInternalId = targetUser.InternalId,
+                        PermissionId = perm.Id,
+                        GrantedByInternal = adminUserId,
+                        GrantedAt = DateTime.UtcNow
+                    };
+                    await _unitOfWork.AdminPermissions.AddAsync(adminPermission);
+                }
+            }
+        }
+        else if (newRole == UserRole.Customer)
+        {
+            var customerProfile = await _unitOfWork.CustomerProfiles.FindAsync(cp => cp.UserInternalId == targetUser.InternalId);
+            if (customerProfile == null)
+            {
+                customerProfile = new CustomerProfile
+                {
+                    Id = Guid.NewGuid(),
+                    UserInternalId = targetUser.InternalId,
+                    HeightCm = null,
+                    WeightKg = null,
+                    DateOfBirth = null,
+                    PhoneNumber = null,
+                    Address = null,
+                    Gender = null,
+                    Country = null,
+                    MannequinImageUrl = null,
+                    MannequinGeneratedAt = null,
+                    WardrobeItemCount = 0,
+                    IsChatBanned = false,
+                    IsPostBanned = false,
+                    ChatBannedUntil = null,
+                    PostBannedUntil = null,
+                    IsOnboardingCompleted = false,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                await _unitOfWork.CustomerProfiles.AddAsync(customerProfile);
+            }
+        }
+        else if (newRole == UserRole.BrandPartner)
+        {
+            var brandProfile = await _unitOfWork.BrandProfiles.FindAsync(bp => bp.UserInternalId == targetUser.InternalId);
+            if (brandProfile == null)
+            {
+                brandProfile = new BrandProfile
+                {
+                    Id = Guid.NewGuid(),
+                    UserInternalId = targetUser.InternalId,
+                    BrandName = targetUser.DisplayName,
+                    LogoUrl = null,
+                    WebsiteUrl = null,
+                    ContactPhone = null,
+                    TaxCode = null,
+                    CreditBalance = 0,
+                    Status = BrandStatus.Verified,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                await _unitOfWork.BrandProfiles.AddAsync(brandProfile);
+            }
+        }
+
+        // 5. Cập nhật role trong thực thể User
+        targetUser.Role = newRole;
+        targetUser.UpdatedAt = DateTime.UtcNow;
+        _unitOfWork.Users.Update(targetUser);
+
+        await _unitOfWork.SaveChangesAsync();
+    }
 
     private static string GenerateRandomPassword(int length = 12)
     {
@@ -449,7 +792,4 @@ public class AdminUserService : IAdminUserService
         return new string(Enumerable.Repeat(validChars, length)
             .Select(s => s[random.Next(s.Length)]).ToArray());
     }
-
-
-
 }
