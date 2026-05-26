@@ -62,6 +62,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAdminUserService, AdminUserService>();
 builder.Services.AddScoped<IAdminModerationService, AdminModerationService>();
+builder.Services.AddScoped<IAdminBrandService, AdminBrandService>();
 
 
 var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET") ?? builder.Configuration["JWT_SECRET"];
@@ -126,7 +127,11 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -158,6 +163,7 @@ builder.Services.AddSwaggerGen(c =>
             new List<string>()
         }
     });
+    c.OperationFilter<HideResponseSchemasFilter>();
 });
 
 var app = builder.Build();
@@ -192,7 +198,10 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseSwagger();
-app.UseSwaggerUI();
+app.UseSwaggerUI(c =>
+{
+    c.DefaultModelsExpandDepth(-1); // Ẩn phần Schemas ở dưới cùng trang Swagger
+});
 
 app.UseStaticFiles(); // Allow serving images from wwwroot
 
@@ -213,3 +222,14 @@ app.MapHealthChecks("/health");
 app.MapHub<NotificationHub>("/notificationHub");
 
 app.Run();
+
+public class HideResponseSchemasFilter : Swashbuckle.AspNetCore.SwaggerGen.IOperationFilter
+{
+    public void Apply(OpenApiOperation operation, Swashbuckle.AspNetCore.SwaggerGen.OperationFilterContext context)
+    {
+        foreach (var response in operation.Responses.Values)
+        {
+            response.Content.Clear();
+        }
+    }
+}
