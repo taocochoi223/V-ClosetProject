@@ -24,7 +24,7 @@ public class NotificationsController : ControllerBase
     /// Lấy danh sách thông báo của người dùng hiện tại (hỗ trợ lọc theo trạng thái isRead)
     /// </summary>
     [HttpGet]
-    [ProducesResponseType(typeof(List<NotificationResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetNotifications([FromQuery] bool? isRead)
     {
         int mockUserId = 1; // Sử dụng mockUserId = 1 đồng nhất với các Controller khác
@@ -88,7 +88,7 @@ public class NotificationsController : ControllerBase
     /// API Hỗ trợ Test (Sandbox): Tự tạo một thông báo giả lập cho người dùng hiện tại
     /// </summary>
     [HttpPost("send-test")]
-    [ProducesResponseType(typeof(NotificationResponseDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status201Created)]
     public async Task<IActionResult> SendTestNotification([FromQuery] string type, [FromQuery] string title, [FromQuery] string body, [FromQuery] string? referenceType, [FromQuery] int? referenceId)
     {
         int mockUserId = 1;

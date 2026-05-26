@@ -27,7 +27,7 @@ public class AdminModerationController : ControllerBase
     /// </summary>
     [RequirePermission("moderation.view")]
     [HttpGet("reports")]
-    [ProducesResponseType(typeof(PagedReportsResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetReports(
         [FromQuery] int page = 1,
@@ -54,7 +54,7 @@ public class AdminModerationController : ControllerBase
     /// </summary>
     [RequirePermission("post.view")]
     [HttpGet("posts/{postId:guid}")]
-    [ProducesResponseType(typeof(PostModerationDetailResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetPostDetail(Guid postId)
