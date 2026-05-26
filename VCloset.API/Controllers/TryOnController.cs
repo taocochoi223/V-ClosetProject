@@ -7,11 +7,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using VCloset.Application.Interfaces;
 using VCloset.Infrastructure.Data;
+using Microsoft.AspNetCore.Authorization;
 
 namespace VCloset.API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/tryon")]
+[Authorize]
 public class TryOnController : ControllerBase
 {
     private readonly IVirtualTryOnService _tryOnService;

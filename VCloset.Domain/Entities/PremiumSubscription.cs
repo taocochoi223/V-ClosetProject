@@ -1,4 +1,4 @@
-﻿using VCloset.Domain.Enums;
+using VCloset.Domain.Enums;
 using System.ComponentModel.DataAnnotations.Schema;
 using System;
 using System.Collections.Generic;
@@ -37,5 +37,10 @@ public partial class PremiumSubscription
     public virtual User UserInternal { get; set; } = null!;
     [Column("plan_type")]
     public PremiumPlan PlanType { get; set; }
+
+    [Column("subscription_plan_internal_id")]
+    public int? SubscriptionPlanInternalId { get; set; }
+
+    public virtual SubscriptionPlan? SubscriptionPlan { get; set; }
 }
 

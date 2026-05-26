@@ -2,12 +2,13 @@ using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 using VCloset.Application.DTOs;
 using VCloset.Application.Interfaces;
-
+using Microsoft.AspNetCore.Authorization;
 namespace VCloset.API.Controllers;
 
 [ApiController]
-[Route("api/Outfits")]
+[Route("api/outfits")]
 [Produces("application/json")]
+[Authorize]
 public class OutfitsController : ControllerBase
 {
     private readonly ICanvasService _canvasService;

@@ -5,12 +5,14 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using VCloset.Application.DTOs;
 using VCloset.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 
 namespace VCloset.API.Controllers;
 
 [ApiController]
 [Route("api/notifications")]
 [Produces("application/json")]
+[Authorize]
 public class NotificationsController : ControllerBase
 {
     private readonly INotificationService _notificationService;

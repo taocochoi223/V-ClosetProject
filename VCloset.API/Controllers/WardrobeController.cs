@@ -6,11 +6,13 @@ using Microsoft.AspNetCore.Mvc;
 using VCloset.Application.DTOs;
 using VCloset.Application.Interfaces;
 using VCloset.Domain.Enums;
+using Microsoft.AspNetCore.Authorization;
 
 namespace VCloset.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class WardrobeController : ControllerBase
 {
     private readonly IBackgroundRemovalService _bgRemovalService;

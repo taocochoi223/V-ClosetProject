@@ -66,6 +66,8 @@ public partial class VClosetVersion30Context : DbContext
 
     public virtual DbSet<PremiumSubscription> PremiumSubscriptions { get; set; }
 
+    public virtual DbSet<SubscriptionPlan> SubscriptionPlans { get; set; }
+
     public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
 
     public virtual DbSet<SponsoredCampaign> SponsoredCampaigns { get; set; }
@@ -998,10 +1000,68 @@ public partial class VClosetVersion30Context : DbContext
                 .HasDefaultValueSql("now()")
                 .HasColumnName("started_at");
             entity.Property(e => e.UserInternalId).HasColumnName("user_internal_id");
+            entity.Property(e => e.SubscriptionPlanInternalId).HasColumnName("subscription_plan_internal_id");
 
             entity.HasOne(d => d.UserInternal).WithMany(p => p.PremiumSubscriptions)
                 .HasForeignKey(d => d.UserInternalId)
                 .HasConstraintName("premium_subscriptions_user_internal_id_fkey");
+
+            entity.HasOne(d => d.SubscriptionPlan).WithMany(p => p.PremiumSubscriptions)
+                .HasForeignKey(d => d.SubscriptionPlanInternalId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("premium_subscriptions_subscription_plan_internal_id_fkey");
+        });
+
+        modelBuilder.Entity<SubscriptionPlan>(entity =>
+        {
+            entity.HasKey(e => e.InternalId).HasName("subscription_plans_pkey");
+
+            entity.ToTable("subscription_plans", tb => tb.HasComment("Bảng cấu hình gói Premium phục vụ thanh toán."));
+
+            entity.HasIndex(e => e.Id, "subscription_plans_id_key").IsUnique();
+
+            entity.Property(e => e.InternalId).HasColumnName("internal_id");
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("gen_random_uuid()")
+                .HasColumnName("id");
+            entity.Property(e => e.Name).HasMaxLength(100).HasColumnName("name");
+            entity.Property(e => e.Description).HasMaxLength(500).HasColumnName("description");
+            entity.Property(e => e.Price).HasPrecision(10, 2).HasColumnName("price");
+            entity.Property(e => e.Currency).HasMaxLength(10).HasDefaultValue("VND").HasColumnName("currency");
+            entity.Property(e => e.DurationDays).HasColumnName("duration_days");
+            entity.Property(e => e.IsActive).HasDefaultValue(true).HasColumnName("is_active");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("now()").HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("now()").HasColumnName("updated_at");
+
+            // Seed default plans
+            entity.HasData(
+                new SubscriptionPlan
+                {
+                    InternalId = 1,
+                    Id = Guid.Parse("3f5f3e9c-502a-43c2-bf72-351faab24c8b"),
+                    Name = "Gói Tháng Premium",
+                    Description = "Mở khóa toàn bộ tính năng và giới hạn tủ đồ trong 30 ngày.",
+                    Price = 49000m,
+                    Currency = "VND",
+                    DurationDays = 30,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                },
+                new SubscriptionPlan
+                {
+                    InternalId = 2,
+                    Id = Guid.Parse("b0d61ca5-408a-4084-9dbb-8cd9c13b19ff"),
+                    Name = "Gói Năm Premium",
+                    Description = "Mở khóa toàn bộ tính năng và giới hạn tủ đồ trong 365 ngày (Tiết kiệm hơn).",
+                    Price = 399000m,
+                    Currency = "VND",
+                    DurationDays = 365,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                }
+            );
         });
 
         modelBuilder.Entity<RefreshToken>(entity =>
