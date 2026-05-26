@@ -55,7 +55,9 @@ public class AuthService : IAuthService
                 IsActive = true,
                 IsEmailVerified = false,
                 CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                UpdatedAt = DateTime.UtcNow,
+                Role = UserRole.Customer,
+                AuthProvider = AuthProvider.Local
             };
             await _unitOfWork.Users.AddAsync(newUser);
         }
@@ -134,12 +136,12 @@ public class AuthService : IAuthService
 
         var profile = await _unitOfWork.CustomerProfiles
             .FindAsync(c => c.UserInternalId == user.InternalId);
-
+        var displayRole = await GetDisplayRoleAsync(user);
         return new AuthResponse
         {
             AccessToken = accessToken,
             RefreshToken = refreshToken,
-            Role = user.Role.ToString(),
+            Role = displayRole,
             UserId = user.InternalId,
             Email = user.Email,
             DisplayName = user.DisplayName,
@@ -456,5 +458,19 @@ public class AuthService : IAuthService
             }
         }
     }
+
+    private async Task<string> GetDisplayRoleAsync(User user)
+    {
+        if (user.Role == UserRole.Admin)
+        {
+            var adminProfile = await _unitOfWork.AdminProfiles.FindAsync(a => a.UserInternalId == user.InternalId);
+            if (adminProfile?.PermissionLevel == 3)
+            {
+                return "SuperAdmin";
+            }
+        }
+        return user.Role.ToString();
+    }
+
 }
 

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using VCloset.Application.DTOs;
@@ -19,6 +20,10 @@ public class UsersController : ControllerBase
         _userService = userService;
     }
 
+    /// <summary>
+    /// API lấy thông tin hồ sơ (Profile) của tôi (Yêu cầu đăng nhập).
+    /// Trả về thông tin cá nhân và số đo của tài khoản đang đăng nhập.
+    /// </summary>
     [Authorize]
     [HttpGet("me")]
     public async Task<IActionResult> GetMyProfile()
@@ -39,6 +44,9 @@ public class UsersController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// API cập nhật thông tin hồ sơ của tôi (Yêu cầu đăng nhập).
+    /// </summary>
     [Authorize]
     [HttpPut("me")]
     public async Task<IActionResult> UpdateMyProfile([FromBody] UpdateProfileRequest request)
@@ -58,6 +66,9 @@ public class UsersController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// API tải lên và cập nhật ảnh đại diện (Avatar) của tôi (Yêu cầu đăng nhập).
+    /// </summary>
     [Authorize]
     [HttpPost("me/avatar")]
     public async Task<IActionResult> UpdateAvatar(IFormFile file)
@@ -77,6 +88,10 @@ public class UsersController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// API lấy thông tin hồ sơ công khai (Public Profile) của một người dùng khác qua UUID.
+    /// Trả về thông tin công khai (không gồm thông tin cá nhân nhạy cảm).
+    /// </summary>
     [Authorize]
     [HttpGet("{targetUserId:guid}")]
     public async Task<IActionResult> GetPublicProfile(Guid targetUserId)
@@ -94,6 +109,10 @@ public class UsersController : ControllerBase
             return BadRequest(ex.Message);
         }
     }
+
+    /// <summary>
+    /// API theo dõi (Follow) một người dùng khác qua UUID (Yêu cầu đăng nhập).
+    /// </summary>
     [Authorize]
     [HttpPost("{targetUserId:guid}/follow")]
     public async Task<IActionResult> FollowUser(Guid targetUserId)
@@ -115,6 +134,9 @@ public class UsersController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// API bỏ theo dõi (Unfollow) một người dùng khác qua UUID (Yêu cầu đăng nhập).
+    /// </summary>
     [Authorize]
     [HttpDelete("{targetUserId:guid}/follow")]
     public async Task<IActionResult> UnfollowUser(Guid targetUserId)
@@ -135,6 +157,10 @@ public class UsersController : ControllerBase
             return BadRequest(ex.Message);
         }
     }
+
+    /// <summary>
+    /// API lấy danh sách những người đang theo dõi tôi (Followers) (Yêu cầu đăng nhập).
+    /// </summary>
     [Authorize]
     [HttpGet("me/followers")]
     public async Task<IActionResult> GetMyFollowers()
@@ -153,6 +179,9 @@ public class UsersController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// API lấy danh sách những người tôi đang theo dõi (Following) (Yêu cầu đăng nhập).
+    /// </summary>
     [Authorize]
     [HttpGet("me/following")]
     public async Task<IActionResult> GetMyFollowing()
@@ -170,6 +199,10 @@ public class UsersController : ControllerBase
             return BadRequest(ex.Message);
         }
     }
+
+    /// <summary>
+    /// API tự vô hiệu hóa / xóa tài khoản của chính mình (Yêu cầu đăng nhập).
+    /// </summary>
     [Authorize]
     [HttpDelete("me")]
     public async Task<IActionResult> DeactivateMyAccount()
@@ -189,6 +222,5 @@ public class UsersController : ControllerBase
             return BadRequest(ex.Message);
         }
     }
-
 }
 
