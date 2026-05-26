@@ -63,6 +63,8 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAdminUserService, AdminUserService>();
 builder.Services.AddScoped<IAdminModerationService, AdminModerationService>();
 builder.Services.AddScoped<IAdminBrandService, AdminBrandService>();
+builder.Services.AddScoped<IAdminDashboardService, AdminDashboardService>();
+
 
 
 var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET") ?? builder.Configuration["JWT_SECRET"];
@@ -76,7 +78,7 @@ builder.Services.AddAuthentication(options =>
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtSecret ?? "VClosetSuperSecretSecurityKeyThatIsAtLeast32CharactersLong!")),
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret ?? "VClosetSuperSecretSecurityKeyThatIsAtLeast32CharactersLong!")),
         ValidateIssuer = true,
         ValidIssuer = "VCloset",
         ValidateAudience = true,
