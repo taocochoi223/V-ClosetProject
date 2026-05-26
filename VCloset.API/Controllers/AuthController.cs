@@ -49,9 +49,19 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        var response = await _authService.LoginAsync(request);
-        if (response == null) return Unauthorized("Email hoặc Mật khẩu không chính xác, hoặc tài khoản chưa được kích hoạt.");
-        return Ok(response);
+        try
+        {
+            var response = await _authService.LoginAsync(request);
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            return Unauthorized(new
+            {
+                message = ex.Message
+            });
+        }
     }
 
     [HttpPost("forgot-password")]

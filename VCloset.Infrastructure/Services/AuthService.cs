@@ -113,20 +113,27 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponse?> LoginAsync(LoginRequest request)
     {
-        var user = await _unitOfWork.Users.FindAsync(u => u.Email == request.Email);
-        if (user == null) 
-            return null;
+        var user = await _unitOfWork.Users
+            .FindAsync(u => u.Email == request.Email);
 
-        if (!user.IsActive || !user.IsEmailVerified) 
-            return null;
+        if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+            throw new Exception("Email hoặc mật khẩu không đúng");
 
-        if (string.IsNullOrEmpty(user.PasswordHash) || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
-            return null;
+        if (!user.IsEmailVerified)
+            throw new Exception("Email chưa được kích hoạt.");
+
+        if (!user.IsActive)
+            throw new Exception("Tài khoản đã bị khoá.");
+
+        if (string.IsNullOrEmpty(user.PasswordHash))
+            throw new Exception("Tài khoản này chưa được thiết lập mật khẩu.");;
 
         var accessToken = _jwtService.GenerateAccessToken(user);
+
         var refreshToken = await GenerateAndSaveRefreshTokenAsync(user.InternalId);
 
-        var profile = await _unitOfWork.CustomerProfiles.FindAsync(c => c.UserInternalId == user.InternalId);
+        var profile = await _unitOfWork.CustomerProfiles
+            .FindAsync(c => c.UserInternalId == user.InternalId);
 
         return new AuthResponse
         {
