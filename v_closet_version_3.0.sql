@@ -165,6 +165,15 @@ CREATE TABLE customer_profiles (
     is_post_banned          BOOLEAN      NOT NULL DEFAULT FALSE,
     chat_banned_until       TIMESTAMPTZ,
     post_banned_until       TIMESTAMPTZ,
+    date_of_birth           TIMESTAMPTZ,
+    phone_number            VARCHAR(20),
+    address                 VARCHAR(500),
+    gender                  VARCHAR(20),
+    country                 VARCHAR(100),
+    is_onboarding_completed BOOLEAN      NOT NULL DEFAULT FALSE,
+    lifestyle               VARCHAR(200),
+    eye_color               VARCHAR(50),
+    hair                    VARCHAR(100),
     updated_at              TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
@@ -246,6 +255,22 @@ CREATE INDEX idx_refresh_tokens_user  ON refresh_tokens(user_internal_id);
 CREATE INDEX idx_refresh_tokens_token ON refresh_tokens(token_hash);
 
 COMMENT ON TABLE refresh_tokens IS 'JWT refresh token theo thiết bị. Logout từ xa, revoke token bất thường.';
+
+
+-- -----------------------------------------------------------------------------
+-- Bảng: user_followers — FK dùng user internal_id (INT)
+-- -----------------------------------------------------------------------------
+CREATE TABLE user_followers (
+    id           SERIAL      PRIMARY KEY,
+    follower_id  INT         NOT NULL REFERENCES users(internal_id) ON DELETE RESTRICT,
+    following_id INT         NOT NULL REFERENCES users(internal_id) ON DELETE RESTRICT,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_user_followers_follower  ON user_followers(follower_id);
+CREATE INDEX idx_user_followers_following ON user_followers(following_id);
+
+COMMENT ON TABLE user_followers IS 'Bảng theo dõi người dùng.';
 
 
 -- =============================================================================
