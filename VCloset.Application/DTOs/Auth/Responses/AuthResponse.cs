@@ -10,4 +10,5 @@ public class AuthResponse
     public string DisplayName { get; set; } = null!;
     public string? AvatarUrl { get; set; }
     public bool IsOnboardingCompleted { get; set; }
+    public bool IsPasswordSet { get; set; }
 }

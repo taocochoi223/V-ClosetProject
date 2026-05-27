@@ -101,15 +101,19 @@ public class AuthService : IAuthService
 
         var profile = await _unitOfWork.CustomerProfiles.FindAsync(c => c.UserInternalId == user.InternalId);
 
+        var displayRole = await GetDisplayRoleAsync(user);
+
         return new AuthResponse
         {
             AccessToken = accessToken,
             RefreshToken = refreshToken,
+            Role = displayRole,
             UserId = user.InternalId,
             Email = user.Email,
             DisplayName = user.DisplayName,
             AvatarUrl = user.AvatarUrl,
-            IsOnboardingCompleted = user.Role != UserRole.Customer || (profile?.IsOnboardingCompleted ?? false)
+            IsOnboardingCompleted = user.Role != UserRole.Customer || (profile?.IsOnboardingCompleted ?? false),
+            IsPasswordSet = !string.IsNullOrEmpty(user.PasswordHash)
         };
     }
 
@@ -146,7 +150,8 @@ public class AuthService : IAuthService
             Email = user.Email,
             DisplayName = user.DisplayName,
             AvatarUrl = user.AvatarUrl,
-            IsOnboardingCompleted = user.Role != UserRole.Customer || (profile?.IsOnboardingCompleted ?? false)
+            IsOnboardingCompleted = user.Role != UserRole.Customer || (profile?.IsOnboardingCompleted ?? false),
+            IsPasswordSet = !string.IsNullOrEmpty(user.PasswordHash)
         };
     }
 
@@ -249,15 +254,19 @@ public class AuthService : IAuthService
 
             var profile = await _unitOfWork.CustomerProfiles.FindAsync(c => c.UserInternalId == user.InternalId);
 
+            var displayRole = await GetDisplayRoleAsync(user);
+
             return new AuthResponse
             {
                 AccessToken = accessToken,
                 RefreshToken = refreshToken,
+                Role = displayRole,
                 UserId = user.InternalId,
                 Email = user.Email,
                 DisplayName = user.DisplayName,
                 AvatarUrl = user.AvatarUrl,
-                IsOnboardingCompleted = user.Role != UserRole.Customer || (profile?.IsOnboardingCompleted ?? false)
+                IsOnboardingCompleted = user.Role != UserRole.Customer || (profile?.IsOnboardingCompleted ?? false),
+                IsPasswordSet = !string.IsNullOrEmpty(user.PasswordHash)
             };
         }
         catch (InvalidJwtException ex)
@@ -296,7 +305,13 @@ public class AuthService : IAuthService
     {
         var user = await _unitOfWork.Users.GetByIdAsync(userId);
         if (user == null) throw new Exception("Tài khoản không tồn tại");
-        if(!BCrypt.Net.BCrypt.Verify(request.OldPassword, user.PasswordHash)) throw new Exception("Mật khẩu cũ không đúng");
+        
+        if (!string.IsNullOrEmpty(user.PasswordHash))
+        {
+            if (!BCrypt.Net.BCrypt.Verify(request.OldPassword, user.PasswordHash)) 
+                throw new Exception("Mật khẩu cũ không đúng");
+        }
+        
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
         user.UpdatedAt = DateTime.UtcNow;
 
@@ -330,15 +345,19 @@ public class AuthService : IAuthService
 
         var profile = await _unitOfWork.CustomerProfiles.FindAsync(c => c.UserInternalId == user.InternalId);
 
+        var displayRole = await GetDisplayRoleAsync(user);
+
         return new AuthResponse
         {
             AccessToken = newAccessToken,
             RefreshToken = newRefreshToken,
+            Role = displayRole,
             UserId = user.InternalId,
             Email = user.Email,
             DisplayName = user.DisplayName,
             AvatarUrl = user.AvatarUrl,
-            IsOnboardingCompleted = user.Role != UserRole.Customer || (profile?.IsOnboardingCompleted ?? false)
+            IsOnboardingCompleted = user.Role != UserRole.Customer || (profile?.IsOnboardingCompleted ?? false),
+            IsPasswordSet = !string.IsNullOrEmpty(user.PasswordHash)
         };
     }
 
