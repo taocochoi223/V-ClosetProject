@@ -308,6 +308,9 @@ public class AuthService : IAuthService
         
         if (!string.IsNullOrEmpty(user.PasswordHash))
         {
+            if (string.IsNullOrEmpty(request.OldPassword))
+                throw new Exception("Mật khẩu cũ không được để trống.");
+
             if (!BCrypt.Net.BCrypt.Verify(request.OldPassword, user.PasswordHash)) 
                 throw new Exception("Mật khẩu cũ không đúng");
         }
