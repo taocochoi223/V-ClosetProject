@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using VCloset.Application.Interfaces;
 using VCloset.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace VCloset.API.Controllers;
 
@@ -90,9 +91,10 @@ public class TryOnController : ControllerBase
             else
             {
                 // Sử dụng mannequin mặc định của tài khoản
-                int mockUserId = 1;
+                var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
                 var profile = await _context.CustomerProfiles
-                    .FirstOrDefaultAsync(cp => cp.UserInternalId == mockUserId);
+                    .FirstOrDefaultAsync(cp => cp.UserInternalId == userId);
                 
                 if (profile == null || string.IsNullOrEmpty(profile.MannequinImageUrl))
                 {
@@ -120,12 +122,13 @@ public class TryOnController : ControllerBase
         if (request == null)
             return BadRequest(new { error = "Yêu cầu không hợp lệ." });
 
-        int mockUserId = 1;
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
 
         try
         {
             // 1. Lấy thông tin món đồ từ Tủ đồ
-            var wardrobeItem = await _wardrobeService.GetItemByIdAsync(mockUserId, request.WardrobeItemId);
+            var wardrobeItem = await _wardrobeService.GetItemByIdAsync(userId, request.WardrobeItemId);
             if (wardrobeItem == null || string.IsNullOrEmpty(wardrobeItem.OriginalImageUrl))
             {
                 return BadRequest(new { error = "Không tìm thấy món đồ hợp lệ trong tủ đồ." });
@@ -136,7 +139,7 @@ public class TryOnController : ControllerBase
             if (string.IsNullOrEmpty(modelUrl))
             {
                 var profile = await _context.CustomerProfiles
-                    .FirstOrDefaultAsync(cp => cp.UserInternalId == mockUserId);
+                    .FirstOrDefaultAsync(cp => cp.UserInternalId == userId);
                 
                 if (profile == null || string.IsNullOrEmpty(profile.MannequinImageUrl))
                 {
