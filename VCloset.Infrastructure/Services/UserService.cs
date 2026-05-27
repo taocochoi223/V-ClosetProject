@@ -44,7 +44,7 @@ public class UserService : IUserService
             BodyShape = profile?.BodyShape?.ToString(),
             MannequinImageUrl = profile?.MannequinImageUrl,
             WardrobeItemCount = profile?.WardrobeItemCount ?? 0,
-            IsOnboardingCompleted = profile?.IsOnboardingCompleted ?? false,
+            IsOnboardingCompleted = user.Role != VCloset.Domain.Enums.UserRole.Customer || (profile?.IsOnboardingCompleted ?? false),
             Lifestyle = profile?.Lifestyle,
             EyeColor = profile?.EyeColor,
             Hair = profile?.Hair
