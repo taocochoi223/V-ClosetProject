@@ -34,7 +34,7 @@ public class ResendEmailService : IEmailService
 
             var payload = new
             {
-                from = "V-Closet <onboarding@resend.dev>",
+                from = "V-Closet <noreply@vcloset.vn>",
                 to = new[] { toEmail },
                 subject = subject,
                 html = htmlContent
