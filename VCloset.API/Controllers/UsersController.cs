@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -14,10 +15,25 @@ namespace VCloset.API.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
+    private readonly ILogger<UsersController> _logger;
 
-    public UsersController(IUserService userService)
+    public UsersController(IUserService userService, ILogger<UsersController> logger)
     {
         _userService = userService;
+        _logger = logger;
+    }
+
+    private IActionResult HandleException(Exception ex)
+    {
+        if (ex is DbUpdateException dbEx)
+        {
+            var dbDetail = dbEx.InnerException?.Message ?? dbEx.Message;
+            _logger.LogError(dbEx, "Database error in UsersController: {DbDetail}", dbDetail);
+            return StatusCode(StatusCodes.Status500InternalServerError, $"Database error: {dbDetail}");
+        }
+
+        _logger.LogWarning(ex, "Request error in UsersController: {Message}", ex.Message);
+        return BadRequest(ex.Message);
     }
 
     /// <summary>
@@ -40,7 +56,7 @@ public class UsersController : ControllerBase
         }
         catch (System.Exception ex)
         {
-            return BadRequest(ex.Message);
+            return HandleException(ex);
         }
     }
 
@@ -62,7 +78,7 @@ public class UsersController : ControllerBase
         }
         catch (System.Exception ex)
         {
-            return BadRequest(ex.Message);
+            return HandleException(ex);
         }
     }
 
@@ -84,7 +100,7 @@ public class UsersController : ControllerBase
         }
         catch (System.Exception ex)
         {
-            return BadRequest(ex.Message);
+            return HandleException(ex);
         }
     }
 
@@ -106,7 +122,7 @@ public class UsersController : ControllerBase
         }
         catch (System.Exception ex)
         {
-            return BadRequest(ex.Message);
+            return HandleException(ex);
         }
     }
 
@@ -130,7 +146,7 @@ public class UsersController : ControllerBase
         }
         catch (System.Exception ex)
         {
-            return BadRequest(ex.Message);
+            return HandleException(ex);
         }
     }
 
@@ -154,7 +170,7 @@ public class UsersController : ControllerBase
         }
         catch (System.Exception ex)
         {
-            return BadRequest(ex.Message);
+            return HandleException(ex);
         }
     }
 
@@ -175,7 +191,7 @@ public class UsersController : ControllerBase
         }
         catch (System.Exception ex)
         {
-            return BadRequest(ex.Message);
+            return HandleException(ex);
         }
     }
 
@@ -196,7 +212,7 @@ public class UsersController : ControllerBase
         }
         catch (System.Exception ex)
         {
-            return BadRequest(ex.Message);
+            return HandleException(ex);
         }
     }
 
@@ -219,7 +235,7 @@ public class UsersController : ControllerBase
         }
         catch (System.Exception ex)
         {
-            return BadRequest(ex.Message);
+            return HandleException(ex);
         }
     }
 }

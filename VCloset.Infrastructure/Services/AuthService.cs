@@ -109,7 +109,7 @@ public class AuthService : IAuthService
             Email = user.Email,
             DisplayName = user.DisplayName,
             AvatarUrl = user.AvatarUrl,
-            IsOnboardingCompleted = profile?.IsOnboardingCompleted ?? false
+            IsOnboardingCompleted = user.Role != UserRole.Customer || (profile?.IsOnboardingCompleted ?? false)
         };
     }
 
@@ -146,7 +146,7 @@ public class AuthService : IAuthService
             Email = user.Email,
             DisplayName = user.DisplayName,
             AvatarUrl = user.AvatarUrl,
-            IsOnboardingCompleted = profile?.IsOnboardingCompleted ?? false
+            IsOnboardingCompleted = user.Role != UserRole.Customer || (profile?.IsOnboardingCompleted ?? false)
         };
     }
 
@@ -257,7 +257,7 @@ public class AuthService : IAuthService
                 Email = user.Email,
                 DisplayName = user.DisplayName,
                 AvatarUrl = user.AvatarUrl,
-                IsOnboardingCompleted = profile?.IsOnboardingCompleted ?? false
+                IsOnboardingCompleted = user.Role != UserRole.Customer || (profile?.IsOnboardingCompleted ?? false)
             };
         }
         catch (InvalidJwtException ex)
@@ -338,7 +338,7 @@ public class AuthService : IAuthService
             Email = user.Email,
             DisplayName = user.DisplayName,
             AvatarUrl = user.AvatarUrl,
-            IsOnboardingCompleted = profile?.IsOnboardingCompleted ?? false
+            IsOnboardingCompleted = user.Role != UserRole.Customer || (profile?.IsOnboardingCompleted ?? false)
         };
     }
 
