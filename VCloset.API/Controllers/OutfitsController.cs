@@ -3,6 +3,7 @@ using System.Text.Json;
 using VCloset.Application.DTOs;
 using VCloset.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 namespace VCloset.API.Controllers;
 
 [ApiController]
@@ -26,7 +27,8 @@ public class OutfitsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create([FromForm] CreateOutfitDto dto, IFormFile? snapshot)
     {
-        int mockUserId = 1;
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
         try
         {
             if ((dto.Items == null || dto.Items.Count == 0) && !string.IsNullOrWhiteSpace(dto.ItemsJson))
@@ -38,7 +40,7 @@ public class OutfitsController : ControllerBase
             }
 
             using var stream = snapshot?.OpenReadStream();
-            var result = await _canvasService.CreateOutfitAsync(mockUserId, dto, stream);
+            var result = await _canvasService.CreateOutfitAsync(userId, dto, stream);
 
             // Quy chuẩn: POST thành công nên trả về 201 Created kèm theo link lấy Resource đó
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
@@ -56,8 +58,9 @@ public class OutfitsController : ControllerBase
     [ProducesResponseType(typeof(List<OutfitResponseDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll()
     {
-        int mockUserId = 1;
-        var result = await _canvasService.GetUserOutfitsAsync(mockUserId);
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+        var result = await _canvasService.GetUserOutfitsAsync(userId);
         return Ok(result);
     }
 
@@ -81,8 +84,9 @@ public class OutfitsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> UpdatePrivacy(Guid id, [FromBody] bool isPublic)
     {
-        int mockUserId = 1;
-        await _canvasService.UpdatePrivacyAsync(mockUserId, id, isPublic);
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+        await _canvasService.UpdatePrivacyAsync(userId, id, isPublic);
         return NoContent(); // Quy chuẩn: Cập nhật thành công không trả về data thì dùng 204
     }
 
@@ -93,8 +97,9 @@ public class OutfitsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> UpdateTitle(Guid id, [FromBody] UpdateOutfitTitleDto dto)
     {
-        int mockUserId = 1;
-        await _canvasService.UpdateTitleAsync(mockUserId, id, dto.Title);
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+        await _canvasService.UpdateTitleAsync(userId, id, dto.Title);
         return NoContent();
     }
 
@@ -105,8 +110,9 @@ public class OutfitsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Delete(Guid id)
     {
-        int mockUserId = 1;
-        await _canvasService.DeleteOutfitAsync(mockUserId, id);
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+        await _canvasService.DeleteOutfitAsync(userId, id);
         return NoContent();
     }
 }

@@ -7,6 +7,7 @@ using VCloset.Application.DTOs;
 using VCloset.Application.Interfaces;
 using VCloset.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace VCloset.API.Controllers;
 
@@ -59,8 +60,8 @@ public class WardrobeController : ControllerBase
     [HttpPost("upload-and-create")]
     public async Task<IActionResult> UploadAndCreateItem(IFormFile file, [FromForm] ClothingCategory category, [FromForm] string? name, [FromForm] string? brand)
     {
-        // Mock UserInternalId = 1 cho đến khi JWT được liên kết hoàn toàn
-        int mockUserId = 1; 
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
 
         if (file == null || file.Length == 0)
             return BadRequest(new { error = "Vui lòng gửi file ảnh quần áo." });
@@ -80,7 +81,7 @@ public class WardrobeController : ControllerBase
                 Brand = brand
             };
             
-            var result = await _wardrobeService.CreateItemAsync(mockUserId, dto);
+            var result = await _wardrobeService.CreateItemAsync(userId, dto);
 
             return Ok(result);
         }
@@ -101,8 +102,9 @@ public class WardrobeController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetItems([FromQuery] ClothingCategory? category, [FromQuery] string? color)
     {
-        int mockUserId = 1;
-        var items = await _wardrobeService.GetItemsAsync(mockUserId, category, color);
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+        var items = await _wardrobeService.GetItemsAsync(userId, category, color);
         return Ok(items);
     }
 
@@ -112,10 +114,11 @@ public class WardrobeController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetItem(Guid id)
     {
-        int mockUserId = 1;
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
         try
         {
-            var item = await _wardrobeService.GetItemByIdAsync(mockUserId, id);
+            var item = await _wardrobeService.GetItemByIdAsync(userId, id);
             return Ok(item);
         }
         catch (Exception ex)
@@ -130,10 +133,11 @@ public class WardrobeController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateItem(Guid id, [FromBody] UpdateWardrobeItemDto dto)
     {
-        int mockUserId = 1;
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
         try
         {
-            var result = await _wardrobeService.UpdateItemAsync(mockUserId, id, dto);
+            var result = await _wardrobeService.UpdateItemAsync(userId, id, dto);
             return Ok(result);
         }
         catch (Exception ex)
@@ -148,10 +152,11 @@ public class WardrobeController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteItem(Guid id)
     {
-        int mockUserId = 1;
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
         try
         {
-            await _wardrobeService.DeleteItemAsync(mockUserId, id);
+            await _wardrobeService.DeleteItemAsync(userId, id);
             return NoContent();
         }
         catch (Exception ex)

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using VCloset.Application.DTOs;
 using VCloset.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace VCloset.API.Controllers;
 
@@ -29,8 +30,9 @@ public class NotificationsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetNotifications([FromQuery] bool? isRead)
     {
-        int mockUserId = 1; // Sử dụng mockUserId = 1 đồng nhất với các Controller khác
-        var notifications = await _notificationService.GetUserNotificationsAsync(mockUserId, isRead);
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+        var notifications = await _notificationService.GetUserNotificationsAsync(userId, isRead);
         return Ok(notifications);
     }
 
@@ -41,8 +43,9 @@ public class NotificationsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetUnreadCount()
     {
-        int mockUserId = 1;
-        var count = await _notificationService.GetUnreadCountAsync(mockUserId);
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+        var count = await _notificationService.GetUnreadCountAsync(userId);
         return Ok(new { count });
     }
 
@@ -54,8 +57,9 @@ public class NotificationsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> MarkAsRead(Guid id)
     {
-        int mockUserId = 1;
-        var result = await _notificationService.MarkAsReadAsync(mockUserId, id);
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+        var result = await _notificationService.MarkAsReadAsync(userId, id);
         if (!result) return NotFound(new { message = "Không tìm thấy thông báo hoặc thông báo không thuộc về người dùng này." });
         return NoContent();
     }
@@ -67,8 +71,9 @@ public class NotificationsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> MarkAllAsRead()
     {
-        int mockUserId = 1;
-        await _notificationService.MarkAllAsReadAsync(mockUserId);
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+        await _notificationService.MarkAllAsReadAsync(userId);
         return NoContent();
     }
 
@@ -80,8 +85,9 @@ public class NotificationsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteNotification(Guid id)
     {
-        int mockUserId = 1;
-        var result = await _notificationService.DeleteNotificationAsync(mockUserId, id);
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+        var result = await _notificationService.DeleteNotificationAsync(userId, id);
         if (!result) return NotFound(new { message = "Không tìm thấy thông báo hoặc thông báo không thuộc về người dùng này." });
         return NoContent();
     }
@@ -93,9 +99,10 @@ public class NotificationsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status201Created)]
     public async Task<IActionResult> SendTestNotification([FromQuery] string type, [FromQuery] string title, [FromQuery] string body, [FromQuery] string? referenceType, [FromQuery] int? referenceId)
     {
-        int mockUserId = 1;
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
         var result = await _notificationService.SendNotificationAsync(
-            mockUserId, 
+            userId, 
             type ?? "System", 
             title ?? "Thông báo giả lập", 
             body ?? "Đây là nội dung tin nhắn giả lập để hỗ trợ test kết nối Flutter.", 
