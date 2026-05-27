@@ -108,7 +108,7 @@ public class AdminUserService : IAdminUserService
             BannedByInternal = adminUserId,
             BanType = request.BanType.ToLower(),
             Reason = request.Reason,
-            BannedUntil = request.BannedUntil,
+            BannedUntil = request.BannedUntil.HasValue ? DateTime.SpecifyKind(request.BannedUntil.Value, DateTimeKind.Utc) : null,
             IsLifted = false,
             CreatedAt = DateTime.UtcNow
         };

@@ -85,7 +85,7 @@ public class UserService : IUserService
         }
         if (request.HeightCm.HasValue) profile.HeightCm = request.HeightCm;
         if (request.WeightKg.HasValue) profile.WeightKg = request.WeightKg;
-        if (request.DateOfBirth.HasValue) profile.DateOfBirth = request.DateOfBirth;
+        if (request.DateOfBirth.HasValue) profile.DateOfBirth = DateTime.SpecifyKind(request.DateOfBirth.Value, DateTimeKind.Utc);
         if (!string.IsNullOrEmpty(request.PhoneNumber)) profile.PhoneNumber = request.PhoneNumber;
         if (!string.IsNullOrEmpty(request.Address)) profile.Address = request.Address;
         if (!string.IsNullOrEmpty(request.Gender)) profile.Gender = request.Gender;
