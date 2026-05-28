@@ -1,4 +1,4 @@
-﻿using VCloset.Domain.Enums;
+using VCloset.Domain.Enums;
 using System.ComponentModel.DataAnnotations.Schema;
 using System;
 using System.Collections.Generic;
@@ -79,6 +79,9 @@ public partial class User
     public virtual ICollection<UserBanLog> UserBanLogUserInternals { get; set; } = new List<UserBanLog>();
 
     public virtual ICollection<WardrobeItem> WardrobeItems { get; set; } = new List<WardrobeItem>();
+
+    public virtual ICollection<PaymentTransaction> PaymentTransactions { get; set; } = new List<PaymentTransaction>();
+
     [Column("role")]
     public UserRole Role { get; set; }
 

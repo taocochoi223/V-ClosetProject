@@ -68,6 +68,8 @@ public partial class VClosetVersion30Context : DbContext
 
     public virtual DbSet<SubscriptionPlan> SubscriptionPlans { get; set; }
 
+    public virtual DbSet<PaymentTransaction> PaymentTransactions { get; set; }
+
     public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
 
     public virtual DbSet<SponsoredCampaign> SponsoredCampaigns { get; set; }
@@ -103,7 +105,8 @@ public partial class VClosetVersion30Context : DbContext
                              .MapEnum<PremiumPlan>("premium_plan")
                              .MapEnum<BrandStatus>("brand_status")
                              .MapEnum<ChatRoomType>("chat_room_type")
-                             .MapEnum<MessageType>("message_type");
+                             .MapEnum<MessageType>("message_type")
+                             .MapEnum<PaymentStatus>("payment_status");
             var dataSource = dataSourceBuilder.Build();
             
             optionsBuilder.UseNpgsql(dataSource);
@@ -136,6 +139,7 @@ public partial class VClosetVersion30Context : DbContext
             .HasPostgresEnum("clothing_category", new[] { "top", "bottom", "dress", "outerwear", "shoes", "bag", "accessory", "other" })
             .HasPostgresEnum("commission_status", new[] { "pending", "confirmed", "paid", "rejected" })
             .HasPostgresEnum("message_type", new[] { "text", "image", "outfit_share", "system" })
+            .HasPostgresEnum("payment_status", new[] { "pending", "success", "failed", "cancelled", "expired" })
             .HasPostgresEnum("premium_plan", new[] { "monthly", "yearly" })
             .HasPostgresEnum("user_role", new[] { "customer", "admin", "moderator", "brand_partner" })
             .HasPostgresExtension("pgcrypto");
@@ -1284,6 +1288,66 @@ public partial class VClosetVersion30Context : DbContext
             entity.HasOne(d => d.UserInternal).WithMany(p => p.WardrobeItems)
                 .HasForeignKey(d => d.UserInternalId)
                 .HasConstraintName("wardrobe_items_user_internal_id_fkey");
+        });
+
+        modelBuilder.Entity<PaymentTransaction>(entity =>
+        {
+            entity.HasKey(e => e.InternalId).HasName("payment_transactions_pkey");
+
+            entity.ToTable("payment_transactions", tb => tb.HasComment("Bảng ghi nhận giao dịch thanh toán qua ví điện tử"));
+
+            entity.HasIndex(e => e.Id, "payment_transactions_id_key").IsUnique();
+
+            entity.Property(e => e.InternalId).HasColumnName("internal_id");
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("gen_random_uuid()")
+                .HasColumnName("id");
+
+            entity.Property(e => e.UserInternalId).HasColumnName("user_internal_id");
+
+            entity.Property(e => e.SubscriptionPlanInternalId).HasColumnName("subscription_plan_internal_id");
+
+            entity.Property(e => e.Amount)
+                .HasPrecision(10, 2)
+                .HasColumnName("amount");
+
+            entity.Property(e => e.Currency)
+                .HasMaxLength(3)
+                .HasDefaultValueSql("'VND'::character varying")
+                .HasColumnName("currency");
+
+            entity.Property(e => e.PaymentGateway)
+                .HasMaxLength(50)
+                .HasColumnName("payment_gateway");
+
+            entity.Property(e => e.Status)
+                .HasColumnName("status");
+
+            entity.Property(e => e.GatewayTransactionId)
+                .HasMaxLength(255)
+                .HasColumnName("gateway_transaction_id");
+
+            entity.Property(e => e.RawCallbackData)
+                .HasColumnType("text")
+                .HasColumnName("raw_callback_data");
+
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("now()")
+                .HasColumnName("created_at");
+
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("now()")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.UserInternal).WithMany(p => p.PaymentTransactions)
+                .HasForeignKey(d => d.UserInternalId)
+                .HasConstraintName("payment_transactions_user_internal_id_fkey");
+
+            entity.HasOne(d => d.SubscriptionPlan).WithMany(p => p.PaymentTransactions)
+                .HasForeignKey(d => d.SubscriptionPlanInternalId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("payment_transactions_subscription_plan_internal_id_fkey");
         });
 
         OnModelCreatingPartial(modelBuilder);

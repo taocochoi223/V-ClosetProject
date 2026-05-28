@@ -239,5 +239,31 @@ public class UsersController : ControllerBase
             return HandleException(ex);
         }
     }
+
+    /// <summary>
+    /// API tìm kiếm người dùng công khai theo tên (Yêu cầu đăng nhập).
+    /// Dùng để tìm bạn bè và theo dõi họ.
+    /// Ví dụ: GET /api/users?search=Nguyen
+    /// </summary>
+    [Authorize]
+    [HttpGet]
+    public async Task<IActionResult> SearchUsers([FromQuery] string? search)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(search))
+                return BadRequest("Vui lòng nhập từ khóa tìm kiếm (tối thiểu 2 ký tự).");
+
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+
+            var results = await _userService.SearchUsersAsync(search, userId);
+            return Ok(results);
+        }
+        catch (System.Exception ex)
+        {
+            return HandleException(ex);
+        }
+    }
 }
 

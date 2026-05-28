@@ -60,6 +60,9 @@ public class UnitOfWork : IUnitOfWork
     private IGenericRepository<UserDeviceToken>? _userDeviceTokens;
     public IGenericRepository<UserDeviceToken> UserDeviceTokens => _userDeviceTokens ??= new GenericRepository<UserDeviceToken>(_context);
 
+    private IGenericRepository<PaymentTransaction>? _paymentTransactions;
+    public IGenericRepository<PaymentTransaction> PaymentTransactions => _paymentTransactions ??= new GenericRepository<PaymentTransaction>(_context);
+
     public async Task<int> SaveChangesAsync()
     {
         return await _context.SaveChangesAsync();

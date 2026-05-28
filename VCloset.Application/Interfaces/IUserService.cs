@@ -17,4 +17,5 @@ public interface IUserService
     Task<System.Collections.Generic.IEnumerable<FollowerResponse>> GetMyFollowingAsync(int currentUserId);
     Task<bool> DeactivateMyAccountAsync(int userId);
     Task<bool> DeactivateUserByAdminAsync(int adminUserId, System.Guid targetUserId);
+    Task<System.Collections.Generic.IEnumerable<PublicProfileResponse>> SearchUsersAsync(string searchTerm, int currentUserId);
 }

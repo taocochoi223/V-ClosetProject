@@ -34,7 +34,8 @@ dataSourceBuilder.MapEnum<UserRole>("user_role")
                  .MapEnum<PremiumPlan>("premium_plan")
                  .MapEnum<BrandStatus>("brand_status")
                  .MapEnum<ChatRoomType>("chat_room_type")
-                 .MapEnum<MessageType>("message_type");
+                 .MapEnum<MessageType>("message_type")
+                 .MapEnum<PaymentStatus>("payment_status");
 var dataSource = dataSourceBuilder.Build();
 
 builder.Services.AddDbContext<VClosetVersion30Context>(options =>
