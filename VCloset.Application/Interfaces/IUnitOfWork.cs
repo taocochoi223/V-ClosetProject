@@ -22,4 +22,5 @@ public interface IUnitOfWork : IDisposable
     IGenericRepository<CanvasOutfit> CanvasOutfits { get; }
     IGenericRepository<Notification> Notifications { get; }
     IGenericRepository<UserDeviceToken> UserDeviceTokens { get; }
+    IGenericRepository<PaymentTransaction> PaymentTransactions { get; }
 }

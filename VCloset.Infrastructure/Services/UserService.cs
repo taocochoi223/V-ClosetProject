@@ -256,4 +256,34 @@ public class UserService : IUserService
         await _unitOfWork.SaveChangesAsync();
         return true;
     }
+
+    public async Task<IEnumerable<PublicProfileResponse>> SearchUsersAsync(string searchTerm, int currentUserId)
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm) || searchTerm.Trim().Length < 2)
+            return Enumerable.Empty<PublicProfileResponse>();
+
+        var keyword = searchTerm.Trim().ToLower();
+
+        var users = await _unitOfWork.Users.FindAllAsync(u =>
+            u.IsActive &&
+            u.InternalId != currentUserId &&
+            u.DisplayName.ToLower().Contains(keyword));
+
+        var result = new System.Collections.Generic.List<PublicProfileResponse>();
+        foreach (var user in users.Take(20))
+        {
+            result.Add(new PublicProfileResponse
+            {
+                UserId = user.Id,
+                DisplayName = user.DisplayName,
+                AvatarUrl = user.AvatarUrl,
+                // Các trường còn lại để null / mặc định vì đây chỉ là kết quả tìm kiếm nhanh
+                HeightCm = null,
+                WeightKg = null,
+                Gender = null,
+                WardrobeItemCount = 0
+            });
+        }
+        return result;
+    }
 }

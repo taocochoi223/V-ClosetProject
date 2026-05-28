@@ -92,4 +92,14 @@ namespace VCloset.Domain.Enums
         Post,
         Account
     }
+
+    // Payment
+    public enum PaymentStatus
+    {
+        Pending,
+        Success,
+        Failed,
+        Cancelled,
+        Expired
+    }
 }
