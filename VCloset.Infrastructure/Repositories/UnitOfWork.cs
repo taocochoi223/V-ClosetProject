@@ -42,6 +42,12 @@ public class UnitOfWork : IUnitOfWork
     private IGenericRepository<BrandProfile>? _brandProfiles;
     public IGenericRepository<BrandProfile> BrandProfiles => _brandProfiles ??= new GenericRepository<BrandProfile>(_context);
 
+    private IGenericRepository<Notification>? _notifications;
+    public IGenericRepository<Notification> Notifications => _notifications ??= new GenericRepository<Notification>(_context);
+
+    private IGenericRepository<UserDeviceToken>? _userDeviceTokens;
+    public IGenericRepository<UserDeviceToken> UserDeviceTokens => _userDeviceTokens ??= new GenericRepository<UserDeviceToken>(_context);
+
     public async Task<int> SaveChangesAsync()
     {
         return await _context.SaveChangesAsync();

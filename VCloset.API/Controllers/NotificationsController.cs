@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using VCloset.Application.DTOs;
 using VCloset.Application.Interfaces;
+using VCloset.Application.DTOs.Admin.Requests;
+using VCloset.Infrastructure.Security;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 
@@ -93,22 +95,70 @@ public class NotificationsController : ControllerBase
     }
 
     /// <summary>
-    /// API Hỗ trợ Test (Sandbox): Tự tạo một thông báo giả lập cho người dùng hiện tại
+    /// API của Admin để phát loa thông báo cho toàn bộ người dùng (Customer) trong hệ thống
     /// </summary>
-    [HttpPost("send-test")]
-    [ProducesResponseType(StatusCodes.Status201Created)]
-    public async Task<IActionResult> SendTestNotification([FromQuery] string type, [FromQuery] string title, [FromQuery] string body, [FromQuery] string? referenceType, [FromQuery] int? referenceId)
+    [RequirePermission("notification.broadcast")]
+    [HttpPost("broadcast")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> BroadcastNotification([FromBody] BroadcastNotificationRequest request)
+    {
+        try
+        {
+            await _notificationService.SendBroadcastNotificationAsync(
+                request.Type ?? "System",
+                request.Title,
+                request.Body,
+                request.ReferenceType,
+                request.ReferenceId
+            );
+            return Ok(new { message = "Đã phát loa thông báo thành công tới toàn bộ người dùng." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// API Lưu Token thiết bị FCM của người dùng để đẩy thông báo qua Firebase khi tắt ứng dụng
+    /// </summary>
+    [HttpPost("device-token")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> SaveDeviceToken([FromBody] SaveDeviceTokenRequest request)
     {
         var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
-        var result = await _notificationService.SendNotificationAsync(
-            userId, 
-            type ?? "System", 
-            title ?? "Thông báo giả lập", 
-            body ?? "Đây là nội dung tin nhắn giả lập để hỗ trợ test kết nối Flutter.", 
-            referenceType, 
-            referenceId
-        );
-        return CreatedAtAction(nameof(GetNotifications), null, result);
+
+        await _notificationService.SaveDeviceTokenAsync(userId, request);
+        return Ok(new { message = "Lưu token thiết bị thành công." });
+    }
+
+    /// <summary>
+    /// API Xóa hàng loạt thông báo được chọn (hỗ trợ tích chọn nhiều thông báo trên app)
+    /// </summary>
+    [HttpPost("bulk-delete")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> BulkDeleteNotifications([FromBody] BulkDeleteNotificationsRequest request)
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+
+        if (request.NotificationIds == null || request.NotificationIds.Count == 0)
+        {
+            return BadRequest(new { message = "Danh sách ID thông báo cần xóa không được để trống." });
+        }
+
+        var result = await _notificationService.BulkDeleteNotificationsAsync(userId, request.NotificationIds);
+        if (!result)
+        {
+            return BadRequest(new { message = "Không tìm thấy thông báo nào được chỉ định thuộc về bạn để xóa." });
+        }
+
+        return Ok(new { message = "Đã xóa hàng loạt thông báo thành công." });
     }
 }
