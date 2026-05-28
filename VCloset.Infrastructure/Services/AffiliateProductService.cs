@@ -8,17 +8,16 @@ using VCloset.Application.DTOs.Affiliate.Responses;
 using VCloset.Application.Interfaces;
 using VCloset.Domain.Entities;
 using VCloset.Domain.Enums;
-using VCloset.Infrastructure.Data;
 
 namespace VCloset.Infrastructure.Services
 {
     public class AffiliateProductService : IAffiliateProductService
     {
-        private readonly VClosetVersion30Context _context;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public AffiliateProductService(VClosetVersion30Context context)
+        public AffiliateProductService(IUnitOfWork unitOfWork)
         {
-            _context = context;
+            _unitOfWork = unitOfWork;
         }
 
         // 1. Thêm sản phẩm tiếp thị liên kết Shopee mới
@@ -36,15 +35,17 @@ namespace VCloset.Infrastructure.Services
                 OriginalPrice = dto.OriginalPrice,
                 Category = dto.Category,
                 AffiliateLink = dto.AffiliateLink,
-                TrackingCode = dto.TrackingCode,
+                TrackingCode = string.IsNullOrWhiteSpace(dto.TrackingCode)
+                    ? $"TRK_{dto.ShopeeProductId}_{Guid.NewGuid().ToString("N").Substring(0, 4).ToUpper()}"
+                    : dto.TrackingCode,
                 IsTrending = dto.IsTrending,
                 IsActive = dto.IsActive,
                 SyncedAt = DateTime.UtcNow,
                 CreatedAt = DateTime.UtcNow
             };
 
-            await _context.AffiliateProducts.AddAsync(product);
-            await _context.SaveChangesAsync();
+            await _unitOfWork.AffiliateProducts.AddAsync(product);
+            await _unitOfWork.SaveChangesAsync();
 
             return new AffiliateProductResponseDto
             {
@@ -63,14 +64,14 @@ namespace VCloset.Infrastructure.Services
         // 2. Ghi nhận lượt click của người dùng
         public async Task<AffiliateClickResponseDto> RecordClickAsync(int userId, RecordAffiliateClickDto dto)
         {
-            var product = await _context.AffiliateProducts.FirstOrDefaultAsync(p => p.Id == dto.ProductId && p.IsActive);
+            var product = await _unitOfWork.AffiliateProducts.FindAsync(p => p.Id == dto.ProductId && p.IsActive);
             if (product == null)
                 throw new Exception("Sản phẩm tiếp thị liên kết không tồn tại hoặc đã bị ẩn.");
 
             int? outfitInternalId = null;
             if (dto.OutfitId.HasValue)
             {
-                var outfit = await _context.CanvasOutfits.FirstOrDefaultAsync(o => o.Id == dto.OutfitId.Value);
+                var outfit = await _unitOfWork.CanvasOutfits.FindAsync(o => o.Id == dto.OutfitId.Value);
                 if (outfit != null)
                 {
                     outfitInternalId = outfit.InternalId;
@@ -96,12 +97,12 @@ namespace VCloset.Infrastructure.Services
                 ClickedAt = DateTime.UtcNow
             };
 
-            await _context.AffiliateClicks.AddAsync(clickRecord);
+            await _unitOfWork.AffiliateClicks.AddAsync(clickRecord);
 
             product.ClickCount += 1;
-            _context.AffiliateProducts.Update(product);
+            _unitOfWork.AffiliateProducts.Update(product);
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
             return new AffiliateClickResponseDto
             {
@@ -149,10 +150,10 @@ namespace VCloset.Infrastructure.Services
                 if (!DateTime.TryParse(parts[5].Trim(), out DateTime orderedAt)) orderedAt = DateTime.UtcNow;
 
                 // Tìm click_id tương ứng trong DB để lấy thông tin User và Product
-                var click = await _context.AffiliateClicks.FirstOrDefaultAsync(c => c.Id == clickId);
+                var click = await _unitOfWork.AffiliateClicks.FindAsync(c => c.Id == clickId);
                 if (click == null) continue; // Bỏ qua nếu click_id không có trong hệ thống
 
-                var existingConversion = await _context.AffiliateConversions.FirstOrDefaultAsync(c => c.ShopeeOrderId == orderId);
+                var existingConversion = await _unitOfWork.AffiliateConversions.FindAsync(c => c.ShopeeOrderId == orderId);
                 
                 var mappedStatus = MapStatus(statusStr);
 
@@ -168,7 +169,7 @@ namespace VCloset.Infrastructure.Services
                     else if (mappedStatus == VCloset.Domain.Enums.CommissionStatus.Paid)
                         existingConversion.PaidAt = DateTime.UtcNow;
 
-                    _context.AffiliateConversions.Update(existingConversion);
+                    _unitOfWork.AffiliateConversions.Update(existingConversion);
                 }
                 else
                 {
@@ -197,27 +198,27 @@ namespace VCloset.Infrastructure.Services
                         conversion.PaidAt = DateTime.UtcNow;
                     }
 
-                    await _context.AffiliateConversions.AddAsync(conversion);
+                    await _unitOfWork.AffiliateConversions.AddAsync(conversion);
 
                     // Tăng số lượng conversion của sản phẩm
-                    var product = await _context.AffiliateProducts.FirstOrDefaultAsync(p => p.InternalId == click.AffiliateProductInternalId);
+                    var product = await _unitOfWork.AffiliateProducts.FindAsync(p => p.InternalId == click.AffiliateProductInternalId);
                     if (product != null)
                     {
                         product.ConversionCount += 1;
-                        _context.AffiliateProducts.Update(product);
+                        _unitOfWork.AffiliateProducts.Update(product);
                     }
                 }
                 count++;
             }
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
             return count;
         }
 
         // 4. Lấy danh sách sản phẩm dành cho Admin (kèm phân trang, lọc, tìm kiếm)
         public async Task<PagedAffiliateProductsResponse> GetAdminProductsAsync(int page, int pageSize, ClothingCategory? category, bool? isActive, string? search)
         {
-            var query = _context.AffiliateProducts.AsQueryable();
+            var query = _unitOfWork.AffiliateProducts.Query();
 
             if (category.HasValue)
             {
@@ -268,7 +269,7 @@ namespace VCloset.Infrastructure.Services
         public async Task<PagedAffiliateProductsResponse> GetClientProductsAsync(int page, int pageSize, ClothingCategory? category, string? search)
         {
             // Chỉ lấy sản phẩm đang hoạt động (IsActive = true)
-            var query = _context.AffiliateProducts.Where(p => p.IsActive);
+            var query = _unitOfWork.AffiliateProducts.Query().Where(p => p.IsActive);
 
             if (category.HasValue)
             {
@@ -314,7 +315,7 @@ namespace VCloset.Infrastructure.Services
         // 6. Lấy chi tiết sản phẩm theo ID
         public async Task<AffiliateProductResponseDto?> GetProductByIdAsync(Guid id)
         {
-            var product = await _context.AffiliateProducts.FirstOrDefaultAsync(p => p.Id == id);
+            var product = await _unitOfWork.AffiliateProducts.FindAsync(p => p.Id == id);
             if (product == null) return null;
 
             return new AffiliateProductResponseDto
@@ -334,7 +335,7 @@ namespace VCloset.Infrastructure.Services
         // 7. Cập nhật sản phẩm
         public async Task<AffiliateProductResponseDto> UpdateProductAsync(Guid id, UpdateAffiliateProductDto dto)
         {
-            var product = await _context.AffiliateProducts.FirstOrDefaultAsync(p => p.Id == id);
+            var product = await _unitOfWork.AffiliateProducts.FindAsync(p => p.Id == id);
             if (product == null)
                 throw new Exception("Không tìm thấy sản phẩm tiếp thị liên kết yêu cầu.");
 
@@ -349,8 +350,8 @@ namespace VCloset.Infrastructure.Services
             product.IsActive = dto.IsActive;
             product.SyncedAt = DateTime.UtcNow;
 
-            _context.AffiliateProducts.Update(product);
-            await _context.SaveChangesAsync();
+            _unitOfWork.AffiliateProducts.Update(product);
+            await _unitOfWork.SaveChangesAsync();
 
             return new AffiliateProductResponseDto
             {
@@ -369,7 +370,7 @@ namespace VCloset.Infrastructure.Services
         // 8. Xóa mềm sản phẩm (chuyển IsActive = false)
         public async Task DeleteProductAsync(Guid id)
         {
-            var product = await _context.AffiliateProducts.FirstOrDefaultAsync(p => p.Id == id);
+            var product = await _unitOfWork.AffiliateProducts.FindAsync(p => p.Id == id);
             if (product == null)
                 throw new Exception("Không tìm thấy sản phẩm tiếp thị liên kết yêu cầu.");
 
@@ -377,8 +378,8 @@ namespace VCloset.Infrastructure.Services
             product.IsActive = false;
             product.SyncedAt = DateTime.UtcNow;
 
-            _context.AffiliateProducts.Update(product);
-            await _context.SaveChangesAsync();
+            _unitOfWork.AffiliateProducts.Update(product);
+            await _unitOfWork.SaveChangesAsync();
         }
 
         private VCloset.Domain.Enums.CommissionStatus MapStatus(string statusStr)

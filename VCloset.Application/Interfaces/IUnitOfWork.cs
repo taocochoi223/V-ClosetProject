@@ -16,4 +16,8 @@ public interface IUnitOfWork : IDisposable
     IGenericRepository<UserBanLog> UserBanLogs { get; }
     IGenericRepository<AdminPermission> AdminPermissions { get; }
     IGenericRepository<BrandProfile> BrandProfiles { get; }
+    IGenericRepository<AffiliateProduct> AffiliateProducts { get; }
+    IGenericRepository<AffiliateClick> AffiliateClicks { get; }
+    IGenericRepository<AffiliateConversion> AffiliateConversions { get; }
+    IGenericRepository<CanvasOutfit> CanvasOutfits { get; }
 }

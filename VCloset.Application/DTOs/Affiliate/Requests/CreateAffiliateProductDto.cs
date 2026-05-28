@@ -13,7 +13,7 @@ namespace VCloset.Application.DTOs.Affiliate.Requests
         public decimal? OriginalPrice { get; set; }
         public ClothingCategory Category { get; set; }
         public string AffiliateLink { get; set; } = null!;
-        public string TrackingCode { get; set; } = null!;
+        public string? TrackingCode { get; set; }
         public bool IsTrending { get; set; } = false;
         public bool IsActive { get; set; } = true;
     }
