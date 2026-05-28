@@ -54,6 +54,12 @@ public class UnitOfWork : IUnitOfWork
     private IGenericRepository<CanvasOutfit>? _canvasOutfits;
     public IGenericRepository<CanvasOutfit> CanvasOutfits => _canvasOutfits ??= new GenericRepository<CanvasOutfit>(_context);
 
+    private IGenericRepository<Notification>? _notifications;
+    public IGenericRepository<Notification> Notifications => _notifications ??= new GenericRepository<Notification>(_context);
+
+    private IGenericRepository<UserDeviceToken>? _userDeviceTokens;
+    public IGenericRepository<UserDeviceToken> UserDeviceTokens => _userDeviceTokens ??= new GenericRepository<UserDeviceToken>(_context);
+
     public async Task<int> SaveChangesAsync()
     {
         return await _context.SaveChangesAsync();
