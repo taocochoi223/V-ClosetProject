@@ -20,4 +20,5 @@ public interface IUnitOfWork : IDisposable
     IGenericRepository<AffiliateClick> AffiliateClicks { get; }
     IGenericRepository<AffiliateConversion> AffiliateConversions { get; }
     IGenericRepository<CanvasOutfit> CanvasOutfits { get; }
+    IGenericRepository<PaymentTransaction> PaymentTransactions { get; }
 }

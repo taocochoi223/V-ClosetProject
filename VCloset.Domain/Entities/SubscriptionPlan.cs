@@ -29,4 +29,6 @@ public partial class SubscriptionPlan
     public DateTime UpdatedAt { get; set; }
 
     public virtual ICollection<PremiumSubscription> PremiumSubscriptions { get; set; } = new List<PremiumSubscription>();
+
+    public virtual ICollection<PaymentTransaction> PaymentTransactions { get; set; } = new List<PaymentTransaction>();
 }

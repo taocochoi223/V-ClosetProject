@@ -54,6 +54,9 @@ public class UnitOfWork : IUnitOfWork
     private IGenericRepository<CanvasOutfit>? _canvasOutfits;
     public IGenericRepository<CanvasOutfit> CanvasOutfits => _canvasOutfits ??= new GenericRepository<CanvasOutfit>(_context);
 
+    private IGenericRepository<PaymentTransaction>? _paymentTransactions;
+    public IGenericRepository<PaymentTransaction> PaymentTransactions => _paymentTransactions ??= new GenericRepository<PaymentTransaction>(_context);
+
     public async Task<int> SaveChangesAsync()
     {
         return await _context.SaveChangesAsync();

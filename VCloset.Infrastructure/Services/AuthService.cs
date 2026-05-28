@@ -383,6 +383,13 @@ public class AuthService : IAuthService
 
     private async Task<string> GenerateAndSaveRefreshTokenAsync(int userInternalId)
     {
+        // Thu hồi (xóa) toàn bộ Refresh Token cũ của user này để ngăn đăng nhập đồng thời nhiều thiết bị
+        var oldTokens = await _unitOfWork.RefreshTokens.FindAllAsync(t => t.UserInternalId == userInternalId);
+        foreach (var token in oldTokens)
+        {
+            _unitOfWork.RefreshTokens.Delete(token);
+        }
+
         var refreshToken = _jwtService.GenerateRefreshToken();
         var tokenEntity = new RefreshToken
         {
