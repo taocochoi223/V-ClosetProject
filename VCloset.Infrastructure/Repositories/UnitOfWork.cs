@@ -42,6 +42,18 @@ public class UnitOfWork : IUnitOfWork
     private IGenericRepository<BrandProfile>? _brandProfiles;
     public IGenericRepository<BrandProfile> BrandProfiles => _brandProfiles ??= new GenericRepository<BrandProfile>(_context);
 
+    private IGenericRepository<AffiliateProduct>? _affiliateProducts;
+    public IGenericRepository<AffiliateProduct> AffiliateProducts => _affiliateProducts ??= new GenericRepository<AffiliateProduct>(_context);
+
+    private IGenericRepository<AffiliateClick>? _affiliateClicks;
+    public IGenericRepository<AffiliateClick> AffiliateClicks => _affiliateClicks ??= new GenericRepository<AffiliateClick>(_context);
+
+    private IGenericRepository<AffiliateConversion>? _affiliateConversions;
+    public IGenericRepository<AffiliateConversion> AffiliateConversions => _affiliateConversions ??= new GenericRepository<AffiliateConversion>(_context);
+
+    private IGenericRepository<CanvasOutfit>? _canvasOutfits;
+    public IGenericRepository<CanvasOutfit> CanvasOutfits => _canvasOutfits ??= new GenericRepository<CanvasOutfit>(_context);
+
     public async Task<int> SaveChangesAsync()
     {
         return await _context.SaveChangesAsync();
