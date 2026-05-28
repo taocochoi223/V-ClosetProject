@@ -20,4 +20,6 @@ public interface IUnitOfWork : IDisposable
     IGenericRepository<AffiliateClick> AffiliateClicks { get; }
     IGenericRepository<AffiliateConversion> AffiliateConversions { get; }
     IGenericRepository<CanvasOutfit> CanvasOutfits { get; }
+    IGenericRepository<Notification> Notifications { get; }
+    IGenericRepository<UserDeviceToken> UserDeviceTokens { get; }
 }
