@@ -44,3 +44,19 @@ public class UpdateOutfitTitleDto
     public string Title { get; set; } = string.Empty;
 }
 
+/// <summary>
+/// Outfit hiển thị trên Feed cộng đồng — bao gồm thông tin tác giả và số like
+/// </summary>
+public class CommunityOutfitDto
+{
+    public Guid Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string? CanvasSnapshotUrl { get; set; }
+    public int LikeCount { get; set; }
+    public DateTime CreatedAt { get; set; }
+
+    // Tác giả
+    public Guid AuthorId { get; set; }
+    public string AuthorDisplayName { get; set; } = string.Empty;
+    public string? AuthorAvatarUrl { get; set; }
+}

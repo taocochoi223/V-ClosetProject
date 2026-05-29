@@ -118,6 +118,8 @@ builder.Services.AddScoped<ICanvasService, CanvasService>();
 // Đăng ký Module 10 - Notifications (Database & SignalR Real-Time)
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<INotificationHubService, NotificationHubService>();
+builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
+builder.Services.AddHttpClient<IMoMoPaymentService, MoMoPaymentService>();
 
 // Cấu hình chính sách CORS hỗ trợ SignalR (Cực kỳ quan trọng để kết nối với Web và di động)
 builder.Services.AddCors(options =>

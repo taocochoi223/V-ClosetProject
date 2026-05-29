@@ -23,4 +23,7 @@ public interface IUnitOfWork : IDisposable
     IGenericRepository<Notification> Notifications { get; }
     IGenericRepository<UserDeviceToken> UserDeviceTokens { get; }
     IGenericRepository<PaymentTransaction> PaymentTransactions { get; }
+    IGenericRepository<SubscriptionPlan> SubscriptionPlans { get; }
+    IGenericRepository<PremiumSubscription> PremiumSubscriptions { get; }
+    IGenericRepository<WardrobeItem> WardrobeItems { get; }
 }

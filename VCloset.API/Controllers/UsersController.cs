@@ -16,11 +16,13 @@ namespace VCloset.API.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
+    private readonly ISubscriptionService _subscriptionService;
     private readonly ILogger<UsersController> _logger;
 
-    public UsersController(IUserService userService, ILogger<UsersController> logger)
+    public UsersController(IUserService userService, ISubscriptionService subscriptionService, ILogger<UsersController> logger)
     {
         _userService = userService;
+        _subscriptionService = subscriptionService;
         _logger = logger;
     }
 
@@ -261,6 +263,26 @@ public class UsersController : ControllerBase
             return Ok(results);
         }
         catch (System.Exception ex)
+        {
+            return HandleException(ex);
+        }
+    }
+
+    /// <summary>
+    /// Xem trạng thái gói Premium + credits hiện tại của tôi.
+    /// Shortcut của GET /api/subscriptions/me đặt tại đây cho tiện client gọi cùng lúc với profile.
+    /// </summary>
+    [HttpGet("me/subscription")]
+    public async Task<IActionResult> GetMySubscriptionStatus()
+    {
+        try
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+            var result = await _subscriptionService.GetMySubscriptionAsync(userId);
+            return Ok(result);
+        }
+        catch (Exception ex)
         {
             return HandleException(ex);
         }
