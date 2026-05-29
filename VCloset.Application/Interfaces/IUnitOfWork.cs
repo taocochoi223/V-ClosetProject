@@ -23,4 +23,7 @@ public interface IUnitOfWork : IDisposable
     IGenericRepository<Notification> Notifications { get; }
     IGenericRepository<UserDeviceToken> UserDeviceTokens { get; }
     IGenericRepository<PaymentTransaction> PaymentTransactions { get; }
+    IGenericRepository<ChatRoom> ChatRooms { get; }
+    IGenericRepository<ChatRoomMember> ChatRoomMembers { get; }
+    IGenericRepository<ChatMessage> ChatMessages { get; }
 }
