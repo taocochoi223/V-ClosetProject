@@ -115,4 +115,41 @@ public class OutfitsController : ControllerBase
         await _canvasService.DeleteOutfitAsync(userId, id);
         return NoContent();
     }
+
+    /// <summary>
+    /// Feed cộng đồng — danh sách outfit công khai của tất cả người dùng, mới nhất trước.
+    /// Dùng để hiển thị trang Khám phá / Cộng đồng.
+    /// </summary>
+    [HttpGet("community")]
+    [ProducesResponseType(typeof(List<CommunityOutfitDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetCommunity([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+
+        pageSize = Math.Clamp(pageSize, 1, 50); // Giới hạn tối đa 50 item/trang
+        var result = await _canvasService.GetCommunityOutfitsAsync(userId, page, pageSize);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Like / Unlike một bộ đồ công khai. Trả về tổng số like sau khi thay đổi.
+    /// </summary>
+    [HttpPost("{id:guid}/like")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Like(Guid id)
+    {
+        try
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+            var newLikeCount = await _canvasService.ToggleLikeAsync(userId, id);
+            return Ok(new { likeCount = newLikeCount });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }
