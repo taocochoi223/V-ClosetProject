@@ -88,6 +88,23 @@ builder.Services.AddAuthentication(options =>
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero
     };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+
+            // Lấy token từ query string cho kết nối WebSocket của SignalR Hub
+            var path = context.HttpContext.Request.Path;
+            if (!string.IsNullOrEmpty(accessToken) && 
+                (path.StartsWithSegments("/hubs/chat") || path.StartsWithSegments("/notificationHub")))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
+    };
 });
 
 // Module 2 - Smart Inventory Services
@@ -118,6 +135,10 @@ builder.Services.AddScoped<ICanvasService, CanvasService>();
 // Đăng ký Module 10 - Notifications (Database & SignalR Real-Time)
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<INotificationHubService, NotificationHubService>();
+
+// Đăng ký Module Chat
+builder.Services.AddScoped<IChatService, ChatService>();
+builder.Services.AddScoped<IChatHubService, ChatHubService>();
 
 // Cấu hình chính sách CORS hỗ trợ SignalR (Cực kỳ quan trọng để kết nối với Web và di động)
 builder.Services.AddCors(options =>
@@ -229,6 +250,7 @@ app.MapHealthChecks("/health");
 
 // Khai báo Endpoint Route cho Hub SignalR
 app.MapHub<NotificationHub>("/notificationHub");
+app.MapHub<ChatHub>("/hubs/chat");
 
 app.Run();
 

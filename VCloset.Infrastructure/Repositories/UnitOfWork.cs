@@ -63,6 +63,15 @@ public class UnitOfWork : IUnitOfWork
     private IGenericRepository<PaymentTransaction>? _paymentTransactions;
     public IGenericRepository<PaymentTransaction> PaymentTransactions => _paymentTransactions ??= new GenericRepository<PaymentTransaction>(_context);
 
+    private IGenericRepository<ChatRoom>? _chatRooms;
+    public IGenericRepository<ChatRoom> ChatRooms => _chatRooms ??= new GenericRepository<ChatRoom>(_context);
+
+    private IGenericRepository<ChatRoomMember>? _chatRoomMembers;
+    public IGenericRepository<ChatRoomMember> ChatRoomMembers => _chatRoomMembers ??= new GenericRepository<ChatRoomMember>(_context);
+
+    private IGenericRepository<ChatMessage>? _chatMessages;
+    public IGenericRepository<ChatMessage> ChatMessages => _chatMessages ??= new GenericRepository<ChatMessage>(_context);
+
     public async Task<int> SaveChangesAsync()
     {
         return await _context.SaveChangesAsync();
