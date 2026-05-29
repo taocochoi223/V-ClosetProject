@@ -72,6 +72,15 @@ public class UnitOfWork : IUnitOfWork
     private IGenericRepository<ChatMessage>? _chatMessages;
     public IGenericRepository<ChatMessage> ChatMessages => _chatMessages ??= new GenericRepository<ChatMessage>(_context);
 
+    private IGenericRepository<SubscriptionPlan>? _subscriptionPlans;
+    public IGenericRepository<SubscriptionPlan> SubscriptionPlans => _subscriptionPlans ??= new GenericRepository<SubscriptionPlan>(_context);
+
+    private IGenericRepository<PremiumSubscription>? _premiumSubscriptions;
+    public IGenericRepository<PremiumSubscription> PremiumSubscriptions => _premiumSubscriptions ??= new GenericRepository<PremiumSubscription>(_context);
+
+    private IGenericRepository<WardrobeItem>? _wardrobeItems;
+    public IGenericRepository<WardrobeItem> WardrobeItems => _wardrobeItems ??= new GenericRepository<WardrobeItem>(_context);
+
     public async Task<int> SaveChangesAsync()
     {
         return await _context.SaveChangesAsync();

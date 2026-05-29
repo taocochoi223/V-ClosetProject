@@ -26,4 +26,7 @@ public interface IUnitOfWork : IDisposable
     IGenericRepository<ChatRoom> ChatRooms { get; }
     IGenericRepository<ChatRoomMember> ChatRoomMembers { get; }
     IGenericRepository<ChatMessage> ChatMessages { get; }
+    IGenericRepository<SubscriptionPlan> SubscriptionPlans { get; }
+    IGenericRepository<PremiumSubscription> PremiumSubscriptions { get; }
+    IGenericRepository<WardrobeItem> WardrobeItems { get; }
 }

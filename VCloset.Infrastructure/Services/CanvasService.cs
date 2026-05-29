@@ -225,4 +225,42 @@ public class CanvasService : ICanvasService
             await _context.SaveChangesAsync();
         }
     }
+
+    // ─── Community Feed ───────────────────────────────────────────────────────
+    public async Task<List<CommunityOutfitDto>> GetCommunityOutfitsAsync(int currentUserId, int page, int pageSize)
+    {
+        return await _context.CanvasOutfits
+            .Where(o => o.IsPublic)
+            .OrderByDescending(o => o.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(o => new CommunityOutfitDto
+            {
+                Id                = o.Id,
+                Title             = o.Title ?? "Untitled",
+                CanvasSnapshotUrl = o.CanvasSnapshotUrl,
+                LikeCount         = o.LikeCount,
+                CreatedAt         = o.CreatedAt,
+                AuthorId          = o.UserInternal.Id,
+                AuthorDisplayName = o.UserInternal.DisplayName ?? "Ẩn danh",
+                AuthorAvatarUrl   = o.UserInternal.AvatarUrl
+            })
+            .ToListAsync();
+    }
+
+    // ─── Toggle Like ──────────────────────────────────────────────────────────
+    public async Task<int> ToggleLikeAsync(int userId, Guid outfitId)
+    {
+        var outfit = await _context.CanvasOutfits
+            .FirstOrDefaultAsync(o => o.Id == outfitId && o.IsPublic);
+        if (outfit == null) throw new Exception("Outfit không tồn tại hoặc không công khai.");
+
+        if (outfit.UserInternalId == userId)
+            throw new Exception("Bạn không thể like outfit của chính mình.");
+
+        outfit.LikeCount = Math.Max(0, outfit.LikeCount + 1);
+        outfit.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+        return outfit.LikeCount;
+    }
 }
