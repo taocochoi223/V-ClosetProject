@@ -142,6 +142,8 @@ builder.Services.AddHttpClient<IMoMoPaymentService, MoMoPaymentService>();
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IChatHubService, ChatHubService>();
 
+// Đăng ký Background Services (Robot dọn rác)
+builder.Services.AddHostedService<PaymentCleanupService>();
 // Cấu hình chính sách CORS hỗ trợ SignalR (Cực kỳ quan trọng để kết nối với Web và di động)
 builder.Services.AddCors(options =>
 {
