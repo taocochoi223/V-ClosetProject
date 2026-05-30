@@ -94,7 +94,7 @@ public class PaymentsController : ControllerBase
                                     Id = Guid.NewGuid(),
                                     UserInternalId = transaction.UserInternalId,
                                     SubscriptionPlanInternalId = plan.InternalId,
-                                    PlanType = (PremiumPlan)plan.InternalId, // Assuming ID maps to Enum
+                                    PlanType = plan.DurationDays >= 365 ? PremiumPlan.Yearly : PremiumPlan.Monthly,
                                     PricePaid = transaction.Amount,
                                     Currency = transaction.Currency,
                                     PaymentMethod = "momo",
