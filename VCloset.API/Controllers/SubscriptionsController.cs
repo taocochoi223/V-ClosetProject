@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using VCloset.Application.DTOs.Subscriptions.Requests;
 using VCloset.Application.Interfaces;
 
 namespace VCloset.API.Controllers;
@@ -89,7 +90,7 @@ public class SubscriptionsController : ControllerBase
     /// Body: { "planId": "uuid-of-plan" }
     /// </summary>
     [HttpPost("purchase")]
-    public async Task<IActionResult> Purchase([FromBody] PurchaseRequest request)
+    public async Task<IActionResult> Purchase([FromBody] PurchaseSubscriptionRequest request)
     {
         try
         {
@@ -111,5 +112,3 @@ public class SubscriptionsController : ControllerBase
         }
     }
 }
-
-public record PurchaseRequest(Guid PlanId);

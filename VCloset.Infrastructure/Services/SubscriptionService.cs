@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using VCloset.Application.DTOs.Subscriptions;
+using VCloset.Application.DTOs.Subscriptions.Responses;
 using VCloset.Application.Interfaces;
 using VCloset.Domain.Entities;
 using VCloset.Domain.Enums;
@@ -100,7 +100,7 @@ public class SubscriptionService : ISubscriptionService
         return result;
     }
 
-    public async Task<VCloset.Application.DTOs.Payment.Responses.MoMoPaymentResponseDto> InitiatePurchaseAsync(int userId, Guid planId)
+    public async Task<VCloset.Application.DTOs.Payment.Responses.MoMoPaymentResponse> InitiatePurchaseAsync(int userId, Guid planId)
     {
         var plan = await _unitOfWork.SubscriptionPlans.FindAsync(p => p.Id == planId && p.IsActive);
         if (plan == null)

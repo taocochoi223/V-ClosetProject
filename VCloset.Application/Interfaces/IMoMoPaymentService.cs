@@ -6,6 +6,6 @@ namespace VCloset.Application.Interfaces;
 
 public interface IMoMoPaymentService
 {
-    Task<MoMoPaymentResponseDto> CreatePaymentAsync(PaymentTransaction transaction, string planName);
+    Task<MoMoPaymentResponse> CreatePaymentAsync(PaymentTransaction transaction, string planName);
     bool ValidateSignature(string rawHash, string signature);
 }

@@ -17,17 +17,20 @@ public class AuthService : IAuthService
     private readonly IDistributedCache _cache;
     private readonly IEmailService _emailService;
     private readonly IJwtService _jwtService;
+    private readonly INotificationHubService _notificationHubService;
 
     public AuthService(
         IUnitOfWork unitOfWork,
         IDistributedCache cache,
         IEmailService emailService,
-        IJwtService jwtService)
+        IJwtService jwtService,
+        INotificationHubService notificationHubService)
     {
         _unitOfWork = unitOfWork;
         _cache = cache;
         _emailService = emailService;
         _jwtService = jwtService;
+        _notificationHubService = notificationHubService;
     }
 
     public async Task<bool> RegisterAsync(RegisterRequest request)
@@ -102,6 +105,7 @@ public class AuthService : IAuthService
         var profile = await _unitOfWork.CustomerProfiles.FindAsync(c => c.UserInternalId == user.InternalId);
 
         var displayRole = await GetDisplayRoleAsync(user);
+        var subStatus = await GetSubscriptionStatusAsync(user.InternalId);
 
         return new AuthResponse
         {
@@ -113,7 +117,9 @@ public class AuthService : IAuthService
             DisplayName = user.DisplayName,
             AvatarUrl = user.AvatarUrl,
             IsOnboardingCompleted = user.Role != UserRole.Customer || (profile?.IsOnboardingCompleted ?? false),
-            IsPasswordSet = !string.IsNullOrEmpty(user.PasswordHash)
+            IsPasswordSet = !string.IsNullOrEmpty(user.PasswordHash),
+            HasActivePremium = subStatus.HasActivePremium,
+            PlanType = subStatus.PlanType
         };
     }
 
@@ -141,6 +147,8 @@ public class AuthService : IAuthService
         var profile = await _unitOfWork.CustomerProfiles
             .FindAsync(c => c.UserInternalId == user.InternalId);
         var displayRole = await GetDisplayRoleAsync(user);
+        var subStatus = await GetSubscriptionStatusAsync(user.InternalId);
+
         return new AuthResponse
         {
             AccessToken = accessToken,
@@ -151,7 +159,9 @@ public class AuthService : IAuthService
             DisplayName = user.DisplayName,
             AvatarUrl = user.AvatarUrl,
             IsOnboardingCompleted = user.Role != UserRole.Customer || (profile?.IsOnboardingCompleted ?? false),
-            IsPasswordSet = !string.IsNullOrEmpty(user.PasswordHash)
+            IsPasswordSet = !string.IsNullOrEmpty(user.PasswordHash),
+            HasActivePremium = subStatus.HasActivePremium,
+            PlanType = subStatus.PlanType
         };
     }
 
@@ -255,6 +265,7 @@ public class AuthService : IAuthService
             var profile = await _unitOfWork.CustomerProfiles.FindAsync(c => c.UserInternalId == user.InternalId);
 
             var displayRole = await GetDisplayRoleAsync(user);
+            var subStatus = await GetSubscriptionStatusAsync(user.InternalId);
 
             return new AuthResponse
             {
@@ -266,7 +277,9 @@ public class AuthService : IAuthService
                 DisplayName = user.DisplayName,
                 AvatarUrl = user.AvatarUrl,
                 IsOnboardingCompleted = user.Role != UserRole.Customer || (profile?.IsOnboardingCompleted ?? false),
-                IsPasswordSet = !string.IsNullOrEmpty(user.PasswordHash)
+                IsPasswordSet = !string.IsNullOrEmpty(user.PasswordHash),
+                HasActivePremium = subStatus.HasActivePremium,
+                PlanType = subStatus.PlanType
             };
         }
         catch (InvalidJwtException ex)
@@ -349,6 +362,7 @@ public class AuthService : IAuthService
         var profile = await _unitOfWork.CustomerProfiles.FindAsync(c => c.UserInternalId == user.InternalId);
 
         var displayRole = await GetDisplayRoleAsync(user);
+        var subStatus = await GetSubscriptionStatusAsync(user.InternalId);
 
         return new AuthResponse
         {
@@ -360,7 +374,9 @@ public class AuthService : IAuthService
             DisplayName = user.DisplayName,
             AvatarUrl = user.AvatarUrl,
             IsOnboardingCompleted = user.Role != UserRole.Customer || (profile?.IsOnboardingCompleted ?? false),
-            IsPasswordSet = !string.IsNullOrEmpty(user.PasswordHash)
+            IsPasswordSet = !string.IsNullOrEmpty(user.PasswordHash),
+            HasActivePremium = subStatus.HasActivePremium,
+            PlanType = subStatus.PlanType
         };
     }
 
@@ -388,6 +404,16 @@ public class AuthService : IAuthService
         foreach (var token in oldTokens)
         {
             _unitOfWork.RefreshTokens.Delete(token);
+        }
+
+        // Bắn tín hiệu SignalR ép các thiết bị cũ đăng xuất ngay lập tức (Real-time)
+        try 
+        {
+            await _notificationHubService.SendForceLogoutAsync(userInternalId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[SIGNALR ERROR] Failed to send ForceLogout: {ex.Message}");
         }
 
         var refreshToken = _jwtService.GenerateRefreshToken();
@@ -501,5 +527,18 @@ public class AuthService : IAuthService
         return user.Role.ToString();
     }
 
+    private async Task<(bool HasActivePremium, string PlanType)> GetSubscriptionStatusAsync(int userId)
+    {
+        var active = await _unitOfWork.PremiumSubscriptions.FindAsync(ps =>
+            ps.UserInternalId == userId &&
+            ps.IsActive &&
+            ps.ExpiresAt > DateTime.UtcNow);
+
+        if (active != null)
+        {
+            return (true, active.PlanType.ToString().ToLower());
+        }
+        return (false, "free");
+    }
 }
 

@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using VCloset.Application.DTOs.Subscriptions;
+using VCloset.Application.DTOs.Subscriptions.Responses;
 
 namespace VCloset.Application.Interfaces;
 
@@ -16,5 +16,5 @@ public interface ISubscriptionService
     Task<IEnumerable<PaymentTransactionResponse>> GetMyTransactionsAsync(int userId);
 
     /// <summary>POST /api/subscriptions/purchase — Tạo pending payment (trả về link PayOS/MoMo)</summary>
-    Task<VCloset.Application.DTOs.Payment.Responses.MoMoPaymentResponseDto> InitiatePurchaseAsync(int userId, System.Guid planId);
+    Task<VCloset.Application.DTOs.Payment.Responses.MoMoPaymentResponse> InitiatePurchaseAsync(int userId, System.Guid planId);
 }

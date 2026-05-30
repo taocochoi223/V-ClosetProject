@@ -19,4 +19,10 @@ public class NotificationHubService : INotificationHubService
         // Gửi thông tin số lượng tin chưa đọc mới xuống nhóm của User đó qua SignalR
         await _hubContext.Clients.Group($"UserGroup_{userId}").SendAsync("ReceiveUnreadCount", unreadCount);
     }
+
+    public async Task SendForceLogoutAsync(int userId)
+    {
+        // Yêu cầu tất cả các thiết bị cũ của user này đăng xuất
+        await _hubContext.Clients.Group($"UserGroup_{userId}").SendAsync("ForceLogout", "Tài khoản của bạn vừa được đăng nhập từ một thiết bị khác.");
+    }
 }

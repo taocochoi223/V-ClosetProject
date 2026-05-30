@@ -22,7 +22,7 @@ public class MoMoPaymentService : IMoMoPaymentService
         _httpClient = httpClient;
     }
 
-    public async Task<MoMoPaymentResponseDto> CreatePaymentAsync(PaymentTransaction transaction, string planName)
+    public async Task<MoMoPaymentResponse> CreatePaymentAsync(PaymentTransaction transaction, string planName)
     {
         string partnerCode = Environment.GetEnvironmentVariable("MOMO_PARTNER_CODE") ?? _configuration["MOMO_PARTNER_CODE"] ?? "";
         string accessKey = Environment.GetEnvironmentVariable("MOMO_ACCESS_KEY") ?? _configuration["MOMO_ACCESS_KEY"] ?? "";
@@ -69,7 +69,7 @@ public class MoMoPaymentService : IMoMoPaymentService
         var responseString = await response.Content.ReadAsStringAsync();
         
         using var doc = JsonDocument.Parse(responseString);
-        var responseDto = new MoMoPaymentResponseDto();
+        var responseDto = new MoMoPaymentResponse();
 
         if (doc.RootElement.TryGetProperty("payUrl", out var payUrlElement))
         {
