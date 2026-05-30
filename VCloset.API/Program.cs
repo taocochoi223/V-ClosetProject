@@ -166,6 +166,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "VCloset API", Version = "v1" });
+    
+    // Resolve duplicate schema names (e.g., UpdatePermissionRequest in different namespaces)
+    c.CustomSchemaIds(type => type.FullName);
 
     // Cấu hình đọc file XML để hiển thị chú thích Tiếng Việt lên Swagger UI
     var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
