@@ -23,7 +23,7 @@ public class AdminDashboardController : ControllerBase
     /// <summary>
     /// Lấy toàn bộ số liệu thống kê tổng hợp (KPI Metrics) của hệ thống
     /// </summary>
-    [RequirePermission("dashboard.view")]
+    [RequirePermission("analytics.view")]
     [HttpGet("metrics")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -43,7 +43,7 @@ public class AdminDashboardController : ControllerBase
     /// <summary>
     /// Lấy dữ liệu biểu đồ doanh thu VIP Premium theo khoảng thời gian tùy chọn (week hoặc month)
     /// </summary>
-    [RequirePermission("dashboard.view")]
+    [RequirePermission("analytics.view")]
     [HttpGet("revenue-chart")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

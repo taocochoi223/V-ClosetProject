@@ -26,7 +26,7 @@ public class AdminCampaignsController : ControllerBase
     /// <summary>
     /// API lấy danh sách toàn bộ chiến dịch quảng cáo tài trợ đang chạy trên hệ thống
     /// </summary>
-    [RequirePermission("campaign.view")]
+    [RequirePermission("analytics.view")]
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -46,7 +46,7 @@ public class AdminCampaignsController : ControllerBase
     /// <summary>
     /// API yêu cầu dừng khẩn cấp một chiến dịch quảng cáo vi phạm tiêu chuẩn
     /// </summary>
-    [RequirePermission("campaign.edit")]
+    [RequirePermission("content.moderate")]
     [HttpPost("{campaignId:guid}/stop")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

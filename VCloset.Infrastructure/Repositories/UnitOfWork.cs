@@ -57,6 +57,9 @@ public class UnitOfWork : IUnitOfWork
     private IGenericRepository<ChatMessage>? _chatMessages;
     public IGenericRepository<ChatMessage> ChatMessages => _chatMessages ??= new GenericRepository<ChatMessage>(_context);
 
+    private IGenericRepository<CanvasOutfit>? _canvasOutfits;
+    public IGenericRepository<CanvasOutfit> CanvasOutfits => _canvasOutfits ??= new GenericRepository<CanvasOutfit>(_context);
+
     public async Task<int> SaveChangesAsync()
     {
         return await _context.SaveChangesAsync();

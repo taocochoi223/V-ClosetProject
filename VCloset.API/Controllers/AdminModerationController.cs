@@ -25,7 +25,7 @@ public class AdminModerationController : ControllerBase
     /// <summary>
     /// API lấy danh sách báo cáo vi phạm cộng đồng (Phân trang, lọc theo trạng thái xử lý/lý do)
     /// </summary>
-    [RequirePermission("moderation.view")]
+    [RequirePermission("content.report")]
     [HttpGet("reports")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -52,7 +52,7 @@ public class AdminModerationController : ControllerBase
     /// <summary>
     /// API xem thông tin chi tiết của một bài viết bị báo cáo vi phạm (ảnh canvas, lý do report)
     /// </summary>
-    [RequirePermission("post.view")]
+    [RequirePermission("content.moderate")]
     [HttpGet("posts/{postId:guid}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -75,7 +75,7 @@ public class AdminModerationController : ControllerBase
     /// <summary>
     /// API xử lý/giải quyết báo cáo vi phạm (ẩn bài viết hoặc bác bỏ báo cáo rác)
     /// </summary>
-    [RequirePermission("moderation.resolve")]
+    [RequirePermission("content.report")]
     [HttpPost("reports/{reportId:guid}/resolve")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -99,7 +99,7 @@ public class AdminModerationController : ControllerBase
     /// <summary>
     /// API thay đổi trạng thái ẩn/hiện hiển thị bài đăng của người dùng
     /// </summary>
-    [RequirePermission("post.edit")]
+    [RequirePermission("content.moderate")]
     [HttpPut("posts/{postId:guid}/visibility")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
