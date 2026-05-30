@@ -38,12 +38,13 @@ public class MoMoPaymentService : IMoMoPaymentService
 
         string orderId = transaction.InternalId.ToString() + "_" + DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         string requestId = Guid.NewGuid().ToString();
-        string amount = ((long)transaction.Amount).ToString();
+        long amountValue = (long)transaction.Amount;
+        string amountStr = amountValue.ToString();
         string orderInfo = $"Thanh toan V-Closet: {planName}";
         string requestType = "captureWallet";
-        string extraData = transaction.InternalId.ToString();
+        string extraData = ""; // Docs require Base64 JSON or empty string
 
-        string rawHash = $"accessKey={accessKey}&amount={amount}&extraData={extraData}&ipnUrl={notifyUrl}&orderId={orderId}&orderInfo={orderInfo}&partnerCode={partnerCode}&redirectUrl={returnUrl}&requestId={requestId}&requestType={requestType}";
+        string rawHash = $"accessKey={accessKey}&amount={amountStr}&extraData={extraData}&ipnUrl={notifyUrl}&orderId={orderId}&orderInfo={orderInfo}&partnerCode={partnerCode}&redirectUrl={returnUrl}&requestId={requestId}&requestType={requestType}";
         string signature = ComputeHmacSha256(rawHash, secretKey);
 
         var requestData = new
@@ -52,7 +53,7 @@ public class MoMoPaymentService : IMoMoPaymentService
             partnerName = "V-Closet",
             storeId = "V-Closet-Store",
             requestId,
-            amount,
+            amount = amountValue, // Must be long in JSON
             orderId,
             orderInfo,
             redirectUrl = returnUrl,

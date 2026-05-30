@@ -37,6 +37,7 @@ public class PaymentsController : ControllerBase
             string amount = requestBody.GetProperty("amount").GetRawText() ?? "";
             string orderInfo = requestBody.GetProperty("orderInfo").GetString() ?? "";
             string requestType = requestBody.GetProperty("requestType").GetString() ?? "";
+            string orderType = requestBody.TryGetProperty("orderType", out var ot) ? ot.GetString() ?? "" : "momo_wallet";
             string transId = requestBody.GetProperty("transId").GetRawText() ?? "";
             string resultCode = requestBody.GetProperty("resultCode").GetRawText() ?? "";
             string message = requestBody.GetProperty("message").GetString() ?? "";
@@ -47,14 +48,21 @@ public class PaymentsController : ControllerBase
 
             string accessKey = Environment.GetEnvironmentVariable("MOMO_ACCESS_KEY") ?? "";
             
-            string rawHash = $"accessKey={accessKey}&amount={amount}&extraData={extraData}&message={message}&orderId={orderId}&orderInfo={orderInfo}&partnerCode={partnerCode}&payType={payType}&requestId={requestId}&responseTime={responseTime}&resultCode={resultCode}";
+            string rawHash = $"accessKey={accessKey}&amount={amount}&extraData={extraData}&message={message}&orderId={orderId}&orderInfo={orderInfo}&orderType={orderType}&partnerCode={partnerCode}&payType={payType}&requestId={requestId}&responseTime={responseTime}&resultCode={resultCode}&transId={transId}";
             
             if (!_momoPaymentService.ValidateSignature(rawHash, signature))
             {
                 return BadRequest(new { message = "Invalid signature" });
             }
 
-            if (int.TryParse(extraData, out int transactionInternalId))
+            int transactionInternalId = 0;
+            var orderIdParts = orderId.Split('_');
+            if (orderIdParts.Length > 0)
+            {
+                int.TryParse(orderIdParts[0], out transactionInternalId);
+            }
+
+            if (transactionInternalId > 0)
             {
                 var transaction = await _unitOfWork.PaymentTransactions.GetByIdAsync(transactionInternalId);
                 if (transaction != null && transaction.Status == PaymentStatus.Pending)
