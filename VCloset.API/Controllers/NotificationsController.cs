@@ -97,7 +97,7 @@ public class NotificationsController : ControllerBase
     /// <summary>
     /// API của Admin để phát loa thông báo cho toàn bộ người dùng (Customer) trong hệ thống
     /// </summary>
-    [RequirePermission("notification.broadcast")]
+    [RequirePermission("notification.send")]
     [HttpPost("broadcast")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
