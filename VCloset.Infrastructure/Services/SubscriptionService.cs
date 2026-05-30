@@ -100,7 +100,7 @@ public class SubscriptionService : ISubscriptionService
         return result;
     }
 
-    public async Task<string> InitiatePurchaseAsync(int userId, Guid planId)
+    public async Task<VCloset.Application.DTOs.Payment.Responses.MoMoPaymentResponseDto> InitiatePurchaseAsync(int userId, Guid planId)
     {
         var plan = await _unitOfWork.SubscriptionPlans.FindAsync(p => p.Id == planId && p.IsActive);
         if (plan == null)
@@ -122,8 +122,8 @@ public class SubscriptionService : ISubscriptionService
         await _unitOfWork.PaymentTransactions.AddAsync(transaction);
         await _unitOfWork.SaveChangesAsync();
 
-        string payUrl = await _momoPaymentService.CreatePaymentAsync(transaction, plan.Name);
+        var paymentResponse = await _momoPaymentService.CreatePaymentAsync(transaction, plan.Name);
 
-        return payUrl;
+        return paymentResponse;
     }
 }

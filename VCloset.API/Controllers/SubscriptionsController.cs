@@ -96,8 +96,13 @@ public class SubscriptionsController : ControllerBase
             var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
 
-            var paymentLink = await _subscriptionService.InitiatePurchaseAsync(userId, request.PlanId);
-            return Ok(new { paymentUrl = paymentLink, message = "Vui lòng hoàn tất thanh toán qua link bên dưới." });
+            var paymentResponse = await _subscriptionService.InitiatePurchaseAsync(userId, request.PlanId);
+            return Ok(new { 
+                payUrl = paymentResponse.PayUrl, 
+                deeplink = paymentResponse.Deeplink,
+                qrCodeUrl = paymentResponse.QrCodeUrl,
+                message = "Vui lòng hoàn tất thanh toán qua link hoặc deeplink." 
+            });
         }
         catch (Exception ex)
         {

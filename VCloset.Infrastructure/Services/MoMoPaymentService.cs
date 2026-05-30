@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
+using VCloset.Application.DTOs.Payment.Responses;
 using VCloset.Application.Interfaces;
 using VCloset.Domain.Entities;
 
@@ -21,7 +22,7 @@ public class MoMoPaymentService : IMoMoPaymentService
         _httpClient = httpClient;
     }
 
-    public async Task<string> CreatePaymentAsync(PaymentTransaction transaction, string planName)
+    public async Task<MoMoPaymentResponseDto> CreatePaymentAsync(PaymentTransaction transaction, string planName)
     {
         string partnerCode = Environment.GetEnvironmentVariable("MOMO_PARTNER_CODE") ?? _configuration["MOMO_PARTNER_CODE"] ?? "";
         string accessKey = Environment.GetEnvironmentVariable("MOMO_ACCESS_KEY") ?? _configuration["MOMO_ACCESS_KEY"] ?? "";
@@ -68,9 +69,24 @@ public class MoMoPaymentService : IMoMoPaymentService
         var responseString = await response.Content.ReadAsStringAsync();
         
         using var doc = JsonDocument.Parse(responseString);
-        if (doc.RootElement.TryGetProperty("payUrl", out var payUrlElement) && payUrlElement.GetString() != null)
+        var responseDto = new MoMoPaymentResponseDto();
+
+        if (doc.RootElement.TryGetProperty("payUrl", out var payUrlElement))
         {
-            return payUrlElement.GetString()!;
+            responseDto.PayUrl = payUrlElement.GetString() ?? "";
+        }
+        if (doc.RootElement.TryGetProperty("deeplink", out var deeplinkElement))
+        {
+            responseDto.Deeplink = deeplinkElement.GetString() ?? "";
+        }
+        if (doc.RootElement.TryGetProperty("qrCodeUrl", out var qrCodeUrlElement))
+        {
+            responseDto.QrCodeUrl = qrCodeUrlElement.GetString() ?? "";
+        }
+
+        if (!string.IsNullOrEmpty(responseDto.PayUrl))
+        {
+            return responseDto;
         }
 
         throw new Exception("Lỗi tạo thanh toán MoMo: " + responseString);
