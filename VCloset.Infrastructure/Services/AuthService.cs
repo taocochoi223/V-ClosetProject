@@ -100,7 +100,7 @@ public class AuthService : IAuthService
         await CreateProfileIfNotExistsAsync(user);
 
         var accessToken = _jwtService.GenerateAccessToken(user);
-        var refreshToken = await GenerateAndSaveRefreshTokenAsync(user.InternalId);
+        var refreshToken = await GenerateAndSaveRefreshTokenAsync(user.InternalId, true);
 
         var profile = await _unitOfWork.CustomerProfiles.FindAsync(c => c.UserInternalId == user.InternalId);
 
@@ -142,7 +142,7 @@ public class AuthService : IAuthService
 
         var accessToken = _jwtService.GenerateAccessToken(user);
 
-        var refreshToken = await GenerateAndSaveRefreshTokenAsync(user.InternalId);
+        var refreshToken = await GenerateAndSaveRefreshTokenAsync(user.InternalId, true);
 
         var profile = await _unitOfWork.CustomerProfiles
             .FindAsync(c => c.UserInternalId == user.InternalId);
@@ -260,7 +260,7 @@ public class AuthService : IAuthService
             if (!user.IsActive) return null;
 
             var accessToken = _jwtService.GenerateAccessToken(user);
-            var refreshToken = await GenerateAndSaveRefreshTokenAsync(user.InternalId);
+            var refreshToken = await GenerateAndSaveRefreshTokenAsync(user.InternalId, true);
 
             var profile = await _unitOfWork.CustomerProfiles.FindAsync(c => c.UserInternalId == user.InternalId);
 
@@ -397,7 +397,7 @@ public class AuthService : IAuthService
 
 
 
-    private async Task<string> GenerateAndSaveRefreshTokenAsync(int userInternalId)
+    private async Task<string> GenerateAndSaveRefreshTokenAsync(int userInternalId, bool isNewLogin = false)
     {
         // Thu hồi (xóa) toàn bộ Refresh Token cũ của user này để ngăn đăng nhập đồng thời nhiều thiết bị
         var oldTokens = await _unitOfWork.RefreshTokens.FindAllAsync(t => t.UserInternalId == userInternalId);
@@ -406,14 +406,17 @@ public class AuthService : IAuthService
             _unitOfWork.RefreshTokens.Delete(token);
         }
 
-        // Bắn tín hiệu SignalR ép các thiết bị cũ đăng xuất ngay lập tức (Real-time)
-        try 
+        if (isNewLogin)
         {
-            await _notificationHubService.SendForceLogoutAsync(userInternalId);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[SIGNALR ERROR] Failed to send ForceLogout: {ex.Message}");
+            // Bắn tín hiệu SignalR ép các thiết bị cũ đăng xuất ngay lập tức (Real-time)
+            try 
+            {
+                await _notificationHubService.SendForceLogoutAsync(userInternalId);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SIGNALR ERROR] Failed to send ForceLogout: {ex.Message}");
+            }
         }
 
         var refreshToken = _jwtService.GenerateRefreshToken();

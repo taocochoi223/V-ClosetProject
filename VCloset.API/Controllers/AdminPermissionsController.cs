@@ -48,9 +48,9 @@ public class AdminPermissionsController : ControllerBase
     /// <summary>
     /// Lấy danh sách quyền hiện tại của 1 Admin User.
     /// </summary>
-    [HttpGet("{userId}")]
+    [HttpGet("{userId:guid}")]
     [Authorize(Policy = "RequirePermission:permission.grant")]
-    public async Task<IActionResult> GetUserPermissions(int userId)
+    public async Task<IActionResult> GetUserPermissions(Guid userId)
     {
         try
         {
@@ -59,7 +59,29 @@ public class AdminPermissionsController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Lỗi khi lấy quyền của user {userId}.");
+            _logger.LogError(ex, $"Lỗi khi lấy danh sách permissions của user {userId}.");
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Lấy danh sách quyền hiện tại của chính bản thân (dùng cho FrontEnd render Menu).
+    /// </summary>
+    [HttpGet("me")]
+    // Không cần Policy RequirePermission, vì ai cũng có quyền xem quyền của chính mình
+    public async Task<IActionResult> GetMyPermissions()
+    {
+        try
+        {
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(currentUserIdStr, out int currentUserId)) return Unauthorized();
+
+            var result = await _adminPermissionService.GetUserPermissionsByInternalIdAsync(currentUserId);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi lấy danh sách permissions của bản thân.");
             return BadRequest(new { message = ex.Message });
         }
     }
@@ -67,9 +89,9 @@ public class AdminPermissionsController : ControllerBase
     /// <summary>
     /// Cấp thêm quyền cho 1 Admin User.
     /// </summary>
-    [HttpPost("{userId}/grant")]
+    [HttpPost("{userId:guid}/grant")]
     [Authorize(Policy = "RequirePermission:permission.grant")]
-    public async Task<IActionResult> GrantPermissions(int userId, [FromBody] UpdatePermissionRequest request)
+    public async Task<IActionResult> GrantPermissions(Guid userId, [FromBody] UpdatePermissionRequest request)
     {
         try
         {
@@ -89,9 +111,9 @@ public class AdminPermissionsController : ControllerBase
     /// <summary>
     /// Rút bớt quyền của 1 Admin User.
     /// </summary>
-    [HttpPost("{userId}/revoke")]
+    [HttpPost("{userId:guid}/revoke")]
     [Authorize(Policy = "RequirePermission:permission.grant")]
-    public async Task<IActionResult> RevokePermissions(int userId, [FromBody] UpdatePermissionRequest request)
+    public async Task<IActionResult> RevokePermissions(Guid userId, [FromBody] UpdatePermissionRequest request)
     {
         try
         {
@@ -111,9 +133,9 @@ public class AdminPermissionsController : ControllerBase
     /// <summary>
     /// Khôi phục toàn bộ quyền của User về mặc định theo Role của họ.
     /// </summary>
-    [HttpPost("{userId}/reset")]
+    [HttpPost("{userId:guid}/reset")]
     [Authorize(Policy = "RequirePermission:permission.grant")]
-    public async Task<IActionResult> ResetToDefaultPermissions(int userId)
+    public async Task<IActionResult> ResetToDefaultPermissions(Guid userId)
     {
         try
         {

@@ -36,19 +36,19 @@ public class AdminPermissionService : IAdminPermissionService
             .ToListAsync();
     }
 
-    public async Task<AdminUserPermissionResponse> GetUserPermissionsAsync(int userId)
+    public async Task<AdminUserPermissionResponse> GetUserPermissionsAsync(Guid userId)
     {
         var adminProfile = await _context.AdminProfiles
             .Include(a => a.UserInternal)
             .Include(a => a.PermissionLevelNavigation)
-            .FirstOrDefaultAsync(a => a.UserInternalId == userId);
+            .FirstOrDefaultAsync(a => a.UserInternal.Id == userId);
 
         if (adminProfile == null)
             throw new Exception("Không tìm thấy profile admin của người dùng này.");
 
         var permissions = await _context.AdminPermissions
             .Include(ap => ap.Permission)
-            .Where(ap => ap.UserInternalId == userId)
+            .Where(ap => ap.UserInternalId == adminProfile.UserInternalId)
             .Select(ap => new PermissionResponse
             {
                 Id = ap.Permission.Id,
@@ -69,15 +69,48 @@ public class AdminPermissionService : IAdminPermissionService
         };
     }
 
-    public async Task<bool> GrantPermissionsAsync(int userId, UpdatePermissionRequest request, int grantedById)
+    public async Task<AdminUserPermissionResponse> GetUserPermissionsByInternalIdAsync(int userInternalId)
     {
-        await EnsureHasRoleHierarchyPrivilegeAsync(grantedById, userId);
+        var adminProfile = await _context.AdminProfiles
+            .Include(a => a.UserInternal)
+            .Include(a => a.PermissionLevelNavigation)
+            .FirstOrDefaultAsync(a => a.UserInternalId == userInternalId);
 
-        var adminExists = await _context.AdminProfiles.AnyAsync(a => a.UserInternalId == userId);
-        if (!adminExists) throw new Exception("Không tìm thấy Admin Profile.");
+        if (adminProfile == null)
+            throw new Exception("Không tìm thấy profile admin của người dùng này.");
+
+        var permissions = await _context.AdminPermissions
+            .Include(ap => ap.Permission)
+            .Where(ap => ap.UserInternalId == userInternalId)
+            .Select(ap => new PermissionResponse
+            {
+                Id = ap.Permission.Id,
+                Code = ap.Permission.Code,
+                Name = ap.Permission.Name,
+                Description = ap.Permission.Description,
+                Grp = ap.Permission.Grp
+            })
+            .ToListAsync();
+
+        return new AdminUserPermissionResponse
+        {
+            UserId = adminProfile.UserInternal.Id, // return Guid
+            DisplayName = adminProfile.UserInternal.DisplayName,
+            Email = adminProfile.UserInternal.Email,
+            RoleName = adminProfile.PermissionLevelNavigation.Name,
+            GrantedPermissions = permissions
+        };
+    }
+
+    public async Task<bool> GrantPermissionsAsync(Guid userId, UpdatePermissionRequest request, int grantedById)
+    {
+        var adminProfile = await _context.AdminProfiles.Include(a => a.UserInternal).FirstOrDefaultAsync(a => a.UserInternal.Id == userId);
+        if (adminProfile == null) throw new Exception("Không tìm thấy Admin Profile.");
+
+        await EnsureHasRoleHierarchyPrivilegeAsync(grantedById, adminProfile.UserInternalId);
 
         var currentPermissionIds = await _context.AdminPermissions
-            .Where(ap => ap.UserInternalId == userId)
+            .Where(ap => ap.UserInternalId == adminProfile.UserInternalId)
             .Select(ap => ap.PermissionId)
             .ToListAsync();
 
@@ -87,7 +120,7 @@ public class AdminPermissionService : IAdminPermissionService
         {
             _context.AdminPermissions.Add(new AdminPermission
             {
-                UserInternalId = userId,
+                UserInternalId = adminProfile.UserInternalId,
                 PermissionId = pId,
                 GrantedByInternal = grantedById,
                 GrantedAt = DateTime.UtcNow
@@ -98,12 +131,15 @@ public class AdminPermissionService : IAdminPermissionService
         return true;
     }
 
-    public async Task<bool> RevokePermissionsAsync(int userId, UpdatePermissionRequest request, int revokedById)
+    public async Task<bool> RevokePermissionsAsync(Guid userId, UpdatePermissionRequest request, int revokedById)
     {
-        await EnsureHasRoleHierarchyPrivilegeAsync(revokedById, userId);
+        var adminProfile = await _context.AdminProfiles.Include(a => a.UserInternal).FirstOrDefaultAsync(a => a.UserInternal.Id == userId);
+        if (adminProfile == null) throw new Exception("Không tìm thấy Admin Profile.");
+
+        await EnsureHasRoleHierarchyPrivilegeAsync(revokedById, adminProfile.UserInternalId);
 
         var toRevoke = await _context.AdminPermissions
-            .Where(ap => ap.UserInternalId == userId && request.PermissionIds.Contains(ap.PermissionId))
+            .Where(ap => ap.UserInternalId == adminProfile.UserInternalId && request.PermissionIds.Contains(ap.PermissionId))
             .ToListAsync();
 
         if (toRevoke.Any())
@@ -115,12 +151,15 @@ public class AdminPermissionService : IAdminPermissionService
         return true;
     }
 
-    public async Task<bool> ResetToDefaultPermissionsAsync(int userId, int grantedById)
+    public async Task<bool> ResetToDefaultPermissionsAsync(Guid userId, int grantedById)
     {
-        await EnsureHasRoleHierarchyPrivilegeAsync(grantedById, userId);
-
         var adminProfile = await _context.AdminProfiles
-            .FirstOrDefaultAsync(a => a.UserInternalId == userId);
+            .Include(a => a.UserInternal)
+            .FirstOrDefaultAsync(a => a.UserInternal.Id == userId);
+
+        if (adminProfile == null) throw new Exception("Không tìm thấy Admin Profile.");
+
+        await EnsureHasRoleHierarchyPrivilegeAsync(grantedById, adminProfile.UserInternalId);
 
         if (adminProfile == null) throw new Exception("Không tìm thấy Admin Profile.");
 
@@ -132,7 +171,7 @@ public class AdminPermissionService : IAdminPermissionService
 
         // Xóa hết quyền cũ
         var oldPermissions = await _context.AdminPermissions
-            .Where(ap => ap.UserInternalId == userId)
+            .Where(ap => ap.UserInternalId == adminProfile.UserInternalId)
             .ToListAsync();
         
         _context.AdminPermissions.RemoveRange(oldPermissions);
@@ -142,7 +181,7 @@ public class AdminPermissionService : IAdminPermissionService
         {
             _context.AdminPermissions.Add(new AdminPermission
             {
-                UserInternalId = userId,
+                UserInternalId = adminProfile.UserInternalId,
                 PermissionId = pId,
                 GrantedByInternal = grantedById,
                 GrantedAt = DateTime.UtcNow

@@ -8,8 +8,9 @@ namespace VCloset.Application.Interfaces;
 public interface IAdminPermissionService
 {
     Task<IEnumerable<PermissionResponse>> GetAllPermissionsAsync();
-    Task<AdminUserPermissionResponse> GetUserPermissionsAsync(int userId);
-    Task<bool> GrantPermissionsAsync(int userId, UpdatePermissionRequest request, int grantedById);
-    Task<bool> RevokePermissionsAsync(int userId, UpdatePermissionRequest request, int revokedById);
-    Task<bool> ResetToDefaultPermissionsAsync(int userId, int grantedById);
+    Task<AdminUserPermissionResponse> GetUserPermissionsAsync(Guid userId);
+    Task<AdminUserPermissionResponse> GetUserPermissionsByInternalIdAsync(int userInternalId);
+    Task<bool> GrantPermissionsAsync(Guid userId, UpdatePermissionRequest request, int grantedById);
+    Task<bool> RevokePermissionsAsync(Guid userId, UpdatePermissionRequest request, int revokedById);
+    Task<bool> ResetToDefaultPermissionsAsync(Guid userId, int grantedById);
 }

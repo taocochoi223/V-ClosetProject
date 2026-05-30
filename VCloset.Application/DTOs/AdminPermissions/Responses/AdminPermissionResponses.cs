@@ -13,7 +13,7 @@ public class PermissionResponse
 
 public class AdminUserPermissionResponse
 {
-    public int UserId { get; set; }
+    public Guid UserId { get; set; }
     public string DisplayName { get; set; } = null!;
     public string Email { get; set; } = null!;
     public string RoleName { get; set; } = null!;
