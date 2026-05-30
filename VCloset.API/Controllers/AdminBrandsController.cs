@@ -27,7 +27,7 @@ public class AdminBrandsController : ControllerBase
     /// <summary>
     /// API xem danh sách các đối tác thương hiệu (Brand Partner)
     /// </summary>
-    [RequirePermission("user.view")]
+    [RequirePermission("brand.verify")]
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -74,7 +74,7 @@ public class AdminBrandsController : ControllerBase
     /// <summary>
     /// API nạp tiền quảng cáo (tín dụng) vào số dư của đối tác thương hiệu
     /// </summary>
-    [RequirePermission("payment.refund")]
+    [RequirePermission("brand.verify")]
     [HttpPost("{brandId:guid}/credit")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

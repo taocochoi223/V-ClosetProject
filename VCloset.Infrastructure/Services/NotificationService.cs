@@ -39,14 +39,17 @@ public class NotificationService : INotificationService
         await _unitOfWork.Notifications.AddAsync(notification);
         await _unitOfWork.SaveChangesAsync();
 
-        // Real-time Push Alert: Gửi số lượng tin nhắn chưa đọc mới cho Flutter
+        var dto = MapToDto(notification);
+
+        // Real-time Push Alert: Gửi số lượng tin chưa đọc mới VÀ nguyên đối tượng DTO qua SignalR
         var newCount = await GetUnreadCountAsync(userId);
         await _hubService.SendUnreadCountAlertAsync(userId, newCount);
+        await _hubService.SendNotificationAlertAsync(userId, dto);
 
-        return MapToDto(notification);
+        return dto;
     }
 
-    public async Task<List<NotificationResponseDto>> GetUserNotificationsAsync(int userId, bool? isRead)
+    public async Task<List<NotificationResponseDto>> GetUserNotificationsAsync(int userId, bool? isRead, int page = 1, int pageSize = 20)
     {
         var notifications = await _unitOfWork.Notifications.FindAllAsync(n => n.UserInternalId == userId);
         
@@ -59,6 +62,8 @@ public class NotificationService : INotificationService
 
         var sortedNotifications = query
             .OrderByDescending(n => n.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToList();
 
         return sortedNotifications.Select(MapToDto).ToList();
@@ -137,6 +142,7 @@ public class NotificationService : INotificationService
 
         if (!users.Any()) return;
 
+        var notifications = new List<Notification>();
         foreach (var user in users)
         {
             var notification = new Notification
@@ -152,16 +158,19 @@ public class NotificationService : INotificationService
                 CreatedAt = DateTime.UtcNow
             };
             await _unitOfWork.Notifications.AddAsync(notification);
+            notifications.Add(notification);
         }
 
         await _unitOfWork.SaveChangesAsync();
 
-        foreach (var user in users)
+        foreach (var notification in notifications)
         {
             try
             {
-                var newCount = await GetUnreadCountAsync(user.InternalId);
-                await _hubService.SendUnreadCountAlertAsync(user.InternalId, newCount);
+                var dto = MapToDto(notification);
+                var newCount = await GetUnreadCountAsync(notification.UserInternalId);
+                await _hubService.SendUnreadCountAlertAsync(notification.UserInternalId, newCount);
+                await _hubService.SendNotificationAlertAsync(notification.UserInternalId, dto);
             }
             catch
             {
@@ -221,6 +230,57 @@ public class NotificationService : INotificationService
         {
             var newCount = await GetUnreadCountAsync(userId);
             await _hubService.SendUnreadCountAlertAsync(userId, newCount);
+        }
+
+        return true;
+    }
+
+    public async Task<List<NotificationResponseDto>> GetAllNotificationsForAdminAsync(int? targetUserId, string? type, int page = 1, int pageSize = 15)
+    {
+        var allNotifications = await _unitOfWork.Notifications.GetAllAsync();
+        var query = allNotifications.AsQueryable();
+
+        if (targetUserId.HasValue)
+        {
+            query = query.Where(n => n.UserInternalId == targetUserId.Value);
+        }
+
+        if (!string.IsNullOrEmpty(type))
+        {
+            query = query.Where(n => n.Type.Equals(type, StringComparison.OrdinalIgnoreCase));
+        }
+
+        var sortedNotifications = query
+            .OrderByDescending(n => n.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        return sortedNotifications.Select(MapToDto).ToList();
+    }
+
+    public async Task<bool> DeleteNotificationByAdminAsync(Guid notificationId)
+    {
+        var notification = await _unitOfWork.Notifications.FindAsync(n => n.Id == notificationId);
+        if (notification == null) return false;
+
+        bool wasUnread = !notification.IsRead;
+        int userId = notification.UserInternalId;
+
+        _unitOfWork.Notifications.Delete(notification);
+        await _unitOfWork.SaveChangesAsync();
+
+        if (wasUnread)
+        {
+            try
+            {
+                var newCount = await GetUnreadCountAsync(userId);
+                await _hubService.SendUnreadCountAlertAsync(userId, newCount);
+            }
+            catch
+            {
+                // Bỏ qua lỗi gửi SignalR đơn lẻ nếu user offline hoặc ngắt kết nối
+            }
         }
 
         return true;

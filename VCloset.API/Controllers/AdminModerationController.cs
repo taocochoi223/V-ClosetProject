@@ -25,7 +25,7 @@ public class AdminModerationController : ControllerBase
     /// <summary>
     /// API lấy danh sách báo cáo vi phạm cộng đồng (Phân trang, lọc theo trạng thái xử lý/lý do)
     /// </summary>
-    [RequirePermission("content.moderate")]
+    [RequirePermission("content.report")]
     [HttpGet("reports")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
