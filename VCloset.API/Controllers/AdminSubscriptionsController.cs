@@ -86,7 +86,7 @@ public class AdminSubscriptionsController : ControllerBase
     /// Cập nhật thông tin gói Premium.
     /// </summary>
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> UpdatePlan(Guid id, [FromBody] CreateOrUpdatePlanRequest request)
+    public async Task<IActionResult> UpdatePlan(Guid id, [FromBody] UpdatePlanRequest request)
     {
         try
         {
