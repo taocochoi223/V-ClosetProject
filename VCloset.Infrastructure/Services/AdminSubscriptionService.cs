@@ -85,18 +85,19 @@ public class AdminSubscriptionService : IAdminSubscriptionService
         };
     }
 
-    public async Task<SubscriptionPlanResponse> UpdatePlanAsync(Guid planId, CreateOrUpdatePlanRequest request)
+    public async Task<SubscriptionPlanResponse> UpdatePlanAsync(Guid planId, UpdatePlanRequest request)
     {
         var plan = await _context.SubscriptionPlans.FirstOrDefaultAsync(p => p.Id == planId);
         if (plan == null)
             throw new Exception("Không tìm thấy gói dịch vụ.");
 
-        plan.Name = request.Name;
-        plan.Description = request.Description;
-        plan.Price = request.Price;
-        plan.Currency = request.Currency;
-        plan.DurationDays = request.DurationDays;
-        plan.IsActive = request.IsActive;
+        if (!string.IsNullOrWhiteSpace(request.Name)) plan.Name = request.Name;
+        if (request.Description != null) plan.Description = request.Description; // Cho phép xoá mô tả bằng cách gửi chuỗi rỗng
+        if (request.Price.HasValue) plan.Price = request.Price.Value;
+        if (!string.IsNullOrWhiteSpace(request.Currency)) plan.Currency = request.Currency;
+        if (request.DurationDays.HasValue) plan.DurationDays = request.DurationDays.Value;
+        if (request.IsActive.HasValue) plan.IsActive = request.IsActive.Value;
+        
         plan.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();

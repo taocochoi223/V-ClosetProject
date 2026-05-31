@@ -11,6 +11,6 @@ public interface IAdminSubscriptionService
     Task<IEnumerable<SubscriptionPlanResponse>> GetAllPlansAsync();
     Task<SubscriptionPlanResponse> GetPlanByIdAsync(Guid planId);
     Task<SubscriptionPlanResponse> CreatePlanAsync(CreateOrUpdatePlanRequest request);
-    Task<SubscriptionPlanResponse> UpdatePlanAsync(Guid planId, CreateOrUpdatePlanRequest request);
+    Task<SubscriptionPlanResponse> UpdatePlanAsync(Guid planId, UpdatePlanRequest request);
     Task<bool> DeletePlanAsync(Guid planId);
 }
