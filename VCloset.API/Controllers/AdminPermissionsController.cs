@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using VCloset.Application.DTOs.AdminPermissions.Requests;
 using VCloset.Application.Interfaces;
+using VCloset.Infrastructure.Security;
 
 namespace VCloset.API.Controllers;
 
@@ -30,7 +31,7 @@ public class AdminPermissionsController : ControllerBase
     /// Lấy danh sách toàn bộ Permission trong hệ thống. (Chỉ SuperAdmin)
     /// </summary>
     [HttpGet("all")]
-    [Authorize(Policy = "RequirePermission:permission.grant")]
+    [RequirePermission("permission.grant")]
     public async Task<IActionResult> GetAllPermissions()
     {
         try
@@ -49,7 +50,7 @@ public class AdminPermissionsController : ControllerBase
     /// Lấy danh sách quyền hiện tại của 1 Admin User.
     /// </summary>
     [HttpGet("{userId:guid}")]
-    [Authorize(Policy = "RequirePermission:permission.grant")]
+    [RequirePermission("permission.grant")]
     public async Task<IActionResult> GetUserPermissions(Guid userId)
     {
         try
@@ -90,7 +91,7 @@ public class AdminPermissionsController : ControllerBase
     /// Cấp thêm quyền cho 1 Admin User.
     /// </summary>
     [HttpPost("{userId:guid}/grant")]
-    [Authorize(Policy = "RequirePermission:permission.grant")]
+    [RequirePermission("permission.grant")]
     public async Task<IActionResult> GrantPermissions(Guid userId, [FromBody] UpdatePermissionRequest request)
     {
         try
@@ -112,7 +113,7 @@ public class AdminPermissionsController : ControllerBase
     /// Rút bớt quyền của 1 Admin User.
     /// </summary>
     [HttpPost("{userId:guid}/revoke")]
-    [Authorize(Policy = "RequirePermission:permission.grant")]
+    [RequirePermission("permission.grant")]
     public async Task<IActionResult> RevokePermissions(Guid userId, [FromBody] UpdatePermissionRequest request)
     {
         try

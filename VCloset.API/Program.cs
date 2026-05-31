@@ -67,6 +67,7 @@ builder.Services.AddScoped<IAdminBrandService, AdminBrandService>();
 builder.Services.AddScoped<IAdminDashboardService, AdminDashboardService>();
 builder.Services.AddScoped<IAffiliateProductService, AffiliateProductService>();
 builder.Services.AddScoped<IAdminPermissionService, AdminPermissionService>();
+builder.Services.AddScoped<IAdminSubscriptionService, AdminSubscriptionService>();
 
 
 
