@@ -1,7 +1,9 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using VCloset.Application.DTOs.Affiliate.Requests;
 using VCloset.Application.DTOs.Affiliate.Responses;
@@ -14,15 +16,27 @@ namespace VCloset.Infrastructure.Services
     public class AffiliateProductService : IAffiliateProductService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IStorageService _storageService;
+        private readonly HttpClient _httpClient;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public AffiliateProductService(IUnitOfWork unitOfWork)
+        public AffiliateProductService(
+            IUnitOfWork unitOfWork,
+            IStorageService storageService,
+            HttpClient httpClient,
+            IHttpContextAccessor httpContextAccessor)
         {
             _unitOfWork = unitOfWork;
+            _storageService = storageService;
+            _httpClient = httpClient;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         // 1. Thêm sản phẩm tiếp thị liên kết Shopee mới
         public async Task<AffiliateProductResponseDto> CreateProductAsync(CreateAffiliateProductDto dto)
         {
+            var uploadedImageUrl = await UploadProductImageFromUrlAsync(dto.ImageUrl, dto.ShopeeProductId);
+
             var product = new AffiliateProduct
             {
                 Id = Guid.NewGuid(),
@@ -30,7 +44,7 @@ namespace VCloset.Infrastructure.Services
                 ShopeeShopId = dto.ShopeeShopId,
                 Name = dto.Name,
                 Description = dto.Description,
-                ImageUrl = dto.ImageUrl,
+                ImageUrl = uploadedImageUrl,
                 Price = dto.Price,
                 OriginalPrice = dto.OriginalPrice,
                 Category = dto.Category,
@@ -339,9 +353,11 @@ namespace VCloset.Infrastructure.Services
             if (product == null)
                 throw new Exception("Không tìm thấy sản phẩm tiếp thị liên kết yêu cầu.");
 
+            var uploadedImageUrl = await UploadProductImageFromUrlAsync(dto.ImageUrl, product.ShopeeProductId);
+
             product.Name = dto.Name;
             product.Description = dto.Description;
-            product.ImageUrl = dto.ImageUrl;
+            product.ImageUrl = uploadedImageUrl;
             product.Price = dto.Price;
             product.OriginalPrice = dto.OriginalPrice;
             product.Category = dto.Category;
@@ -391,6 +407,59 @@ namespace VCloset.Infrastructure.Services
                 "cancelled" or "rejected" => VCloset.Domain.Enums.CommissionStatus.Rejected,
                 _ => VCloset.Domain.Enums.CommissionStatus.Pending
             };
+        }
+
+        private async Task<string> UploadProductImageFromUrlAsync(string imageUrl, string shopeeProductId)
+        {
+            if (string.IsNullOrEmpty(imageUrl) || !imageUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            {
+                return imageUrl;
+            }
+
+            // Tránh tải lại nếu ảnh đã được upload lên Cloud Storage (S3) của chúng ta
+            var s3ServiceUrl = Environment.GetEnvironmentVariable("S3_SERVICE_URL");
+            if (!string.IsNullOrEmpty(s3ServiceUrl) && imageUrl.Contains(s3ServiceUrl, StringComparison.OrdinalIgnoreCase))
+            {
+                return imageUrl;
+            }
+
+            // Tránh tải lại nếu ảnh đã được lưu ở Local Storage của chúng ta
+            var httpContext = _httpContextAccessor.HttpContext;
+            if (httpContext != null)
+            {
+                var localBaseUrl = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
+                if (imageUrl.Contains(localBaseUrl, StringComparison.OrdinalIgnoreCase))
+                {
+                    return imageUrl;
+                }
+            }
+
+            try
+            {
+                var response = await _httpClient.GetAsync(imageUrl);
+                if (!response.IsSuccessStatusCode)
+                {
+                    return imageUrl;
+                }
+
+                var contentType = response.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+                var extension = contentType switch
+                {
+                    "image/png" => ".png",
+                    "image/gif" => ".gif",
+                    "image/webp" => ".webp",
+                    _ => ".jpg"
+                };
+
+                var fileName = $"shopee_prod_{shopeeProductId}{extension}";
+                using var stream = await response.Content.ReadAsStreamAsync();
+                
+                return await _storageService.UploadFileAsync(stream, fileName, contentType, "products");
+            }
+            catch
+            {
+                return imageUrl;
+            }
         }
     }
 }
