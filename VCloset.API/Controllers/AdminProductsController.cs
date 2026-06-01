@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using VCloset.Application.DTOs.Affiliate.Requests;
 using VCloset.Application.DTOs.Affiliate.Responses;
@@ -16,10 +17,17 @@ namespace VCloset.API.Controllers
     public class AdminProductsController : ControllerBase
     {
         private readonly IAffiliateProductService _productService;
+        private readonly IBackgroundRemovalService _bgRemovalService;
+        private readonly IStorageService _storageService;
 
-        public AdminProductsController(IAffiliateProductService productService)
+        public AdminProductsController(
+            IAffiliateProductService productService,
+            IBackgroundRemovalService bgRemovalService,
+            IStorageService storageService)
         {
             _productService = productService;
+            _bgRemovalService = bgRemovalService;
+            _storageService = storageService;
         }
 
         /// <summary>
@@ -137,6 +145,40 @@ namespace VCloset.API.Controllers
             catch (Exception ex)
             {
                 return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// API dành cho Admin upload ảnh, thực hiện tách nền, tải lên Cloud Storage và trả về URL ảnh kết quả.
+        /// </summary>
+        [RequirePermission("product.manage")]
+        [HttpPost("remove-bg-upload")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> RemoveBackgroundAndUpload(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest(new { message = "Vui lòng tải lên một file ảnh." });
+
+            try
+            {
+                using var ms = new MemoryStream();
+                await file.CopyToAsync(ms);
+                var imageBytes = ms.ToArray();
+
+                // Gọi dịch vụ tách nền
+                var resultBytes = await _bgRemovalService.RemoveBackgroundAsync(imageBytes, file.FileName);
+
+                // Tải lên S3/Local Storage
+                using var uploadStream = new MemoryStream(resultBytes);
+                var fileName = $"nobg_{Path.GetFileNameWithoutExtension(file.FileName)}.png";
+                var imageUrl = await _storageService.UploadFileAsync(uploadStream, fileName, "image/png", "products");
+
+                return Ok(new { imageUrl });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = $"Tách nền và tải ảnh thất bại: {ex.Message}" });
             }
         }
     }
