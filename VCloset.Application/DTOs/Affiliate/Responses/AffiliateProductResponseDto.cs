@@ -14,5 +14,6 @@ namespace VCloset.Application.DTOs.Affiliate.Responses
         public ClothingCategory Category { get; set; }
         public bool IsTrending { get; set; }
         public bool IsActive { get; set; }
+        public string? Description { get; set; }
     }
 }
