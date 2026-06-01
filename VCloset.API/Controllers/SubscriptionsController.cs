@@ -86,8 +86,8 @@ public class SubscriptionsController : ControllerBase
     }
 
     /// <summary>
-    /// Khởi tạo giao dịch mua gói Premium. Trả về link thanh toán PayOS.
-    /// Body: { "planId": "uuid-of-plan" }
+    /// Khởi tạo giao dịch mua gói Premium. Trả về link thanh toán PayOS/MoMo/VNPay.
+    /// Body: { "planId": "uuid-of-plan", "paymentGateway": "momo" }
     /// </summary>
     [HttpPost("purchase")]
     public async Task<IActionResult> Purchase([FromBody] PurchaseSubscriptionRequest request)
@@ -97,12 +97,13 @@ public class SubscriptionsController : ControllerBase
             var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
 
-            var paymentResponse = await _subscriptionService.InitiatePurchaseAsync(userId, request.PlanId);
+            var paymentResponse = await _subscriptionService.InitiatePurchaseAsync(userId, request.PlanId, request.PaymentGateway);
             return Ok(new { 
                 payUrl = paymentResponse.PayUrl, 
                 deeplink = paymentResponse.Deeplink,
                 qrCodeUrl = paymentResponse.QrCodeUrl,
-                message = "Vui lòng hoàn tất thanh toán qua link hoặc deeplink." 
+                paymentGateway = paymentResponse.PaymentGateway,
+                message = "Vui lòng hoàn tất thanh toán qua link." 
             });
         }
         catch (Exception ex)

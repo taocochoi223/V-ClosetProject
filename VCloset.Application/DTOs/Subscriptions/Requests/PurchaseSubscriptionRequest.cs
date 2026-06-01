@@ -8,4 +8,9 @@ namespace VCloset.Application.DTOs.Subscriptions.Requests;
 public class PurchaseSubscriptionRequest
 {
     public Guid PlanId { get; set; }
+    
+    /// <summary>
+    /// Cổng thanh toán (momo, vnpay). Mặc định là momo.
+    /// </summary>
+    public string PaymentGateway { get; set; } = "momo";
 }
