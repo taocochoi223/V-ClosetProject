@@ -53,3 +53,11 @@ public class CampaignSummaryResponse
     public DateTime EndAt { get; set; }
     public DateTime CreatedAt { get; set; }
 }
+
+// Request body khi Admin điều chỉnh ngân sách ngày và vị trí hiển thị chiến dịch quảng cáo
+public class AdjustCampaignRequest
+{
+    public decimal DailyBudget { get; set; }
+    public short DisplayRank { get; set; }
+}
+

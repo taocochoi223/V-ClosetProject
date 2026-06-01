@@ -22,4 +22,10 @@ public interface IAdminBrandService
 
     // 5. Ngừng khẩn cấp chiến dịch quảng cáo vi phạm
     Task StopCampaignAsync(int adminUserId, Guid campaignId);
+
+    // 6. Khôi phục/kích hoạt lại chiến dịch quảng cáo đã dừng
+    Task ResumeCampaignAsync(int adminUserId, Guid campaignId);
+
+    // 7. Điều chỉnh ngân sách ngày và thứ hạng hiển thị của chiến dịch quảng cáo
+    Task AdjustCampaignAsync(int adminUserId, Guid campaignId, AdjustCampaignRequest request);
 }
