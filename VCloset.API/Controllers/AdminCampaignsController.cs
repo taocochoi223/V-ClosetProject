@@ -66,4 +66,52 @@ public class AdminCampaignsController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    /// <summary>
+    /// API yêu cầu khôi phục/kích hoạt lại một chiến dịch quảng cáo đã dừng
+    /// </summary>
+    [RequirePermission("content.moderate")]
+    [HttpPost("{campaignId:guid}/resume")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> ResumeCampaign(Guid campaignId)
+    {
+        try
+        {
+            var adminIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(adminIdString, out int adminId)) return Unauthorized(new { message = "Không xác định được Admin từ token." });
+
+            await _adminBrandService.ResumeCampaignAsync(adminId, campaignId);
+            return Ok(new { message = "Đã khôi phục/kích hoạt lại chiến dịch quảng cáo thành công." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// API điều chỉnh ngân sách ngày và thứ hạng hiển thị của chiến dịch quảng cáo
+    /// </summary>
+    [RequirePermission("content.moderate")]
+    [HttpPut("{campaignId:guid}/adjust")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> AdjustCampaign(Guid campaignId, [FromBody] AdjustCampaignRequest request)
+    {
+        try
+        {
+            var adminIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(adminIdString, out int adminId)) return Unauthorized(new { message = "Không xác định được Admin từ token." });
+
+            await _adminBrandService.AdjustCampaignAsync(adminId, campaignId, request);
+            return Ok(new { message = "Đã điều chỉnh thông tin chiến dịch quảng cáo thành công." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }

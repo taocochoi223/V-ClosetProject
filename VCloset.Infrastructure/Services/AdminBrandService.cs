@@ -183,4 +183,40 @@ public class AdminBrandService : IAdminBrandService
         _context.SponsoredCampaigns.Update(campaign);
         await _context.SaveChangesAsync();
     }
+
+    // 6. Khôi phục/kích hoạt lại chiến dịch quảng cáo đã dừng
+    public async Task ResumeCampaignAsync(int adminUserId, Guid campaignId)
+    {
+        var campaign = await _context.SponsoredCampaigns.FirstOrDefaultAsync(c => c.Id == campaignId);
+        if (campaign == null)
+            throw new Exception("Không tìm thấy chiến dịch quảng cáo yêu cầu.");
+
+        if (campaign.IsActive)
+            throw new Exception("Chiến dịch quảng cáo này hiện đang hoạt động.");
+
+        // Kích hoạt lại
+        campaign.IsActive = true;
+        _context.SponsoredCampaigns.Update(campaign);
+        await _context.SaveChangesAsync();
+    }
+
+    // 7. Điều chỉnh ngân sách ngày và thứ hạng hiển thị của chiến dịch quảng cáo
+    public async Task AdjustCampaignAsync(int adminUserId, Guid campaignId, AdjustCampaignRequest request)
+    {
+        var campaign = await _context.SponsoredCampaigns.FirstOrDefaultAsync(c => c.Id == campaignId);
+        if (campaign == null)
+            throw new Exception("Không tìm thấy chiến dịch quảng cáo yêu cầu.");
+
+        if (request.DailyBudget <= 0)
+            throw new Exception("Ngân sách hàng ngày phải lớn hơn 0.");
+
+        if (request.DisplayRank <= 0)
+            throw new Exception("Thứ tự hiển thị phải lớn hơn 0.");
+
+        campaign.DailyBudget = request.DailyBudget;
+        campaign.DisplayRank = request.DisplayRank;
+
+        _context.SponsoredCampaigns.Update(campaign);
+        await _context.SaveChangesAsync();
+    }
 }
