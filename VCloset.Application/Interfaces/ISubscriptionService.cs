@@ -15,6 +15,6 @@ public interface ISubscriptionService
     /// <summary>GET /api/subscriptions/transactions — Lịch sử thanh toán</summary>
     Task<IEnumerable<PaymentTransactionResponse>> GetMyTransactionsAsync(int userId);
 
-    /// <summary>POST /api/subscriptions/purchase — Tạo pending payment (trả về link PayOS/MoMo)</summary>
-    Task<VCloset.Application.DTOs.Payment.Responses.MoMoPaymentResponse> InitiatePurchaseAsync(int userId, System.Guid planId);
+    /// <summary>POST /api/subscriptions/purchase — Tạo pending payment (trả về link PayOS/MoMo/VNPay)</summary>
+    Task<VCloset.Application.DTOs.Payment.Responses.PaymentInitializationResponse> InitiatePurchaseAsync(int userId, System.Guid planId, string paymentGateway = "momo");
 }

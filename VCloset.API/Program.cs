@@ -139,6 +139,7 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<INotificationHubService, NotificationHubService>();
 builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 builder.Services.AddHttpClient<IMoMoPaymentService, MoMoPaymentService>();
+builder.Services.AddScoped<IVNPayService, VNPayService>();
 
 // Đăng ký Module Chat
 builder.Services.AddScoped<IChatService, ChatService>();

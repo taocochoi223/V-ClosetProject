@@ -13,11 +13,13 @@ public class SubscriptionService : ISubscriptionService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMoMoPaymentService _momoPaymentService;
+    private readonly IVNPayService _vnPayService;
 
-    public SubscriptionService(IUnitOfWork unitOfWork, IMoMoPaymentService momoPaymentService)
+    public SubscriptionService(IUnitOfWork unitOfWork, IMoMoPaymentService momoPaymentService, IVNPayService vnPayService)
     {
         _unitOfWork = unitOfWork;
         _momoPaymentService = momoPaymentService;
+        _vnPayService = vnPayService;
     }
 
     public async Task<IEnumerable<SubscriptionPlanResponse>> GetPlansAsync()
@@ -100,8 +102,14 @@ public class SubscriptionService : ISubscriptionService
         return result;
     }
 
-    public async Task<VCloset.Application.DTOs.Payment.Responses.MoMoPaymentResponse> InitiatePurchaseAsync(int userId, Guid planId)
+    public async Task<VCloset.Application.DTOs.Payment.Responses.PaymentInitializationResponse> InitiatePurchaseAsync(int userId, Guid planId, string paymentGateway = "momo")
     {
+        paymentGateway = paymentGateway.ToLower();
+        if (paymentGateway != "momo" && paymentGateway != "vnpay")
+        {
+            throw new Exception("Cổng thanh toán không hợp lệ (chỉ hỗ trợ momo hoặc vnpay).");
+        }
+
         var plan = await _unitOfWork.SubscriptionPlans.FindAsync(p => p.Id == planId && p.IsActive);
         if (plan == null)
             throw new Exception("Gói dịch vụ không tồn tại hoặc đã ngừng cung cấp.");
@@ -113,7 +121,7 @@ public class SubscriptionService : ISubscriptionService
             SubscriptionPlanInternalId  = plan.InternalId,
             Amount                      = plan.Price,
             Currency                    = plan.Currency,
-            PaymentGateway              = "momo",
+            PaymentGateway              = paymentGateway,
             Status                      = PaymentStatus.Pending,
             CreatedAt                   = DateTime.UtcNow,
             UpdatedAt                   = DateTime.UtcNow
@@ -122,8 +130,25 @@ public class SubscriptionService : ISubscriptionService
         await _unitOfWork.PaymentTransactions.AddAsync(transaction);
         await _unitOfWork.SaveChangesAsync();
 
-        var paymentResponse = await _momoPaymentService.CreatePaymentAsync(transaction, plan.Name);
-
-        return paymentResponse;
+        if (paymentGateway == "vnpay")
+        {
+            var vnpayResponse = await _vnPayService.CreatePaymentAsync(transaction, plan.Name);
+            return new VCloset.Application.DTOs.Payment.Responses.PaymentInitializationResponse
+            {
+                PayUrl = vnpayResponse.PayUrl,
+                PaymentGateway = "vnpay"
+            };
+        }
+        else
+        {
+            var momoResponse = await _momoPaymentService.CreatePaymentAsync(transaction, plan.Name);
+            return new VCloset.Application.DTOs.Payment.Responses.PaymentInitializationResponse
+            {
+                PayUrl = momoResponse.PayUrl,
+                Deeplink = momoResponse.Deeplink,
+                QrCodeUrl = momoResponse.QrCodeUrl,
+                PaymentGateway = "momo"
+            };
+        }
     }
 }
