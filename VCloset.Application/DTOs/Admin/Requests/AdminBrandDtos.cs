@@ -61,3 +61,13 @@ public class AdjustCampaignRequest
     public short DisplayRank { get; set; }
 }
 
+// Response phân trang cho chiến dịch quảng cáo
+public class PagedCampaignsResponse
+{
+    public List<CampaignSummaryResponse> Campaigns { get; set; } = new();
+    public int TotalCount { get; set; }
+    public int Page { get; set; }
+    public int PageSize { get; set; }
+}
+
+

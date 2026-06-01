@@ -219,4 +219,102 @@ public class AdminBrandService : IAdminBrandService
         _context.SponsoredCampaigns.Update(campaign);
         await _context.SaveChangesAsync();
     }
+
+    // 8. Xóa chiến dịch quảng cáo
+    public async Task DeleteCampaignAsync(int adminUserId, Guid campaignId)
+    {
+        var campaign = await _context.SponsoredCampaigns.FirstOrDefaultAsync(c => c.Id == campaignId);
+        if (campaign == null)
+            throw new Exception("Không tìm thấy chiến dịch quảng cáo yêu cầu.");
+
+        _context.SponsoredCampaigns.Remove(campaign);
+        await _context.SaveChangesAsync();
+    }
+
+    // 9. Tìm kiếm, phân trang và sắp xếp chiến dịch quảng cáo
+    public async Task<PagedCampaignsResponse> SearchCampaignsAsync(string? search, bool? isActive, string? sortBy, int page, int pageSize)
+    {
+        var rawList = await (from c in _context.SponsoredCampaigns
+                             join b in _context.BrandProfiles on c.BrandInternalId equals b.InternalId into brandJoin
+                             from b in brandJoin.DefaultIfEmpty()
+                             join p in _context.AffiliateProducts on c.AffiliateProductInternalId equals p.InternalId into productJoin
+                             from p in productJoin.DefaultIfEmpty()
+                             select new CampaignSummaryResponse
+                             {
+                                 CampaignId = c.Id,
+                                 BrandName = b != null ? b.BrandName : "Không xác định",
+                                 ProductName = p != null ? p.Name : "Không xác định",
+                                 ProductImageUrl = p != null ? p.ImageUrl : "https://shopee.vn/favicon.ico",
+                                 DisplayRank = c.DisplayRank,
+                                 DailyBudget = c.DailyBudget,
+                                 TotalSpent = c.TotalSpent,
+                                 ImpressionCount = c.ImpressionCount,
+                                 ClickCount = c.ClickCount,
+                                 IsActive = c.IsActive,
+                                 StartAt = c.StartAt,
+                                 EndAt = c.EndAt,
+                                 CreatedAt = c.CreatedAt
+                             }).ToListAsync();
+
+        var query = rawList.AsQueryable();
+
+        if (isActive.HasValue)
+        {
+            query = query.Where(c => c.IsActive == isActive.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var lowerSearch = search.ToLowerInvariant();
+            query = query.Where(r => r.ProductName.ToLowerInvariant().Contains(lowerSearch) || 
+                                     r.BrandName.ToLowerInvariant().Contains(lowerSearch));
+        }
+
+        if (!string.IsNullOrWhiteSpace(sortBy))
+        {
+            query = sortBy.ToLowerInvariant() switch
+            {
+                "budget" => query.OrderByDescending(r => r.DailyBudget),
+                "budgetasc" => query.OrderBy(r => r.DailyBudget),
+                "spent" => query.OrderByDescending(r => r.TotalSpent),
+                "spentasc" => query.OrderBy(r => r.TotalSpent),
+                "ctr" => query.OrderByDescending(r => r.ImpressionCount > 0 ? (double)r.ClickCount / r.ImpressionCount : 0),
+                "rank" => query.OrderBy(r => r.DisplayRank),
+                _ => query.OrderByDescending(r => r.CreatedAt)
+            };
+        }
+        else
+        {
+            query = query.OrderByDescending(r => r.CreatedAt);
+        }
+
+        var totalCount = query.Count();
+        var pagedList = query.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+        return new PagedCampaignsResponse
+        {
+            Campaigns = pagedList,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize
+        };
+    }
+
+    // 10. Xuất báo cáo CSV toàn bộ chiến dịch quảng cáo
+    public async Task<byte[]> ExportCampaignsReportAsync()
+    {
+        var campaigns = await GetCampaignsAsync();
+        
+        var csv = new System.Text.StringBuilder();
+        csv.AppendLine("CampaignId,BrandName,ProductName,DisplayRank,DailyBudget,TotalSpent,Impressions,Clicks,CTR(%),Status,StartAt,EndAt,CreatedAt");
+        
+        foreach (var c in campaigns)
+        {
+            var status = c.IsActive ? "Active" : "Stopped";
+            var ctr = c.ImpressionCount > 0 ? ((double)c.ClickCount / c.ImpressionCount * 100).ToString("0.00") : "0.00";
+            csv.AppendLine($"\"{c.CampaignId}\",\"{c.BrandName}\",\"{c.ProductName}\",{c.DisplayRank},{c.DailyBudget},{c.TotalSpent},{c.ImpressionCount},{c.ClickCount},{ctr},\"{status}\",\"{c.StartAt:yyyy-MM-dd HH:mm:ss}\",\"{c.EndAt:yyyy-MM-dd HH:mm:ss}\",\"{c.CreatedAt:yyyy-MM-dd HH:mm:ss}\"");
+        }
+        
+        return System.Text.Encoding.UTF8.GetPreamble().Concat(System.Text.Encoding.UTF8.GetBytes(csv.ToString())).ToArray();
+    }
 }

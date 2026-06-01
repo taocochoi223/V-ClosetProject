@@ -28,4 +28,13 @@ public interface IAdminBrandService
 
     // 7. Điều chỉnh ngân sách ngày và thứ hạng hiển thị của chiến dịch quảng cáo
     Task AdjustCampaignAsync(int adminUserId, Guid campaignId, AdjustCampaignRequest request);
+
+    // 8. Xóa hoặc lưu trữ chiến dịch quảng cáo
+    Task DeleteCampaignAsync(int adminUserId, Guid campaignId);
+
+    // 9. Tìm kiếm, phân trang và sắp xếp chiến dịch quảng cáo
+    Task<PagedCampaignsResponse> SearchCampaignsAsync(string? search, bool? isActive, string? sortBy, int page, int pageSize);
+
+    // 10. Xuất báo cáo CSV toàn bộ chiến dịch quảng cáo
+    Task<byte[]> ExportCampaignsReportAsync();
 }
