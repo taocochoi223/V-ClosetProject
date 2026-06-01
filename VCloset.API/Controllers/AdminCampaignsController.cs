@@ -114,4 +114,74 @@ public class AdminCampaignsController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    /// <summary>
+    /// API xóa hoặc lưu trữ một chiến dịch quảng cáo
+    /// </summary>
+    [RequirePermission("content.moderate")]
+    [HttpDelete("{campaignId:guid}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> DeleteCampaign(Guid campaignId)
+    {
+        try
+        {
+            var adminIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(adminIdString, out int adminId)) return Unauthorized(new { message = "Không xác định được Admin từ token." });
+
+            await _adminBrandService.DeleteCampaignAsync(adminId, campaignId);
+            return Ok(new { message = "Đã xóa chiến dịch quảng cáo thành công." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// API tìm kiếm, phân trang và sắp xếp chiến dịch quảng cáo tài trợ
+    /// </summary>
+    [RequirePermission("analytics.view")]
+    [HttpGet("search")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> SearchCampaigns(
+        [FromQuery] string? search,
+        [FromQuery] bool? isActive,
+        [FromQuery] string? sortBy,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
+    {
+        try
+        {
+            var result = await _adminBrandService.SearchCampaignsAsync(search, isActive, sortBy, page, pageSize);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// API xuất báo cáo danh sách chiến dịch dưới dạng file CSV UTF-8
+    /// </summary>
+    [RequirePermission("analytics.view")]
+    [HttpGet("export")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ExportCampaignsReport()
+    {
+        try
+        {
+            var fileBytes = await _adminBrandService.ExportCampaignsReportAsync();
+            var fileName = $"campaigns-report-{DateTime.Now:yyyyMMddHHmmss}.csv";
+            return File(fileBytes, "text/csv; charset=utf-8", fileName);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }
