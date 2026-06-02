@@ -105,6 +105,20 @@ builder.Services.AddAuthentication(options =>
                 context.Token = accessToken;
             }
             return Task.CompletedTask;
+        },
+        OnTokenValidated = async context =>
+        {
+            var dbContext = context.HttpContext.RequestServices.GetRequiredService<VCloset.Infrastructure.Data.VClosetVersion30Context>();
+            var userIdString = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            
+            if (int.TryParse(userIdString, out int userId))
+            {
+                var user = await dbContext.Users.FindAsync(userId);
+                if (user == null || !user.IsActive)
+                {
+                    context.Fail("Tài khoản của bạn đã bị vô hiệu hoá hoặc khoá.");
+                }
+            }
         }
     };
 });
