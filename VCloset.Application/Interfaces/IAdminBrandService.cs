@@ -37,4 +37,7 @@ public interface IAdminBrandService
 
     // 10. Xuất báo cáo CSV toàn bộ chiến dịch quảng cáo
     Task<byte[]> ExportCampaignsReportAsync();
+
+    // 11. Lấy số liệu thống kê tổng hợp (KPI Cards) của các chiến dịch quảng cáo
+    Task<CampaignDashboardMetricsResponse> GetCampaignDashboardMetricsAsync();
 }
