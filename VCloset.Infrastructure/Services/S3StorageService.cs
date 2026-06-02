@@ -43,9 +43,20 @@ public class S3StorageService : IStorageService
 
     public async Task<string> UploadFileAsync(Stream fileStream, string fileName, string contentType, string folder = "uploads")
     {
-        var uniqueFileName = $"{Guid.NewGuid()}_{fileName}";
+        // Loại bỏ ký tự Unicode/lạ trong fileName để tránh lỗi signature S3. Chỉ giữ lại extension.
+        var ext = Path.GetExtension(fileName);
+        if (string.IsNullOrEmpty(ext))
+        {
+            ext = ".png";
+        }
+        var uniqueFileName = $"{Guid.NewGuid()}{ext}";
         var folderClean = folder.TrimEnd('/');
         var key = $"{folderClean}/{uniqueFileName}";
+
+        if (string.IsNullOrEmpty(contentType))
+        {
+            contentType = "application/octet-stream";
+        }
 
         var request = new PutObjectRequest
         {
