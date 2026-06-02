@@ -87,6 +87,9 @@ public class AdminUserService : IAdminUserService
         var targetUser = await _unitOfWork.Users.FindAsync(u => u.Id == targetUserId);
         if (targetUser == null)
             throw new Exception("Không tìm thấy người dùng.");
+            
+        if (adminUserId == targetUser.InternalId)
+            throw new Exception("Bạn không thể thực hiện thao tác này lên chính mình.");
 
         if (!targetUser.IsActive)
             throw new Exception("Tài khoản này đã bị vô hiệu hoá.");
@@ -122,6 +125,9 @@ public class AdminUserService : IAdminUserService
         var targetUser = await _unitOfWork.Users.FindAsync(u => u.Id == targetUserId);
         if (targetUser == null)
             throw new Exception("Không tìm thấy người dùng.");
+            
+        if (adminUserId == targetUser.InternalId)
+            throw new Exception("Bạn không thể thực hiện thao tác này lên chính mình.");
 
         var allBanLogs = await _unitOfWork.UserBanLogs.FindAllAsync(b => b.UserInternalId == targetUser.InternalId);
         var activeBan = GetActiveBanFromList(allBanLogs.ToList());
@@ -145,6 +151,9 @@ public class AdminUserService : IAdminUserService
 
         if (adminUser == null) throw new Exception("Không tìm thấy admin.");
         if (targetUser == null) throw new Exception("Không tìm thấy người dùng mục tiêu.");
+        
+        if (adminUserId == targetUser.InternalId)
+            throw new Exception("Bạn không thể thực hiện thao tác này lên chính mình.");
 
         if (!targetUser.IsActive)
             throw new Exception("Tài khoản này đã bị vô hiệu hoá rồi.");
@@ -536,6 +545,9 @@ public class AdminUserService : IAdminUserService
         var targetUser = await _unitOfWork.Users.FindAsync(u => u.Id == targetUserId);
         if (targetUser == null)
             throw new Exception("Không tìm thấy người dùng mục tiêu.");
+            
+        if (adminUserId == targetUser.InternalId)
+            throw new Exception("Bạn không thể thực hiện thao tác này lên chính mình.");
 
         if (targetUser.IsActive)
             throw new Exception("Tài khoản người dùng này vẫn đang hoạt động.");
