@@ -24,6 +24,26 @@ public class AdminCampaignsController : ControllerBase
     }
 
     /// <summary>
+    /// API lấy số liệu thống kê tổng hợp (KPI Metrics) của các chiến dịch quảng cáo tài trợ
+    /// </summary>
+    [RequirePermission("analytics.view")]
+    [HttpGet("metrics")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetCampaignMetrics()
+    {
+        try
+        {
+            var result = await _adminBrandService.GetCampaignDashboardMetricsAsync();
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// API lấy danh sách toàn bộ chiến dịch quảng cáo tài trợ đang chạy trên hệ thống
     /// </summary>
     [RequirePermission("analytics.view")]

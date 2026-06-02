@@ -52,6 +52,9 @@ public class CampaignSummaryResponse
     public DateTime StartAt { get; set; }
     public DateTime EndAt { get; set; }
     public DateTime CreatedAt { get; set; }
+
+    // Chỉ số hiệu suất CTR (%) tính toán tự động
+    public double Ctr => ImpressionCount > 0 ? Math.Round((double)ClickCount / ImpressionCount * 100, 2) : 0.0;
 }
 
 // Request body khi Admin điều chỉnh ngân sách ngày và vị trí hiển thị chiến dịch quảng cáo
@@ -69,5 +72,18 @@ public class PagedCampaignsResponse
     public int Page { get; set; }
     public int PageSize { get; set; }
 }
+
+// Response số liệu thống kê tổng hợp (KPI Cards) cho chiến dịch quảng cáo tài trợ
+public class CampaignDashboardMetricsResponse
+{
+    public int ActiveCampaignsCount { get; set; }       // Số chiến dịch đang chạy (IsActive = true)
+    public int TotalCampaignsCount { get; set; }        // Tổng số chiến dịch trên hệ thống
+    public decimal TotalDailyBudget { get; set; }       // Tổng ngân sách chạy hàng ngày của các chiến dịch đang chạy
+    public decimal TotalSpent { get; set; }             // Doanh thu quảng cáo lũy kế từ các chiến dịch
+    public int TotalImpressions { get; set; }           // Tổng lượt view (views/impressions)
+    public int TotalClicks { get; set; }                // Tổng lượt click (clicks)
+    public double OverallCtr { get; set; }              // Hiệu suất CTR chung (%)
+}
+
 
 

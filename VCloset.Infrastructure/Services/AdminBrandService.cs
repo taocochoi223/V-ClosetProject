@@ -311,10 +311,35 @@ public class AdminBrandService : IAdminBrandService
         foreach (var c in campaigns)
         {
             var status = c.IsActive ? "Active" : "Stopped";
-            var ctr = c.ImpressionCount > 0 ? ((double)c.ClickCount / c.ImpressionCount * 100).ToString("0.00") : "0.00";
+            var ctr = c.Ctr.ToString("0.00");
             csv.AppendLine($"\"{c.CampaignId}\",\"{c.BrandName}\",\"{c.ProductName}\",{c.DisplayRank},{c.DailyBudget},{c.TotalSpent},{c.ImpressionCount},{c.ClickCount},{ctr},\"{status}\",\"{c.StartAt:yyyy-MM-dd HH:mm:ss}\",\"{c.EndAt:yyyy-MM-dd HH:mm:ss}\",\"{c.CreatedAt:yyyy-MM-dd HH:mm:ss}\"");
         }
         
         return System.Text.Encoding.UTF8.GetPreamble().Concat(System.Text.Encoding.UTF8.GetBytes(csv.ToString())).ToArray();
+    }
+
+    // 11. Lấy số liệu thống kê tổng hợp (KPI Cards) của các chiến dịch quảng cáo tài trợ
+    public async Task<CampaignDashboardMetricsResponse> GetCampaignDashboardMetricsAsync()
+    {
+        var campaigns = await _context.SponsoredCampaigns.ToListAsync();
+        
+        int activeCount = campaigns.Count(c => c.IsActive);
+        int totalCount = campaigns.Count;
+        decimal totalDailyBudget = campaigns.Where(c => c.IsActive).Sum(c => c.DailyBudget);
+        decimal totalSpent = campaigns.Sum(c => c.TotalSpent);
+        int totalImpressions = campaigns.Sum(c => c.ImpressionCount);
+        int totalClicks = campaigns.Sum(c => c.ClickCount);
+        double overallCtr = totalImpressions > 0 ? Math.Round((double)totalClicks / totalImpressions * 100, 2) : 0.0;
+
+        return new CampaignDashboardMetricsResponse
+        {
+            ActiveCampaignsCount = activeCount,
+            TotalCampaignsCount = totalCount,
+            TotalDailyBudget = totalDailyBudget,
+            TotalSpent = totalSpent,
+            TotalImpressions = totalImpressions,
+            TotalClicks = totalClicks,
+            OverallCtr = overallCtr
+        };
     }
 }
