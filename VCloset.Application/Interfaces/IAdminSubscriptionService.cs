@@ -13,4 +13,7 @@ public interface IAdminSubscriptionService
     Task<SubscriptionPlanResponse> CreatePlanAsync(CreateOrUpdatePlanRequest request);
     Task<SubscriptionPlanResponse> UpdatePlanAsync(Guid planId, UpdatePlanRequest request);
     Task<bool> DeletePlanAsync(Guid planId);
+    Task<PagedPremiumSubscriptionsResponse> GetPremiumSubscriptionsAsync(
+        int page, int pageSize, string? search, bool? isActive, string? planType);
+    Task<bool> RevokePremiumSubscriptionAsync(Guid subscriptionId, string? adminNote, int adminId);
 }

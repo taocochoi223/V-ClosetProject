@@ -32,4 +32,16 @@ public class NotificationHubService : INotificationHubService
         // Gửi toàn bộ đối tượng thông báo mới xuống nhóm của User đó qua SignalR
         await _hubContext.Clients.Group($"UserGroup_{userId}").SendAsync("ReceiveNotification", notification);
     }
+
+    public async Task SendPaymentUpdateAsync(int userId, object paymentUpdate)
+    {
+        // Gửi cập nhật trạng thái thanh toán đến user tương ứng
+        await _hubContext.Clients.Group($"UserGroup_{userId}").SendAsync("ReceivePaymentUpdate", paymentUpdate);
+    }
+
+    public async Task SendPendingPaymentAlertAsync(object pendingPayment)
+    {
+        // Gửi cảnh báo giao dịch chờ duyệt mới đến AdminGroup
+        await _hubContext.Clients.Group("AdminGroup").SendAsync("ReceivePendingPayment", pendingPayment);
+    }
 }

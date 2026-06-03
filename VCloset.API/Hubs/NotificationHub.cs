@@ -38,4 +38,10 @@ public class NotificationHub : Hub
 
         await base.OnDisconnectedAsync(exception);
     }
+
+    public async Task JoinAdminGroup()
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, "AdminGroup");
+        Console.WriteLine($"\n[SIGNALR] Connection {Context.ConnectionId} joined AdminGroup.\n");
+    }
 }

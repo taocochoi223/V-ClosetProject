@@ -23,10 +23,12 @@ public class ManualPaymentService : IManualPaymentService
     private const string GatewayName = "manual_transfer";
 
     private readonly IUnitOfWork _unitOfWork;
+    private readonly INotificationHubService _notificationHubService;
 
-    public ManualPaymentService(IUnitOfWork unitOfWork)
+    public ManualPaymentService(IUnitOfWork unitOfWork, INotificationHubService notificationHubService)
     {
         _unitOfWork = unitOfWork;
+        _notificationHubService = notificationHubService;
     }
 
     /// <inheritdoc/>
@@ -78,6 +80,31 @@ public class ManualPaymentService : IManualPaymentService
 
         await _unitOfWork.PaymentTransactions.AddAsync(transaction);
         await _unitOfWork.SaveChangesAsync();
+
+        // Gửi SignalR alert đến Admin
+        try
+        {
+            var user = await _unitOfWork.Users.GetByIdAsync(userId);
+            var alertItem = new ManualPaymentListItem
+            {
+                TransactionId = transaction.InternalId,
+                TransactionGuid = transaction.Id,
+                UserId = userId,
+                UserEmail = user?.Email ?? string.Empty,
+                UserName = user?.DisplayName ?? string.Empty,
+                PlanName = plan.Name,
+                Amount = transaction.Amount,
+                Currency = transaction.Currency,
+                ProofImageUrl = proofImageUrl,
+                UserNote = userNote,
+                CreatedAt = transaction.CreatedAt
+            };
+            await _notificationHubService.SendPendingPaymentAlertAsync(alertItem);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"SignalR Admin Alert Error: {ex.Message}");
+        }
 
         return new ManualPaymentResult
         {
@@ -195,6 +222,20 @@ public class ManualPaymentService : IManualPaymentService
         }
 
         await _unitOfWork.SaveChangesAsync();
+
+        // Gửi SignalR update đến user
+        try
+        {
+            await _notificationHubService.SendPaymentUpdateAsync(transaction.UserInternalId, new {
+                transactionId = transaction.InternalId,
+                status = "success",
+                message = "Giao dịch chuyển khoản của bạn đã được phê duyệt thành công! Premium đã được kích hoạt."
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"SignalR User Alert Error: {ex.Message}");
+        }
     }
 
     /// <inheritdoc/>
@@ -216,6 +257,20 @@ public class ManualPaymentService : IManualPaymentService
         transaction.RawCallbackData = UpdateProofData(transaction.RawCallbackData, adminNote, adminId, DateTime.UtcNow);
 
         await _unitOfWork.SaveChangesAsync();
+
+        // Gửi SignalR update đến user
+        try
+        {
+            await _notificationHubService.SendPaymentUpdateAsync(transaction.UserInternalId, new {
+                transactionId = transaction.InternalId,
+                status = "failed",
+                message = $"Giao dịch chuyển khoản của bạn đã bị từ chối. Lý do: {adminNote ?? "Không có lý do cụ thể"}"
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"SignalR User Alert Error: {ex.Message}");
+        }
     }
 
     // ─── Private Helpers ─────────────────────────────────────────────────────
