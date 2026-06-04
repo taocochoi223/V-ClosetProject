@@ -20,7 +20,7 @@ public partial class SubscriptionPlan
 
     public string Currency { get; set; } = "VND";
 
-    public int DurationDays { get; set; }
+    public int? DurationDays { get; set; }
 
     public bool IsActive { get; set; }
 

@@ -85,9 +85,19 @@ public class PaymentsController : ControllerBase
 
                             if (existingPremium != null)
                             {
-                                existingPremium.ExpiresAt = existingPremium.ExpiresAt > DateTime.UtcNow 
-                                    ? existingPremium.ExpiresAt.AddDays(plan.DurationDays) 
-                                    : DateTime.UtcNow.AddDays(plan.DurationDays);
+                                if (plan.DurationDays.HasValue)
+                                {
+                                    if (existingPremium.ExpiresAt.HasValue)
+                                    {
+                                        existingPremium.ExpiresAt = existingPremium.ExpiresAt.Value > DateTime.UtcNow 
+                                            ? existingPremium.ExpiresAt.Value.AddDays(plan.DurationDays.Value) 
+                                            : DateTime.UtcNow.AddDays(plan.DurationDays.Value);
+                                    }
+                                }
+                                else
+                                {
+                                    existingPremium.ExpiresAt = null;
+                                }
                             }
                             else
                             {
@@ -96,13 +106,13 @@ public class PaymentsController : ControllerBase
                                     Id = Guid.NewGuid(),
                                     UserInternalId = transaction.UserInternalId,
                                     SubscriptionPlanInternalId = plan.InternalId,
-                                    PlanType = plan.DurationDays >= 365 ? PremiumPlan.Yearly : PremiumPlan.Monthly,
+                                    PlanType = !plan.DurationDays.HasValue || plan.DurationDays >= 365 ? PremiumPlan.Yearly : PremiumPlan.Monthly,
                                     PricePaid = transaction.Amount,
                                     Currency = transaction.Currency,
                                     PaymentMethod = "momo",
                                     PaymentRef = transId,
                                     StartedAt = DateTime.UtcNow,
-                                    ExpiresAt = DateTime.UtcNow.AddDays(plan.DurationDays),
+                                    ExpiresAt = plan.DurationDays.HasValue ? DateTime.UtcNow.AddDays(plan.DurationDays.Value) : (DateTime?)null,
                                     IsActive = true,
                                     CreatedAt = DateTime.UtcNow
                                 };
@@ -225,9 +235,19 @@ public class PaymentsController : ControllerBase
 
                         if (existingPremium != null)
                         {
-                            existingPremium.ExpiresAt = existingPremium.ExpiresAt > DateTime.UtcNow 
-                                ? existingPremium.ExpiresAt.AddDays(plan.DurationDays) 
-                                : DateTime.UtcNow.AddDays(plan.DurationDays);
+                            if (plan.DurationDays.HasValue)
+                            {
+                                if (existingPremium.ExpiresAt.HasValue)
+                                {
+                                    existingPremium.ExpiresAt = existingPremium.ExpiresAt.Value > DateTime.UtcNow 
+                                        ? existingPremium.ExpiresAt.Value.AddDays(plan.DurationDays.Value) 
+                                        : DateTime.UtcNow.AddDays(plan.DurationDays.Value);
+                                }
+                            }
+                            else
+                            {
+                                existingPremium.ExpiresAt = null;
+                            }
                         }
                         else
                         {
@@ -236,13 +256,13 @@ public class PaymentsController : ControllerBase
                                 Id = Guid.NewGuid(),
                                 UserInternalId = transaction.UserInternalId,
                                 SubscriptionPlanInternalId = plan.InternalId,
-                                PlanType = plan.DurationDays >= 365 ? PremiumPlan.Yearly : PremiumPlan.Monthly,
+                                PlanType = !plan.DurationDays.HasValue || plan.DurationDays >= 365 ? PremiumPlan.Yearly : PremiumPlan.Monthly,
                                 PricePaid = transaction.Amount,
                                 Currency = transaction.Currency,
                                 PaymentMethod = "vnpay",
                                 PaymentRef = vnp_TransactionNo,
                                 StartedAt = DateTime.UtcNow,
-                                ExpiresAt = DateTime.UtcNow.AddDays(plan.DurationDays),
+                                ExpiresAt = plan.DurationDays.HasValue ? DateTime.UtcNow.AddDays(plan.DurationDays.Value) : (DateTime?)null,
                                 IsActive = true,
                                 CreatedAt = DateTime.UtcNow
                             };

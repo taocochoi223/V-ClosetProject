@@ -72,7 +72,7 @@ public class AdminSubscriptionService : IAdminSubscriptionService
             Description = request.Description,
             Price = request.Price,
             Currency = request.Currency,
-            DurationDays = request.DurationDays,
+            DurationDays = request.DurationDays == 0 ? null : request.DurationDays,
             IsActive = request.IsActive,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -103,7 +103,7 @@ public class AdminSubscriptionService : IAdminSubscriptionService
         if (request.Description != null) plan.Description = request.Description; // Cho phép xoá mô tả bằng cách gửi chuỗi rỗng
         if (request.Price.HasValue) plan.Price = request.Price.Value;
         if (!string.IsNullOrWhiteSpace(request.Currency)) plan.Currency = request.Currency;
-        if (request.DurationDays.HasValue) plan.DurationDays = request.DurationDays.Value;
+        if (request.DurationDays.HasValue) plan.DurationDays = request.DurationDays.Value == 0 ? null : request.DurationDays.Value;
         if (request.IsActive.HasValue) plan.IsActive = request.IsActive.Value;
         
         plan.UpdatedAt = DateTime.UtcNow;
