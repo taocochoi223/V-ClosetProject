@@ -22,29 +22,14 @@ public class WardrobeService : IWardrobeService
 
     public async Task<WardrobeItemResponseDto> CreateItemAsync(int userInternalId, CreateWardrobeItemDto dto)
     {
-        // Check freemium limit (30 items)
-        var customerProfile = await _context.CustomerProfiles
-            .FirstOrDefaultAsync(c => c.UserInternalId == userInternalId);
+        var hasPremium = await _context.PremiumSubscriptions
+            .AnyAsync(s => s.UserInternalId == userInternalId && s.IsActive && s.ExpiresAt > DateTime.UtcNow);
 
-        if (customerProfile != null)
-        {
-            var hasPremium = await _context.PremiumSubscriptions
-                .AnyAsync(s => s.UserInternalId == userInternalId && s.IsActive && s.ExpiresAt > DateTime.UtcNow);
+        var activeCount = await _context.WardrobeItems.CountAsync(w => w.UserInternalId == userInternalId && w.IsActive);
 
-            if (!hasPremium && customerProfile.WardrobeItemCount >= 30)
-            {
-                throw new InvalidOperationException("Bạn đã đạt giới hạn 30 món đồ của tài khoản miễn phí. Vui lòng nâng cấp Premium.");
-            }
-        }
-        else
+        if (!hasPremium && activeCount >= 2)
         {
-            var count = await _context.WardrobeItems.CountAsync(w => w.UserInternalId == userInternalId && w.IsActive);
-            if (count >= 30)
-            {
-                var hasPremium = await _context.PremiumSubscriptions
-                    .AnyAsync(s => s.UserInternalId == userInternalId && s.IsActive && s.ExpiresAt > DateTime.UtcNow);
-                if (!hasPremium) throw new InvalidOperationException("Bạn đã đạt giới hạn 30 món đồ của tài khoản miễn phí. Vui lòng nâng cấp Premium.");
-            }
+            throw new InvalidOperationException("Bạn đã đạt giới hạn thử nghiệm 2 món đồ của tài khoản miễn phí. Vui lòng nâng cấp Premium.");
         }
 
         var item = new WardrobeItem
@@ -63,6 +48,15 @@ public class WardrobeService : IWardrobeService
         };
 
         _context.WardrobeItems.Add(item);
+
+        var customerProfile = await _context.CustomerProfiles
+            .FirstOrDefaultAsync(c => c.UserInternalId == userInternalId);
+        if (customerProfile != null)
+        {
+            customerProfile.WardrobeItemCount = activeCount + 1;
+            customerProfile.UpdatedAt = DateTime.UtcNow;
+        }
+
         await _context.SaveChangesAsync();
 
         return MapToDto(item);
@@ -125,9 +119,19 @@ public class WardrobeService : IWardrobeService
 
         if (item == null) throw new Exception("Không tìm thấy món đồ.");
 
+        var activeCount = await _context.WardrobeItems.CountAsync(w => w.UserInternalId == userInternalId && w.IsActive);
+
         // Soft Delete
         item.IsActive = false;
         item.UpdatedAt = DateTime.UtcNow;
+
+        var customerProfile = await _context.CustomerProfiles
+            .FirstOrDefaultAsync(c => c.UserInternalId == userInternalId);
+        if (customerProfile != null)
+        {
+            customerProfile.WardrobeItemCount = Math.Max(0, activeCount - 1);
+            customerProfile.UpdatedAt = DateTime.UtcNow;
+        }
 
         await _context.SaveChangesAsync();
     }
