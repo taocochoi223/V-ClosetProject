@@ -12,6 +12,8 @@ using VCloset.Infrastructure.Data;
 
 namespace VCloset.Infrastructure.Services;
 
+using Microsoft.EntityFrameworkCore;
+
 public class AdminUserService : IAdminUserService
 {
     private readonly IUnitOfWork _unitOfWork;
@@ -31,6 +33,7 @@ public class AdminUserService : IAdminUserService
         if (user == null) return null;
 
         var customerProfile = await _unitOfWork.CustomerProfiles.FindAsync(c => c.UserInternalId == user.InternalId);
+        var adminProfile = await _context.AdminProfiles.FirstOrDefaultAsync(a => a.UserInternalId == user.InternalId);
         var allBanLogs = await _unitOfWork.UserBanLogs.FindAllAsync(b => b.UserInternalId == user.InternalId);
         var banLogList = allBanLogs.OrderByDescending(b => b.CreatedAt).ToList();
 
@@ -56,6 +59,38 @@ public class AdminUserService : IAdminUserService
 
         var summary = MapToSummary(user, activeBan);
 
+        object? profileDto = null;
+        if (user.Role == VCloset.Domain.Enums.UserRole.Admin || user.Role == VCloset.Domain.Enums.UserRole.Moderator)
+        {
+            if (adminProfile != null)
+            {
+                profileDto = new Application.DTOs.Admin.Responses.AdminProfileDto
+                {
+                    PhoneNumber = adminProfile.PhoneNumber,
+                    JobTitle = adminProfile.JobTitle,
+                    EmployeeCode = adminProfile.EmployeeCode,
+                    Department = adminProfile.Department
+                };
+            }
+        }
+        else if (user.Role == VCloset.Domain.Enums.UserRole.Customer)
+        {
+            if (customerProfile != null)
+            {
+                profileDto = new Application.DTOs.Admin.Responses.CustomerProfileDto
+                {
+                    PhoneNumber = customerProfile.PhoneNumber,
+                    Address = customerProfile.Address,
+                    Gender = customerProfile.Gender,
+                    Country = customerProfile.Country,
+                    HeightCm = customerProfile.HeightCm,
+                    WeightKg = customerProfile.WeightKg,
+                    DateOfBirth = customerProfile.DateOfBirth,
+                    WardrobeItemCount = customerProfile.WardrobeItemCount
+                };
+            }
+        }
+
         return new AdminUserDetailResponse
         {
             UserId = summary.UserId,
@@ -70,14 +105,7 @@ public class AdminUserService : IAdminUserService
             ActiveBanType = summary.ActiveBanType,
             BannedUntil = summary.BannedUntil,
 
-            PhoneNumber = customerProfile?.PhoneNumber,
-            Address = customerProfile?.Address,
-            Gender = customerProfile?.Gender,
-            Country = customerProfile?.Country,
-            HeightCm = customerProfile?.HeightCm,
-            WeightKg = customerProfile?.WeightKg,
-            DateOfBirth = customerProfile?.DateOfBirth,
-            WardrobeItemCount = customerProfile?.WardrobeItemCount ?? 0,
+            Profile = profileDto,
             BanHistory = banHistory
         };
     }
@@ -700,6 +728,7 @@ public class AdminUserService : IAdminUserService
                     UserInternalId = targetUser.InternalId,
                     PermissionLevel = permLevelId,
                     Department = null,
+                    EmployeeCode = $"EMP-{targetUser.InternalId:D4}",
                     Notes = $"Thay đổi vai trò bởi SuperAdmin ID: {adminUserId}",
                     CreatedAt = DateTime.UtcNow
                 };
