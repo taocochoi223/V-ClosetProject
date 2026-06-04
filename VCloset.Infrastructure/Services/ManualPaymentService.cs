@@ -155,7 +155,7 @@ public class ManualPaymentService : IManualPaymentService
                         </table>
                         <p>Vui lòng đăng nhập vào trang quản trị để xem hình ảnh chứng từ và tiến hành phê duyệt giao dịch.</p>
                         <div style='text-align: center; margin: 30px 0;'>
-                            <a href='https://vcloset.vn/admin' style='background-color: #4F46E5; color: white; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;'>Đến Trang Quản Trị</a>
+                            <a href='https://admin.vcloset.vn/admin/subscriptions' style='background-color: #4F46E5; color: white; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;'>Đến Trang Quản Trị</a>
                         </div>
                         <p style='color: #666; font-size: 13px; text-align: center; border-top: 1px solid #eee; padding-top: 20px; margin-top: 30px;'>
                             Email này được gửi tự động từ hệ thống quản lý V-Closet.
