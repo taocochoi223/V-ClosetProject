@@ -137,7 +137,7 @@ public class ManualPaymentService : IManualPaymentService
                             plan.Name,
                             transaction.Amount, 
                             transaction.Currency,
-                            userNote, 
+                            userNote ?? string.Empty, 
                             transaction.CreatedAt
                         );
                     }
