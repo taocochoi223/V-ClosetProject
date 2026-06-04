@@ -24,11 +24,16 @@ public class ManualPaymentService : IManualPaymentService
 
     private readonly IUnitOfWork _unitOfWork;
     private readonly INotificationHubService _notificationHubService;
+    private readonly INotificationService _notificationService;
 
-    public ManualPaymentService(IUnitOfWork unitOfWork, INotificationHubService notificationHubService)
+    public ManualPaymentService(
+        IUnitOfWork unitOfWork,
+        INotificationHubService notificationHubService,
+        INotificationService notificationService)
     {
         _unitOfWork = unitOfWork;
         _notificationHubService = notificationHubService;
+        _notificationService = notificationService;
     }
 
     /// <inheritdoc/>
@@ -223,6 +228,23 @@ public class ManualPaymentService : IManualPaymentService
 
         await _unitOfWork.SaveChangesAsync();
 
+        // Lưu thông báo vào CSDL và gửi Real-time Notification qua SignalR
+        try
+        {
+            await _notificationService.SendNotificationAsync(
+                transaction.UserInternalId,
+                "Payment",
+                "Thanh toán thành công",
+                "Giao dịch chuyển khoản của bạn đã được phê duyệt thành công! Premium đã được kích hoạt.",
+                "ManualPayment",
+                transaction.InternalId
+            );
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Database Notification Error: {ex.Message}");
+        }
+
         // Gửi SignalR update đến user
         try
         {
@@ -257,6 +279,23 @@ public class ManualPaymentService : IManualPaymentService
         transaction.RawCallbackData = UpdateProofData(transaction.RawCallbackData, adminNote, adminId, DateTime.UtcNow);
 
         await _unitOfWork.SaveChangesAsync();
+
+        // Lưu thông báo vào CSDL và gửi Real-time Notification qua SignalR
+        try
+        {
+            await _notificationService.SendNotificationAsync(
+                transaction.UserInternalId,
+                "Payment",
+                "Thanh toán thất bại",
+                $"Giao dịch chuyển khoản của bạn đã bị từ chối. Lý do: {adminNote ?? "Không có lý do cụ thể"}",
+                "ManualPayment",
+                transaction.InternalId
+            );
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Database Notification Error: {ex.Message}");
+        }
 
         // Gửi SignalR update đến user
         try
