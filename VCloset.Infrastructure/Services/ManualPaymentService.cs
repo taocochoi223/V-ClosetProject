@@ -293,6 +293,15 @@ public class ManualPaymentService : IManualPaymentService
                 };
                 await _unitOfWork.PremiumSubscriptions.AddAsync(newPremium);
             }
+
+            // Cập nhật lượt AI cho khách hàng lên (2, 2)
+            var profile = await _unitOfWork.CustomerProfiles.FindAsync(cp => cp.UserInternalId == transaction.UserInternalId);
+            if (profile != null)
+            {
+                profile.BgRemovalCredits = 2;
+                profile.TryOnCredits = 2;
+                _unitOfWork.CustomerProfiles.Update(profile);
+            }
         }
 
         await _unitOfWork.SaveChangesAsync();

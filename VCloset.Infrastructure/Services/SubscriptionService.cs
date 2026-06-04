@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using VCloset.Application.DTOs.Subscriptions.Responses;
 using VCloset.Application.Interfaces;
 using VCloset.Domain.Entities;
@@ -48,12 +49,16 @@ public class SubscriptionService : ISubscriptionService
 
         var profile = await _unitOfWork.CustomerProfiles.FindAsync(c => c.UserInternalId == userId);
 
+        var outfitCount = await _unitOfWork.CanvasOutfits.Query()
+            .CountAsync(o => o.UserInternalId == userId);
+
         var response = new MySubscriptionResponse
         {
             HasActivePremium  = active != null,
             WardrobeItemCount = profile?.WardrobeItemCount ?? 0,
-            BgRemovalCredits  = 0,
-            TryOnCredits      = 0,
+            BgRemovalCredits  = profile?.BgRemovalCredits ?? 1,
+            TryOnCredits      = profile?.TryOnCredits ?? 1,
+            OutfitCount       = outfitCount,
         };
 
         if (active != null)
@@ -67,12 +72,14 @@ public class SubscriptionService : ISubscriptionService
             response.ExpiresAt        = active.ExpiresAt;
             response.DaysRemaining    = active.ExpiresAt.HasValue ? (int)Math.Max(0, Math.Ceiling((active.ExpiresAt.Value - now).TotalDays)) : 0;
             response.WardrobeItemLimit = null; // Premium = không giới hạn
+            response.OutfitLimit       = null; // Premium = không giới hạn
         }
         else
         {
             response.PlanName          = "Miễn phí";
             response.PlanType          = "free";
             response.WardrobeItemLimit = 2;
+            response.OutfitLimit       = 2; // Free = tối đa 2 outfit
         }
 
         return response;
@@ -150,5 +157,30 @@ public class SubscriptionService : ISubscriptionService
                 PaymentGateway = "momo"
             };
         }
+    }
+
+    public async Task<MySubscriptionResponse> ClaimAdRewardAsync(int userId, string rewardType)
+    {
+        var profile = await _unitOfWork.CustomerProfiles.FindAsync(c => c.UserInternalId == userId);
+        if (profile == null)
+            throw new Exception("Không tìm thấy thông tin cá nhân khách hàng.");
+
+        rewardType = rewardType.ToLower().Trim();
+        if (rewardType == "bg_removal" || rewardType == "bgremoval")
+        {
+            profile.BgRemovalCredits += 1;
+        }
+        else if (rewardType == "try_on" || rewardType == "tryon")
+        {
+            profile.TryOnCredits += 1;
+        }
+        else
+        {
+            throw new ArgumentException("Loại phần thưởng không hợp lệ.");
+        }
+
+        await _unitOfWork.SaveChangesAsync();
+
+        return await GetMySubscriptionAsync(userId);
     }
 }

@@ -20,4 +20,8 @@ public class MySubscriptionResponse
     // Wardrobe limits
     public int WardrobeItemCount { get; set; }
     public int? WardrobeItemLimit { get; set; }  // null = không giới hạn
+
+    // Outfit limits
+    public int OutfitCount { get; set; }
+    public int? OutfitLimit { get; set; }  // null = không giới hạn
 }

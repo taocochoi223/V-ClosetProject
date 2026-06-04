@@ -3,11 +3,13 @@ using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using VCloset.Application.DTOs;
 using VCloset.Application.Interfaces;
 using VCloset.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using VCloset.Infrastructure.Data;
 
 namespace VCloset.API.Controllers;
 
@@ -19,12 +21,14 @@ public class WardrobeController : ControllerBase
     private readonly IBackgroundRemovalService _bgRemovalService;
     private readonly IWardrobeService _wardrobeService;
     private readonly IStorageService _storageService;
+    private readonly VClosetVersion30Context _context;
 
-    public WardrobeController(IBackgroundRemovalService bgRemovalService, IWardrobeService wardrobeService, IStorageService storageService)
+    public WardrobeController(IBackgroundRemovalService bgRemovalService, IWardrobeService wardrobeService, IStorageService storageService, VClosetVersion30Context context)
     {
         _bgRemovalService = bgRemovalService;
         _wardrobeService = wardrobeService;
         _storageService = storageService;
+        _context = context;
     }
 
     /// <summary>
@@ -34,8 +38,20 @@ public class WardrobeController : ControllerBase
     [HttpPost("remove-bg")]
     public async Task<IActionResult> RemoveBackground(IFormFile file)
     {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+
         if (file == null || file.Length == 0)
-            return BadRequest(new { message = "Vui lòng gửi file ảnh (image_file)." });
+            return BadRequest(new { error = "Vui lòng gửi file ảnh (image_file)." });
+
+        // Kiểm tra và trừ lượt AI
+        var profile = await _context.CustomerProfiles
+            .FirstOrDefaultAsync(cp => cp.UserInternalId == userId);
+        if (profile == null)
+            return BadRequest(new { error = "Không tìm thấy hồ sơ người dùng." });
+
+        if (profile.BgRemovalCredits <= 0)
+            return BadRequest(new { error = "Bạn đã hết lượt tách nền AI của gói miễn phí. Vui lòng nâng cấp Premium để tiếp tục." });
 
         using var ms = new MemoryStream();
         await file.CopyToAsync(ms);
@@ -44,6 +60,12 @@ public class WardrobeController : ControllerBase
         try
         {
             var resultBytes = await _bgRemovalService.RemoveBackgroundAsync(imageBytes, file.FileName);
+            
+            // Trừ 1 lượt và lưu
+            profile.BgRemovalCredits = Math.Max(0, profile.BgRemovalCredits - 1);
+            profile.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
             // Trả về file ảnh PNG trong suốt trực tiếp cho client
             return File(resultBytes, "image/png");
         }

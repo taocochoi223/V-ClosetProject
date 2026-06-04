@@ -34,6 +34,12 @@ public partial class CustomerProfile
 
     public int WardrobeItemCount { get; set; }
 
+    [Column("bg_removal_credits")]
+    public int BgRemovalCredits { get; set; }
+
+    [Column("try_on_credits")]
+    public int TryOnCredits { get; set; }
+
     public bool IsChatBanned { get; set; }
 
     public bool IsPostBanned { get; set; }
