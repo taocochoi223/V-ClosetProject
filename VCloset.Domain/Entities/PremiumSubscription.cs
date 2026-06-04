@@ -22,7 +22,7 @@ public partial class PremiumSubscription
 
     public DateTime StartedAt { get; set; }
 
-    public DateTime ExpiresAt { get; set; }
+    public DateTime? ExpiresAt { get; set; }
 
     public bool IsActive { get; set; }
 
