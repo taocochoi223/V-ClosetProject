@@ -44,7 +44,7 @@ public class SubscriptionService : ISubscriptionService
         var active = await _unitOfWork.PremiumSubscriptions.FindAsync(ps =>
             ps.UserInternalId == userId &&
             ps.IsActive &&
-            ps.ExpiresAt > now);
+            (!ps.ExpiresAt.HasValue || ps.ExpiresAt > now));
 
         var profile = await _unitOfWork.CustomerProfiles.FindAsync(c => c.UserInternalId == userId);
 
@@ -65,7 +65,7 @@ public class SubscriptionService : ISubscriptionService
             response.PlanName         = plan?.Name ?? active.PlanType.ToString();
             response.PlanType         = active.PlanType.ToString().ToLower();
             response.ExpiresAt        = active.ExpiresAt;
-            response.DaysRemaining    = (int)Math.Max(0, Math.Ceiling((active.ExpiresAt - now).TotalDays));
+            response.DaysRemaining    = active.ExpiresAt.HasValue ? (int)Math.Max(0, Math.Ceiling((active.ExpiresAt.Value - now).TotalDays)) : 0;
             response.WardrobeItemLimit = null; // Premium = không giới hạn
         }
         else

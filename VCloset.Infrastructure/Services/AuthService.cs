@@ -112,7 +112,7 @@ public class AuthService : IAuthService
             AccessToken = accessToken,
             RefreshToken = refreshToken,
             Role = displayRole,
-            UserId = user.InternalId,
+            UserId = user.Id,
             Email = user.Email,
             DisplayName = user.DisplayName,
             AvatarUrl = user.AvatarUrl,
@@ -154,7 +154,7 @@ public class AuthService : IAuthService
             AccessToken = accessToken,
             RefreshToken = refreshToken,
             Role = displayRole,
-            UserId = user.InternalId,
+            UserId = user.Id,
             Email = user.Email,
             DisplayName = user.DisplayName,
             AvatarUrl = user.AvatarUrl,
@@ -272,7 +272,7 @@ public class AuthService : IAuthService
                 AccessToken = accessToken,
                 RefreshToken = refreshToken,
                 Role = displayRole,
-                UserId = user.InternalId,
+                UserId = user.Id,
                 Email = user.Email,
                 DisplayName = user.DisplayName,
                 AvatarUrl = user.AvatarUrl,
@@ -369,7 +369,7 @@ public class AuthService : IAuthService
             AccessToken = newAccessToken,
             RefreshToken = newRefreshToken,
             Role = displayRole,
-            UserId = user.InternalId,
+            UserId = user.Id,
             Email = user.Email,
             DisplayName = user.DisplayName,
             AvatarUrl = user.AvatarUrl,
@@ -535,7 +535,7 @@ public class AuthService : IAuthService
         var active = await _unitOfWork.PremiumSubscriptions.FindAsync(ps =>
             ps.UserInternalId == userId &&
             ps.IsActive &&
-            ps.ExpiresAt > DateTime.UtcNow);
+            (!ps.ExpiresAt.HasValue || ps.ExpiresAt > DateTime.UtcNow));
 
         if (active != null)
         {

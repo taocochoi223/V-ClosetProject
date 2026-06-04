@@ -14,7 +14,6 @@ public class UpdatePlanRequest
 
     public string? Currency { get; set; }
 
-    [Range(1, 3650, ErrorMessage = "Số ngày hiệu lực phải từ 1 đến 3650")]
     public int? DurationDays { get; set; }
 
     public bool? IsActive { get; set; }
