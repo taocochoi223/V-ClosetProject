@@ -27,7 +27,18 @@ public class WardrobeService : IWardrobeService
 
         var activeCount = await _context.WardrobeItems.CountAsync(w => w.UserInternalId == userInternalId && w.IsActive);
 
-        if (!hasPremium && activeCount >= 2)
+        var tierName = hasPremium ? "premium" : "free";
+        var config = await _context.SubscriptionTierConfigs
+            .FirstOrDefaultAsync(c => c.TierName == tierName);
+
+        if (config != null)
+        {
+            if (config.WardrobeItemLimit.HasValue && activeCount >= config.WardrobeItemLimit.Value)
+            {
+                throw new InvalidOperationException($"Bạn đã đạt giới hạn {config.WardrobeItemLimit.Value} món đồ của tài khoản {tierName}. Vui lòng nâng cấp Premium.");
+            }
+        }
+        else if (!hasPremium && activeCount >= 2)
         {
             throw new InvalidOperationException("Bạn đã đạt giới hạn thử nghiệm 2 món đồ của tài khoản miễn phí. Vui lòng nâng cấp Premium.");
         }

@@ -18,19 +18,22 @@ public class AuthService : IAuthService
     private readonly IEmailService _emailService;
     private readonly IJwtService _jwtService;
     private readonly INotificationHubService _notificationHubService;
+    private readonly ITierConfigService _tierConfigService;
 
     public AuthService(
         IUnitOfWork unitOfWork,
         IDistributedCache cache,
         IEmailService emailService,
         IJwtService jwtService,
-        INotificationHubService notificationHubService)
+        INotificationHubService notificationHubService,
+        ITierConfigService tierConfigService)
     {
         _unitOfWork = unitOfWork;
         _cache = cache;
         _emailService = emailService;
         _jwtService = jwtService;
         _notificationHubService = notificationHubService;
+        _tierConfigService = tierConfigService;
     }
 
     public async Task<bool> RegisterAsync(RegisterRequest request)
@@ -490,6 +493,7 @@ public class AuthService : IAuthService
                 var existing = await _unitOfWork.CustomerProfiles.FindAsync(c => c.UserInternalId == user.InternalId);
                 if (existing != null) return;
 
+                var freeTier = await _tierConfigService.GetConfigEntityAsync("free");
                 var customerProfile = new CustomerProfile
                 {
                     Id = Guid.NewGuid(),
@@ -504,8 +508,8 @@ public class AuthService : IAuthService
                     MannequinImageUrl = null,
                     MannequinGeneratedAt = null,
                     WardrobeItemCount = 0,
-                    BgRemovalCredits = 1,
-                    TryOnCredits = 1,
+                    BgRemovalCredits = freeTier.BgRemovalCredits,
+                    TryOnCredits = freeTier.TryOnCredits,
                     IsChatBanned = false,
                     IsPostBanned = false,
                     ChatBannedUntil = null,

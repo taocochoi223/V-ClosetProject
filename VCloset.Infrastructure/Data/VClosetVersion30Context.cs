@@ -80,6 +80,8 @@ public partial class VClosetVersion30Context : DbContext
 
     public virtual DbSet<WardrobeItem> WardrobeItems { get; set; }
 
+    public virtual DbSet<SubscriptionTierConfig> SubscriptionTierConfigs { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (!optionsBuilder.IsConfigured)
@@ -1358,6 +1360,71 @@ public partial class VClosetVersion30Context : DbContext
                 .HasForeignKey(d => d.SubscriptionPlanInternalId)
                 .OnDelete(DeleteBehavior.Restrict)
                 .HasConstraintName("payment_transactions_subscription_plan_internal_id_fkey");
+        });
+
+        modelBuilder.Entity<SubscriptionTierConfig>(entity =>
+        {
+            entity.ToTable("subscription_tier_configs");
+
+            entity.HasKey(e => e.InternalId);
+
+            entity.Property(e => e.InternalId)
+                .UseIdentityByDefaultColumn()
+                .HasColumnName("internal_id");
+
+            entity.HasIndex(e => e.TierName).IsUnique();
+
+            entity.Property(e => e.TierName)
+                .HasMaxLength(50)
+                .HasColumnName("tier_name");
+
+            entity.Property(e => e.BgRemovalCredits)
+                .HasDefaultValue(1)
+                .HasColumnName("bg_removal_credits");
+
+            entity.Property(e => e.TryOnCredits)
+                .HasDefaultValue(1)
+                .HasColumnName("try_on_credits");
+
+            entity.Property(e => e.WardrobeItemLimit)
+                .HasColumnName("wardrobe_item_limit");
+
+            entity.Property(e => e.OutfitLimit)
+                .HasColumnName("outfit_limit");
+
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("now()")
+                .HasColumnName("updated_at");
+
+            entity.Property(e => e.UpdatedBy)
+                .HasMaxLength(256)
+                .HasColumnName("updated_by");
+
+            // Seed data mặc định
+            entity.HasData(
+                new SubscriptionTierConfig
+                {
+                    InternalId         = 1,
+                    TierName           = "free",
+                    BgRemovalCredits   = 1,
+                    TryOnCredits       = 1,
+                    WardrobeItemLimit  = 2,
+                    OutfitLimit        = 2,
+                    UpdatedAt          = new DateTime(2026, 6, 4, 0, 0, 0, DateTimeKind.Utc),
+                    UpdatedBy          = "system"
+                },
+                new SubscriptionTierConfig
+                {
+                    InternalId         = 2,
+                    TierName           = "premium",
+                    BgRemovalCredits   = 2,
+                    TryOnCredits       = 2,
+                    WardrobeItemLimit  = null,
+                    OutfitLimit        = null,
+                    UpdatedAt          = new DateTime(2026, 6, 4, 0, 0, 0, DateTimeKind.Utc),
+                    UpdatedBy          = "system"
+                }
+            );
         });
 
         OnModelCreatingPartial(modelBuilder);

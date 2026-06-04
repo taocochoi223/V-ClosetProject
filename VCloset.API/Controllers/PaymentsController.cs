@@ -16,12 +16,14 @@ public class PaymentsController : ControllerBase
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMoMoPaymentService _momoPaymentService;
     private readonly IVNPayService _vnPayService;
+    private readonly ITierConfigService _tierConfigService;
 
-    public PaymentsController(IUnitOfWork unitOfWork, IMoMoPaymentService momoPaymentService, IVNPayService vnPayService)
+    public PaymentsController(IUnitOfWork unitOfWork, IMoMoPaymentService momoPaymentService, IVNPayService vnPayService, ITierConfigService tierConfigService)
     {
         _unitOfWork = unitOfWork;
         _momoPaymentService = momoPaymentService;
         _vnPayService = vnPayService;
+        _tierConfigService = tierConfigService;
     }
 
     /// <summary>
@@ -117,6 +119,16 @@ public class PaymentsController : ControllerBase
                                     CreatedAt = DateTime.UtcNow
                                 };
                                 await _unitOfWork.PremiumSubscriptions.AddAsync(newPremium);
+                            }
+
+                            // Cập nhật lượt AI cho khách hàng theo config premium tier
+                            var profile = await _unitOfWork.CustomerProfiles.FindAsync(cp => cp.UserInternalId == transaction.UserInternalId);
+                            if (profile != null)
+                            {
+                                var premiumTier = await _tierConfigService.GetConfigEntityAsync("premium");
+                                profile.BgRemovalCredits = premiumTier.BgRemovalCredits;
+                                profile.TryOnCredits = premiumTier.TryOnCredits;
+                                _unitOfWork.CustomerProfiles.Update(profile);
                             }
                         }
                     }
@@ -267,6 +279,16 @@ public class PaymentsController : ControllerBase
                                 CreatedAt = DateTime.UtcNow
                             };
                             await _unitOfWork.PremiumSubscriptions.AddAsync(newPremium);
+                        }
+
+                        // Cập nhật lượt AI cho khách hàng theo config premium tier
+                        var profile = await _unitOfWork.CustomerProfiles.FindAsync(cp => cp.UserInternalId == transaction.UserInternalId);
+                        if (profile != null)
+                        {
+                            var premiumTier = await _tierConfigService.GetConfigEntityAsync("premium");
+                            profile.BgRemovalCredits = premiumTier.BgRemovalCredits;
+                            profile.TryOnCredits = premiumTier.TryOnCredits;
+                            _unitOfWork.CustomerProfiles.Update(profile);
                         }
                     }
                 }

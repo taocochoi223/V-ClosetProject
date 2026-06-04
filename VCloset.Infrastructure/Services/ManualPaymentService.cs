@@ -26,17 +26,20 @@ public class ManualPaymentService : IManualPaymentService
     private readonly INotificationHubService _notificationHubService;
     private readonly INotificationService _notificationService;
     private readonly IEmailService _emailService;
+    private readonly ITierConfigService _tierConfigService;
 
     public ManualPaymentService(
         IUnitOfWork unitOfWork,
         INotificationHubService notificationHubService,
         INotificationService notificationService,
-        IEmailService emailService)
+        IEmailService emailService,
+        ITierConfigService tierConfigService)
     {
         _unitOfWork = unitOfWork;
         _notificationHubService = notificationHubService;
         _notificationService = notificationService;
         _emailService = emailService;
+        _tierConfigService = tierConfigService;
     }
 
     /// <inheritdoc/>
@@ -294,12 +297,13 @@ public class ManualPaymentService : IManualPaymentService
                 await _unitOfWork.PremiumSubscriptions.AddAsync(newPremium);
             }
 
-            // Cập nhật lượt AI cho khách hàng lên (2, 2)
+            // Cập nhật lượt AI cho khách hàng theo config premium tier
             var profile = await _unitOfWork.CustomerProfiles.FindAsync(cp => cp.UserInternalId == transaction.UserInternalId);
             if (profile != null)
             {
-                profile.BgRemovalCredits = 2;
-                profile.TryOnCredits = 2;
+                var premiumTier = await _tierConfigService.GetConfigEntityAsync("premium");
+                profile.BgRemovalCredits = premiumTier.BgRemovalCredits;
+                profile.TryOnCredits = premiumTier.TryOnCredits;
                 _unitOfWork.CustomerProfiles.Update(profile);
             }
         }
