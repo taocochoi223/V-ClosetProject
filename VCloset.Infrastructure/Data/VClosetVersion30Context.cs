@@ -95,6 +95,10 @@ public partial class VClosetVersion30Context : DbContext
                 .Build();
                 
             var connectionString = configuration.GetConnectionString("MyCnn");
+            if (string.IsNullOrEmpty(connectionString) || connectionString.StartsWith("YOUR_CONNECTION_STRING") || connectionString.Contains("LOADED_FROM_ENV"))
+            {
+                connectionString = "Host=localhost;Database=dummy;Username=postgres;Password=postgres";
+            }
             var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
             dataSourceBuilder.MapEnum<UserRole>("user_role")
                              .MapEnum<AuthProvider>("auth_provider")
@@ -741,8 +745,14 @@ public partial class VClosetVersion30Context : DbContext
             entity.Property(e => e.UserInternalId).HasColumnName("user_internal_id");
             entity.Property(e => e.WardrobeItemCount)
                 .HasDefaultValue(0)
-                .HasComment("Cache d? check gi?i h?n freemium 50 items m� kh�ng COUNT(*).")
+                .HasComment("Cache d? check gi?i h?n freemium 50 items m khng COUNT(*).")
                 .HasColumnName("wardrobe_item_count");
+            entity.Property(e => e.BgRemovalCredits)
+                .HasDefaultValue(0)
+                .HasColumnName("bg_removal_credits");
+            entity.Property(e => e.TryOnCredits)
+                .HasDefaultValue(0)
+                .HasColumnName("try_on_credits");
             entity.Property(e => e.WeightKg)
                 .HasPrecision(5, 2)
                 .HasColumnName("weight_kg");

@@ -25,6 +25,18 @@ public class CanvasService : ICanvasService
             dto.Items ??= new List<CanvasItemDto>();
             await NormalizeCanvasItemsAsync(userId, dto.Items);
 
+            // Kiểm tra giới hạn bộ phối đồ (Outfit limit = 2) cho tài khoản Free
+            var hasPremium = await _context.PremiumSubscriptions
+                .AnyAsync(s => s.UserInternalId == userId && s.IsActive && (!s.ExpiresAt.HasValue || s.ExpiresAt.Value > DateTime.UtcNow));
+
+            var activeOutfitsCount = await _context.CanvasOutfits
+                .CountAsync(o => o.UserInternalId == userId);
+
+            if (!hasPremium && activeOutfitsCount >= 2)
+            {
+                throw new InvalidOperationException("Bạn đã đạt giới hạn thử nghiệm 2 bộ phối đồ của tài khoản miễn phí. Vui lòng nâng cấp Premium.");
+            }
+
             string? imageUrl = null;
             if (snapshotStream != null)
             {

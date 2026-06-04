@@ -503,6 +503,8 @@ public class AuthService : IAuthService
                     MannequinImageUrl = null,
                     MannequinGeneratedAt = null,
                     WardrobeItemCount = 0,
+                    BgRemovalCredits = 1,
+                    TryOnCredits = 1,
                     IsChatBanned = false,
                     IsPostBanned = false,
                     ChatBannedUntil = null,
