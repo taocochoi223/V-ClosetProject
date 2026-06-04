@@ -15,12 +15,14 @@ public class SubscriptionService : ISubscriptionService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMoMoPaymentService _momoPaymentService;
     private readonly IVNPayService _vnPayService;
+    private readonly ITierConfigService _tierConfigService;
 
-    public SubscriptionService(IUnitOfWork unitOfWork, IMoMoPaymentService momoPaymentService, IVNPayService vnPayService)
+    public SubscriptionService(IUnitOfWork unitOfWork, IMoMoPaymentService momoPaymentService, IVNPayService vnPayService, ITierConfigService tierConfigService)
     {
         _unitOfWork = unitOfWork;
         _momoPaymentService = momoPaymentService;
         _vnPayService = vnPayService;
+        _tierConfigService = tierConfigService;
     }
 
     public async Task<IEnumerable<SubscriptionPlanResponse>> GetPlansAsync()
@@ -71,15 +73,17 @@ public class SubscriptionService : ISubscriptionService
             response.PlanType         = active.PlanType.ToString().ToLower();
             response.ExpiresAt        = active.ExpiresAt;
             response.DaysRemaining    = active.ExpiresAt.HasValue ? (int)Math.Max(0, Math.Ceiling((active.ExpiresAt.Value - now).TotalDays)) : 0;
-            response.WardrobeItemLimit = null; // Premium = không giới hạn
-            response.OutfitLimit       = null; // Premium = không giới hạn
+            var premiumTier = await _tierConfigService.GetConfigEntityAsync("premium");
+            response.WardrobeItemLimit = premiumTier.WardrobeItemLimit;
+            response.OutfitLimit       = premiumTier.OutfitLimit;
         }
         else
         {
             response.PlanName          = "Miễn phí";
             response.PlanType          = "free";
-            response.WardrobeItemLimit = 2;
-            response.OutfitLimit       = 2; // Free = tối đa 2 outfit
+            var freeTier = await _tierConfigService.GetConfigEntityAsync("free");
+            response.WardrobeItemLimit = freeTier.WardrobeItemLimit;
+            response.OutfitLimit       = freeTier.OutfitLimit;
         }
 
         return response;
