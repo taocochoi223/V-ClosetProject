@@ -158,6 +158,30 @@ builder.Services.AddHttpClient<IMoMoPaymentService, MoMoPaymentService>();
 builder.Services.AddScoped<IVNPayService, VNPayService>();
 builder.Services.AddScoped<IManualPaymentService, ManualPaymentService>();
 
+// Khởi tạo Firebase Admin SDK
+var firebaseCredentialPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "firebase-service-account.json");
+if (File.Exists(firebaseCredentialPath))
+{
+    try
+    {
+        var credential = Google.Apis.Auth.OAuth2.CredentialFactory.FromFile<Google.Apis.Auth.OAuth2.ServiceAccountCredential>(firebaseCredentialPath)
+                               .ToGoogleCredential();
+        FirebaseAdmin.FirebaseApp.Create(new FirebaseAdmin.AppOptions
+        {
+            Credential = credential
+        });
+        Console.WriteLine("[INFO] Firebase App initialized successfully using credential file.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[ERROR] Failed to initialize Firebase App: {ex.Message}");
+    }
+}
+else
+{
+    Console.WriteLine("[WARNING] firebase-service-account.json not found in output directory. Firebase notifications will be disabled.");
+}
+
 // Đăng ký Module Chat
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IChatHubService, ChatHubService>();
