@@ -37,6 +37,20 @@ public class AdminUserSummaryResponse
 /// </summary>
 public class AdminUserDetailResponse : AdminUserSummaryResponse
 {
+    public object? Profile { get; set; }
+    public System.Collections.Generic.List<BanLogResponse> BanHistory { get; set; } = new();
+}
+
+public class AdminProfileDto
+{
+    public string? PhoneNumber { get; set; }
+    public string? JobTitle { get; set; }
+    public string? EmployeeCode { get; set; }
+    public string? Department { get; set; }
+}
+
+public class CustomerProfileDto
+{
     public string? PhoneNumber { get; set; }
     public string? Address { get; set; }
     public string? Gender { get; set; }
@@ -45,7 +59,6 @@ public class AdminUserDetailResponse : AdminUserSummaryResponse
     public decimal? WeightKg { get; set; }
     public DateTime? DateOfBirth { get; set; }
     public int WardrobeItemCount { get; set; }
-    public System.Collections.Generic.List<BanLogResponse> BanHistory { get; set; } = new();
 }
 
 /// <summary>

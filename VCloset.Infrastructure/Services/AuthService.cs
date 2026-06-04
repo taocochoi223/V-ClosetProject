@@ -454,6 +454,7 @@ public class AuthService : IAuthService
                     UserInternalId = user.InternalId,
                     PermissionLevel = (short)(lowestLevel?.Id ?? 1),
                     Department = null,
+                    EmployeeCode = $"EMP-{user.InternalId:D4}",
                     Notes = null,
                     CreatedAt = DateTime.UtcNow
                 };
