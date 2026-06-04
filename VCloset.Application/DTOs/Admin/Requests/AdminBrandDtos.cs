@@ -85,5 +85,24 @@ public class CampaignDashboardMetricsResponse
     public double OverallCtr { get; set; }              // Hiệu suất CTR chung (%)
 }
 
+// Request body khi Admin tạo một chiến dịch quảng cáo mới
+public class CreateCampaignRequest
+{
+    public Guid BrandId { get; set; }
+    public Guid ProductId { get; set; }
+    public short DisplayRank { get; set; }
+    public decimal DailyBudget { get; set; }
+    public DateTime StartAt { get; set; }
+    public DateTime EndAt { get; set; }
+}
+
+// Response thông tin tóm tắt sản phẩm để hiển thị trong ô chọn dropdown khi tạo chiến dịch
+public class ProductSelectResponse
+{
+    public Guid ProductId { get; set; }
+    public string ProductName { get; set; } = null!;
+    public string ProductImageUrl { get; set; } = null!;
+}
+
 
 

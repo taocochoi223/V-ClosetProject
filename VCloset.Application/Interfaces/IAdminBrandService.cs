@@ -40,4 +40,10 @@ public interface IAdminBrandService
 
     // 11. Lấy số liệu thống kê tổng hợp (KPI Cards) của các chiến dịch quảng cáo
     Task<CampaignDashboardMetricsResponse> GetCampaignDashboardMetricsAsync();
+
+    // 12. Tạo chiến dịch quảng cáo mới
+    Task CreateCampaignAsync(CreateCampaignRequest request);
+
+    // 13. Lấy danh sách sản phẩm tiếp thị liên kết đang hoạt động
+    Task<List<ProductSelectResponse>> GetActiveProductsAsync();
 }
