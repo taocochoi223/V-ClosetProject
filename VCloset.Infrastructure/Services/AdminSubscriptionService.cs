@@ -16,11 +16,16 @@ public class AdminSubscriptionService : IAdminSubscriptionService
 {
     private readonly VClosetVersion30Context _context;
     private readonly INotificationHubService _notificationHubService;
+    private readonly INotificationService _notificationService;
 
-    public AdminSubscriptionService(VClosetVersion30Context context, INotificationHubService notificationHubService)
+    public AdminSubscriptionService(
+        VClosetVersion30Context context,
+        INotificationHubService notificationHubService,
+        INotificationService notificationService)
     {
         _context = context;
         _notificationHubService = notificationHubService;
+        _notificationService = notificationService;
     }
 
     public async Task<IEnumerable<SubscriptionPlanResponse>> GetAllPlansAsync()
@@ -208,6 +213,23 @@ public class AdminSubscriptionService : IAdminSubscriptionService
         subscription.CancelledAt = DateTime.UtcNow;
         
         await _context.SaveChangesAsync();
+
+        // Lưu thông báo vào CSDL và gửi Real-time Notification qua SignalR
+        try
+        {
+            await _notificationService.SendNotificationAsync(
+                subscription.UserInternalId,
+                "System",
+                "Gói Premium bị thu hồi",
+                $"Gói Premium của bạn đã bị thu hồi bởi quản trị viên. Lý do: {adminNote ?? "Không có lý do cụ thể"}",
+                "PremiumSubscription",
+                subscription.InternalId
+            );
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Database Notification Revoke Error]: {ex.Message}");
+        }
 
         // Bắn SignalR báo về máy user
         try
