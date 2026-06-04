@@ -19,7 +19,7 @@ public class PremiumSubscriptionListItem
     public string PaymentMethod { get; set; } = null!;
     public string PaymentRef { get; set; } = null!;
     public DateTime StartedAt { get; set; }
-    public DateTime ExpiresAt { get; set; }
+    public DateTime? ExpiresAt { get; set; }
     public bool IsActive { get; set; }
 }
 
