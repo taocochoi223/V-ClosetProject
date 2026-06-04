@@ -91,7 +91,7 @@ public class ResendEmailService : IEmailService
     {
         string subject = "V-Closet: Mã xác thực OTP đăng ký tài khoản";
         string content = $@"
-            <h2 style='color: #111827; text-align: center; margin-top: 0;'>Chào mừng bạn đến với V-Closet!</h2>
+            <h2 style='color: #111827; text-align: center; margin-top: 0;'>Chào mừng bạn đến với <span style='color: #4F46E5;'>V-Closet</span>!</h2>
             <p style='font-size: 15px; line-height: 1.6;'>Cảm ơn bạn đã đăng ký tài khoản. Vui lòng sử dụng mã OTP dưới đây để hoàn tất kích hoạt tài khoản của bạn:</p>
             <div style='text-align: center; margin: 30px 0;'>
                 <span style='font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #4F46E5; background-color: #EEF2F6; padding: 12px 24px; border-radius: 8px; display: inline-block;'>{otpCode}</span>
@@ -121,7 +121,7 @@ public class ResendEmailService : IEmailService
     {
         string subject = "V-Closet: Thông tin tài khoản mới";
         string content = $@"
-            <h2 style='color: #111827; text-align: center; margin-top: 0;'>Chào {displayName},</h2>
+            <h2 style='color: #111827; text-align: center; margin-top: 0;'>Chào <span style='color: #4F46E5;'>{displayName}</span>,</h2>
             <p style='font-size: 15px; line-height: 1.6;'>Tài khoản của bạn đã được tạo thành công bởi quản trị viên hệ thống V-Closet. Dưới đây là thông tin đăng nhập của bạn:</p>
             
             <div style='background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 25px 0;'>
