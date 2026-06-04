@@ -22,6 +22,7 @@ TestResults/
 
 # 3. Block Local Secrets (CRITICAL)
 .env
+firebase-service-account.json
 
 # 4. Block OS & Cache Files
 .DS_Store
