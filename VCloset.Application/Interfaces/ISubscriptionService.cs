@@ -17,4 +17,7 @@ public interface ISubscriptionService
 
     /// <summary>POST /api/subscriptions/purchase — Tạo pending payment (trả về link PayOS/MoMo/VNPay)</summary>
     Task<VCloset.Application.DTOs.Payment.Responses.PaymentInitializationResponse> InitiatePurchaseAsync(int userId, System.Guid planId, string paymentGateway = "momo");
+
+    /// <summary>POST /api/subscriptions/ad-reward — Cộng 1 lượt credit khi xem ad</summary>
+    Task<MySubscriptionResponse> ClaimAdRewardAsync(int userId, string rewardType);
 }

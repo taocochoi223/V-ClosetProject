@@ -112,4 +112,26 @@ public class SubscriptionsController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Nhận thêm credit (lượt tách nền/thử đồ) khi xem xong quảng cáo thành công.
+    /// Body: { "rewardType": "bg_removal" } hoặc { "rewardType": "try_on" }
+    /// </summary>
+    [HttpPost("ad-reward")]
+    public async Task<IActionResult> ClaimAdReward([FromBody] AdRewardRequest request)
+    {
+        try
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+
+            var result = await _subscriptionService.ClaimAdRewardAsync(userId, request.RewardType);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error claiming ad reward");
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }

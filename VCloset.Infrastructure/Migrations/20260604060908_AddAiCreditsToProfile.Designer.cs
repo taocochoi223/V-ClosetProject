@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Net;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using VCloset.Domain.Enums;
@@ -14,9 +15,11 @@ using VCloset.Infrastructure.Data;
 namespace VCloset.Infrastructure.Migrations
 {
     [DbContext(typeof(VClosetVersion30Context))]
-    partial class VClosetVersion30ContextModelSnapshot : ModelSnapshot
+    [Migration("20260604060908_AddAiCreditsToProfile")]
+    partial class AddAiCreditsToProfile
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

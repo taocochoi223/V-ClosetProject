@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using VCloset.Application.Interfaces;
 using VCloset.Infrastructure.Data;
+using VCloset.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 
@@ -34,6 +35,21 @@ public class TryOnController : ControllerBase
         _context = context;
     }
 
+    private async Task<CustomerProfile?> ValidateAndDeductTryOnCreditAsync(int userId)
+    {
+        var profile = await _context.CustomerProfiles.FirstOrDefaultAsync(cp => cp.UserInternalId == userId);
+        if (profile == null) return null;
+
+        if (profile.TryOnCredits <= 0)
+        {
+            throw new InvalidOperationException("Bạn đã hết lượt phối đồ ảo AI của gói miễn phí. Vui lòng nâng cấp Premium để tiếp tục.");
+        }
+
+        profile.TryOnCredits = Math.Max(0, profile.TryOnCredits - 1);
+        profile.UpdatedAt = DateTime.UtcNow;
+        return profile;
+    }
+
     /// <summary>
     /// Chạy thử đồ ảo bằng cách truyền trực tiếp URLs của hình ảnh.
     /// </summary>
@@ -46,15 +62,27 @@ public class TryOnController : ControllerBase
         if (string.IsNullOrEmpty(request.ModelImageUrl) || string.IsNullOrEmpty(request.GarmentImageUrl))
             return BadRequest(new { error = "Vui lòng cung cấp đầy đủ ModelImageUrl và GarmentImageUrl." });
 
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+
         try
         {
+            var profile = await ValidateAndDeductTryOnCreditAsync(userId);
+            if (profile == null) return BadRequest(new { error = "Không tìm thấy hồ sơ người dùng." });
+
             var predictionId = await _tryOnService.RunTryOnAsync(
                 request.ModelImageUrl,
                 request.GarmentImageUrl,
                 request.Category,
                 request.RestoreBackground
             );
+
+            await _context.SaveChangesAsync();
             return Ok(new { predictionId });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
         }
         catch (Exception ex)
         {
@@ -72,11 +100,17 @@ public class TryOnController : ControllerBase
         [FromForm] string category = "auto",
         [FromForm] bool restoreBackground = true)
     {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+
         if (garmentFile == null || garmentFile.Length == 0)
             return BadRequest(new { error = "Vui lòng upload file ảnh quần áo (garmentFile)." });
 
         try
         {
+            var profile = await ValidateAndDeductTryOnCreditAsync(userId);
+            if (profile == null) return BadRequest(new { error = "Không tìm thấy hồ sơ người dùng." });
+
             // 1. Upload ảnh sản phẩm lên S3 (temp-tryon folder)
             using var garmentStream = garmentFile.OpenReadStream();
             var garmentUrl = await _storageService.UploadFileAsync(garmentStream, garmentFile.FileName, garmentFile.ContentType, "temp-tryon");
@@ -90,13 +124,7 @@ public class TryOnController : ControllerBase
             }
             else
             {
-                // Sử dụng mannequin mặc định của tài khoản
-                var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
-                var profile = await _context.CustomerProfiles
-                    .FirstOrDefaultAsync(cp => cp.UserInternalId == userId);
-                
-                if (profile == null || string.IsNullOrEmpty(profile.MannequinImageUrl))
+                if (string.IsNullOrEmpty(profile.MannequinImageUrl))
                 {
                     return BadRequest(new { error = "Vui lòng cung cấp file ảnh người mẫu hoặc cấu hình ảnh Mannequin trong Profile trước." });
                 }
@@ -105,7 +133,13 @@ public class TryOnController : ControllerBase
 
             // 3. Gọi Fashn AI
             var predictionId = await _tryOnService.RunTryOnAsync(modelUrl, garmentUrl, category, restoreBackground);
+            
+            await _context.SaveChangesAsync();
             return Ok(new { predictionId });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
         }
         catch (Exception ex)
         {
@@ -127,6 +161,9 @@ public class TryOnController : ControllerBase
 
         try
         {
+            var profile = await ValidateAndDeductTryOnCreditAsync(userId);
+            if (profile == null) return BadRequest(new { error = "Không tìm thấy hồ sơ người dùng." });
+
             // 1. Lấy thông tin món đồ từ Tủ đồ
             var wardrobeItem = await _wardrobeService.GetItemByIdAsync(userId, request.WardrobeItemId);
             if (wardrobeItem == null || string.IsNullOrEmpty(wardrobeItem.OriginalImageUrl))
@@ -138,10 +175,7 @@ public class TryOnController : ControllerBase
             string modelUrl = request.ModelImageUrl ?? string.Empty;
             if (string.IsNullOrEmpty(modelUrl))
             {
-                var profile = await _context.CustomerProfiles
-                    .FirstOrDefaultAsync(cp => cp.UserInternalId == userId);
-                
-                if (profile == null || string.IsNullOrEmpty(profile.MannequinImageUrl))
+                if (string.IsNullOrEmpty(profile.MannequinImageUrl))
                 {
                     return BadRequest(new { error = "Không tìm thấy ảnh người mẫu. Vui lòng truyền ModelImageUrl hoặc cấu hình ảnh Mannequin trong Profile của bạn." });
                 }
@@ -155,7 +189,13 @@ public class TryOnController : ControllerBase
                 request.Category,
                 request.RestoreBackground
             );
+
+            await _context.SaveChangesAsync();
             return Ok(new { predictionId });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
         }
         catch (Exception ex)
         {
