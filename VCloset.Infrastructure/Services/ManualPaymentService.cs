@@ -268,6 +268,10 @@ public class ManualPaymentService : IManualPaymentService
                         ? existingPremium.ExpiresAt.Value.AddDays(plan.DurationDays.Value)
                         : DateTime.UtcNow.AddDays(plan.DurationDays.Value);
                 }
+                else
+                {
+                    existingPremium.ExpiresAt = null;
+                }
             }
             else
             {
