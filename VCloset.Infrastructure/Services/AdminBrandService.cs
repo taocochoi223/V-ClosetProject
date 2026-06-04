@@ -207,14 +207,52 @@ public class AdminBrandService : IAdminBrandService
         if (campaign == null)
             throw new Exception("Không tìm thấy chiến dịch quảng cáo yêu cầu.");
 
-        if (request.DailyBudget <= 0)
-            throw new Exception("Ngân sách hàng ngày phải lớn hơn 0.");
+        // 1. Làm tròn ngân sách ngày đến hàng nghìn gần nhất (làm tròn 3 số cuối về 000)
+        var roundedBudget = Math.Round(request.DailyBudget / 1000m, MidpointRounding.AwayFromZero) * 1000m;
+        if (roundedBudget <= 0)
+            throw new Exception("Ngân sách hàng ngày sau khi làm tròn phải lớn hơn 0.");
 
-        if (request.DisplayRank <= 0)
+        // 2. Dịch chuyển thứ tự theo kiểu Chèn/Cuộn (Insert/Shift)
+        short oldRank = campaign.DisplayRank;
+        short newRank = request.DisplayRank;
+
+        if (newRank <= 0)
             throw new Exception("Thứ tự hiển thị phải lớn hơn 0.");
 
-        campaign.DailyBudget = request.DailyBudget;
-        campaign.DisplayRank = request.DisplayRank;
+        if (oldRank != newRank)
+        {
+            if (oldRank < newRank)
+            {
+                // Di chuyển xuống dưới (ví dụ: 1 -> 5)
+                // Các chiến dịch ở giữa (từ oldRank + 1 đến newRank) sẽ bị lùi lên 1 bậc (-1)
+                var campaignsToShift = await _context.SponsoredCampaigns
+                    .Where(c => c.Id != campaignId && c.IsActive && c.DisplayRank > oldRank && c.DisplayRank <= newRank)
+                    .ToListAsync();
+
+                foreach (var c in campaignsToShift)
+                {
+                    c.DisplayRank--;
+                    _context.SponsoredCampaigns.Update(c);
+                }
+            }
+            else
+            {
+                // Di chuyển lên trên (ví dụ: 5 -> 2)
+                // Các chiến dịch ở giữa (từ newRank đến oldRank - 1) sẽ bị tiến xuống 1 bậc (+1)
+                var campaignsToShift = await _context.SponsoredCampaigns
+                    .Where(c => c.Id != campaignId && c.IsActive && c.DisplayRank >= newRank && c.DisplayRank < oldRank)
+                    .ToListAsync();
+
+                foreach (var c in campaignsToShift)
+                {
+                    c.DisplayRank++;
+                    _context.SponsoredCampaigns.Update(c);
+                }
+            }
+        }
+
+        campaign.DailyBudget = roundedBudget;
+        campaign.DisplayRank = newRank;
 
         _context.SponsoredCampaigns.Update(campaign);
         await _context.SaveChangesAsync();
