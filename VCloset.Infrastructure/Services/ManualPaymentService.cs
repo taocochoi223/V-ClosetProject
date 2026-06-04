@@ -261,14 +261,12 @@ public class ManualPaymentService : IManualPaymentService
 
             if (existingPremium != null)
             {
+                // Kéo dài subscription hiện tại
                 if (plan.DurationDays.HasValue)
                 {
-                    if (existingPremium.ExpiresAt.HasValue)
-                    {
-                        existingPremium.ExpiresAt = existingPremium.ExpiresAt.Value > DateTime.UtcNow
-                            ? existingPremium.ExpiresAt.Value.AddDays(plan.DurationDays.Value)
-                            : DateTime.UtcNow.AddDays(plan.DurationDays.Value);
-                    }
+                    existingPremium.ExpiresAt = (existingPremium.ExpiresAt.HasValue && existingPremium.ExpiresAt.Value > DateTime.UtcNow)
+                        ? existingPremium.ExpiresAt.Value.AddDays(plan.DurationDays.Value)
+                        : DateTime.UtcNow.AddDays(plan.DurationDays.Value);
                 }
                 else
                 {
