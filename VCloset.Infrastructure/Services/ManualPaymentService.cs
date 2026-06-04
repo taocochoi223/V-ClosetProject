@@ -125,48 +125,21 @@ public class ManualPaymentService : IManualPaymentService
             
             if (user != null && admins != null && admins.Any())
             {
-                string subject = "[V-Closet] Có yêu cầu duyệt chuyển khoản thủ công mới";
-                string htmlContent = $@"
-                    <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;'>
-                        <h2 style='color: #4F46E5; text-align: center;'>Yêu cầu duyệt chuyển khoản mới</h2>
-                        <p>Xin chào Admin,</p>
-                        <p>Hệ thống vừa nhận được một yêu cầu nâng cấp gói dịch vụ bằng hình thức <strong>chuyển khoản thủ công</strong> cần bạn xét duyệt:</p>
-                        <table style='width: 100%; border-collapse: collapse; margin: 20px 0;'>
-                            <tr style='background-color: #f8f9fa;'>
-                                <td style='padding: 10px; border: 1px solid #ddd; font-weight: bold; width: 35%;'>Người gửi:</td>
-                                <td style='padding: 10px; border: 1px solid #ddd;'>{user.DisplayName} ({user.Email})</td>
-                            </tr>
-                            <tr>
-                                <td style='padding: 10px; border: 1px solid #ddd; font-weight: bold;'>Gói đăng ký:</td>
-                                <td style='padding: 10px; border: 1px solid #ddd;'>{plan.Name}</td>
-                            </tr>
-                            <tr style='background-color: #f8f9fa;'>
-                                <td style='padding: 10px; border: 1px solid #ddd; font-weight: bold;'>Số tiền:</td>
-                                <td style='padding: 10px; border: 1px solid #ddd;'>{transaction.Amount:N0} {transaction.Currency}</td>
-                            </tr>
-                            <tr>
-                                <td style='padding: 10px; border: 1px solid #ddd; font-weight: bold;'>Ghi chú của User:</td>
-                                <td style='padding: 10px; border: 1px solid #ddd;'>{userNote ?? "Không có"}</td>
-                            </tr>
-                            <tr style='background-color: #f8f9fa;'>
-                                <td style='padding: 10px; border: 1px solid #ddd; font-weight: bold;'>Thời gian gửi:</td>
-                                <td style='padding: 10px; border: 1px solid #ddd;'>{transaction.CreatedAt.AddHours(7):dd/MM/yyyy HH:mm:ss} (Giờ VN)</td>
-                            </tr>
-                        </table>
-                        <p>Vui lòng đăng nhập vào trang quản trị để xem hình ảnh chứng từ và tiến hành phê duyệt giao dịch.</p>
-                        <div style='text-align: center; margin: 30px 0;'>
-                            <a href='https://admin.vcloset.vn/admin/subscriptions' style='background-color: #4F46E5; color: white; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block;'>Đến Trang Quản Trị</a>
-                        </div>
-                        <p style='color: #666; font-size: 13px; text-align: center; border-top: 1px solid #eee; padding-top: 20px; margin-top: 30px;'>
-                            Email này được gửi tự động từ hệ thống quản lý V-Closet.
-                        </p>
-                    </div>";
 
                 foreach (var admin in admins)
                 {
                     if (!string.IsNullOrEmpty(admin.Email))
                     {
-                        await _emailService.SendEmailAsync(admin.Email, subject, htmlContent);
+                        await _emailService.SendAdminPaymentNotificationAsync(
+                            admin.Email, 
+                            user?.DisplayName ?? "Người dùng ẩn danh",
+                            user?.Email ?? "N/A",
+                            plan.Name,
+                            transaction.Amount, 
+                            transaction.Currency,
+                            userNote ?? string.Empty, 
+                            transaction.CreatedAt
+                        );
                     }
                 }
             }

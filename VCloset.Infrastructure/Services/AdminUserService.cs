@@ -356,18 +356,10 @@ public class AdminUserService : IAdminUserService
         await _unitOfWork.SaveChangesAsync();
 
         // 5. Gửi email thông báo tài khoản mới chứa mật khẩu ngẫu nhiên
-        var mailSent = await _emailService.SendEmailAsync(
+        var mailSent = await _emailService.SendNewAccountEmailAsync(
             newUser.Email,
-            "V-Closet: Thông tin tài khoản mới",
-            $"<h3>Chào {newUser.DisplayName},</h3>" +
-            $"<p>Tài khoản của bạn đã được tạo thành công bởi quản trị viên hệ thống V-Closet.</p>" +
-            $"<p>Dưới đây là thông tin đăng nhập của bạn:</p>" +
-            $"<ul>" +
-            $"<li><b>Tài khoản:</b> {newUser.Email}</li>" +
-            $"<li><b>Mật khẩu tạm thời:</b> <code style='font-size: 15px; color: #d63384; background: #f8f9fa; padding: 3px 6px; border-radius: 4px; font-family: monospace;'>{tempPassword}</code></li>" +
-            $"</ul>" +
-            $"<p>Vui lòng đăng nhập và thực hiện đổi mật khẩu ngay để đảm bảo an toàn bảo mật.</p>" +
-            $"<p>Trân trọng,<br/>Đội ngũ phát triển V-Closet</p>"
+            newUser.DisplayName,
+            tempPassword
         );
 
         if (!mailSent)
