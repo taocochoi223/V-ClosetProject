@@ -46,6 +46,21 @@ public class NotificationService : INotificationService
         await _hubService.SendUnreadCountAlertAsync(userId, newCount);
         await _hubService.SendNotificationAlertAsync(userId, dto);
 
+        // Đẩy thông báo qua Firebase (FCM)
+        try
+        {
+            var userTokens = await _unitOfWork.UserDeviceTokens.FindAllAsync(t => t.UserInternalId == userId);
+            var tokens = userTokens.Select(t => t.FcmToken).ToList();
+            if (tokens.Any())
+            {
+                await PushFirebaseNotificationAsync(tokens, title, body, type, referenceType, referenceId);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[WARNING] Failed to push Firebase notification to user {userId}: {ex.Message}");
+        }
+
         return dto;
     }
 
@@ -177,6 +192,22 @@ public class NotificationService : INotificationService
                 // Bỏ qua lỗi gửi SignalR đơn lẻ nếu user offline hoặc ngắt kết nối
             }
         }
+
+        // Đẩy thông báo qua Firebase (FCM) cho toàn bộ người nhận
+        try
+        {
+            var userIds = users.Select(u => u.InternalId).ToList();
+            var tokensList = await _unitOfWork.UserDeviceTokens.FindAllAsync(t => userIds.Contains(t.UserInternalId));
+            var tokens = tokensList.Select(t => t.FcmToken).Distinct().ToList();
+            if (tokens.Any())
+            {
+                await PushFirebaseNotificationAsync(tokens, title, body, type, referenceType, referenceId);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[WARNING] Failed to push Firebase broadcast: {ex.Message}");
+        }
     }
 
     public async Task SaveDeviceTokenAsync(int userId, SaveDeviceTokenRequest request)
@@ -284,6 +315,75 @@ public class NotificationService : INotificationService
         }
 
         return true;
+    }
+
+    private async Task PushFirebaseNotificationAsync(List<string> tokens, string title, string body, string type, string? referenceType, int? referenceId)
+    {
+        if (FirebaseAdmin.FirebaseApp.DefaultInstance == null || tokens == null || !tokens.Any())
+        {
+            return;
+        }
+
+        try
+        {
+            // Firebase limits multicast messages to 500 tokens per send
+            for (int i = 0; i < tokens.Count; i += 500)
+            {
+                var batch = tokens.Skip(i).Take(500).ToList();
+                var message = new FirebaseAdmin.Messaging.MulticastMessage()
+                {
+                    Tokens = batch,
+                    Notification = new FirebaseAdmin.Messaging.Notification()
+                    {
+                        Title = title,
+                        Body = body
+                    },
+                    Data = new Dictionary<string, string>()
+                    {
+                        { "type", type },
+                        { "referenceType", referenceType ?? "" },
+                        { "referenceId", referenceId?.ToString() ?? "" }
+                    }
+                };
+
+                var response = await FirebaseAdmin.Messaging.FirebaseMessaging.DefaultInstance.SendEachForMulticastAsync(message);
+
+                if (response.FailureCount > 0)
+                {
+                    var failedTokens = new List<string>();
+                    for (int j = 0; j < response.Responses.Count; j++)
+                    {
+                        if (!response.Responses[j].IsSuccess)
+                        {
+                            var error = response.Responses[j].Exception?.MessagingErrorCode;
+                            if (error == FirebaseAdmin.Messaging.MessagingErrorCode.Unregistered || 
+                                error == FirebaseAdmin.Messaging.MessagingErrorCode.InvalidArgument)
+                            {
+                                failedTokens.Add(batch[j]);
+                            }
+                        }
+                    }
+
+                    if (failedTokens.Any())
+                    {
+                        foreach (var token in failedTokens)
+                        {
+                            var tokenEntity = await _unitOfWork.UserDeviceTokens.FindAsync(t => t.FcmToken == token);
+                            if (tokenEntity != null)
+                            {
+                                _unitOfWork.UserDeviceTokens.Delete(tokenEntity);
+                            }
+                        }
+                        await _unitOfWork.SaveChangesAsync();
+                        Console.WriteLine($"[INFO] Cleared {failedTokens.Count} stale/invalid FCM device tokens from database.");
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERROR] Failed to send Firebase notifications: {ex.Message}");
+        }
     }
 
     private static NotificationResponseDto MapToDto(Notification entity)

@@ -23,4 +23,10 @@
     <ProjectReference Include="..\VCloset.Infrastructure\VCloset.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="firebase-service-account.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
