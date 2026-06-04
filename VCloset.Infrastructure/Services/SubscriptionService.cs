@@ -72,7 +72,7 @@ public class SubscriptionService : ISubscriptionService
         {
             response.PlanName          = "Miễn phí";
             response.PlanType          = "free";
-            response.WardrobeItemLimit = 30;
+            response.WardrobeItemLimit = 2;
         }
 
         return response;
