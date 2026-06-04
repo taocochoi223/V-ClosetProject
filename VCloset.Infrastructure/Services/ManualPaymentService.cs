@@ -262,9 +262,12 @@ public class ManualPaymentService : IManualPaymentService
             if (existingPremium != null)
             {
                 // Kéo dài subscription hiện tại
-                existingPremium.ExpiresAt = existingPremium.ExpiresAt > DateTime.UtcNow
-                    ? existingPremium.ExpiresAt.AddDays(plan.DurationDays)
-                    : DateTime.UtcNow.AddDays(plan.DurationDays);
+                if (plan.DurationDays.HasValue)
+                {
+                    existingPremium.ExpiresAt = (existingPremium.ExpiresAt.HasValue && existingPremium.ExpiresAt.Value > DateTime.UtcNow)
+                        ? existingPremium.ExpiresAt.Value.AddDays(plan.DurationDays.Value)
+                        : DateTime.UtcNow.AddDays(plan.DurationDays.Value);
+                }
             }
             else
             {
@@ -274,13 +277,13 @@ public class ManualPaymentService : IManualPaymentService
                     Id                        = Guid.NewGuid(),
                     UserInternalId            = transaction.UserInternalId,
                     SubscriptionPlanInternalId = plan.InternalId,
-                    PlanType                  = plan.DurationDays >= 365 ? PremiumPlan.Yearly : PremiumPlan.Monthly,
+                    PlanType                  = !plan.DurationDays.HasValue || plan.DurationDays >= 365 ? PremiumPlan.Yearly : PremiumPlan.Monthly,
                     PricePaid                 = transaction.Amount,
                     Currency                  = transaction.Currency,
                     PaymentMethod             = GatewayName,
                     PaymentRef                = transaction.Id.ToString(),
                     StartedAt                 = DateTime.UtcNow,
-                    ExpiresAt                 = DateTime.UtcNow.AddDays(plan.DurationDays),
+                    ExpiresAt                 = plan.DurationDays.HasValue ? DateTime.UtcNow.AddDays(plan.DurationDays.Value) : (DateTime?)null,
                     IsActive                  = true,
                     CreatedAt                 = DateTime.UtcNow
                 };
