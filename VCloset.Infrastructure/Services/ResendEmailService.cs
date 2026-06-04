@@ -58,33 +58,120 @@ public class ResendEmailService : IEmailService
         }
     }
 
+    private string GetBaseEmailTemplate(string content)
+    {
+        return $@"
+            <div style='font-family: ""Helvetica Neue"", Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 0; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;'>
+                <!-- Header -->
+                <div style='background-color: #4F46E5; padding: 20px; text-align: center;'>
+                    <h1 style='color: #ffffff; margin: 0; font-size: 24px; letter-spacing: 1px;'>V-CLOSET</h1>
+                </div>
+                
+                <!-- Body -->
+                <div style='padding: 30px; background-color: #ffffff; color: #1f2937;'>
+                    {content}
+                </div>
+                
+                <!-- Footer -->
+                <div style='background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;'>
+                    <p style='margin: 0; color: #6b7280; font-size: 14px;'>Bạn cần hỗ trợ? Vui lòng liên hệ với chúng tôi qua:</p>
+                    <p style='margin: 8px 0; font-size: 14px;'>
+                        <a href='mailto:support@vcloset.vn' style='color: #4F46E5; text-decoration: none; font-weight: bold;'>support@vcloset.vn</a>
+                        &nbsp;|&nbsp;
+                        <a href='https://www.facebook.com/profile.php?id=61590136782776' target='_blank' style='color: #4F46E5; text-decoration: none; font-weight: bold;'>Fanpage Facebook</a>
+                    </p>
+                    <p style='margin: 15px 0 0 0; color: #9ca3af; font-size: 12px;'>
+                        &copy; {DateTime.UtcNow.Year} V-Closet. All rights reserved.
+                    </p>
+                </div>
+            </div>";
+    }
+
     public async Task<bool> SendOtpEmailAsync(string toEmail, string otpCode)
     {
         string subject = "V-Closet: Mã xác thực OTP đăng ký tài khoản";
-        string html = $@"
-            <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;'>
-                <h2 style='color: #4F46E5; text-align: center;'>Chào mừng bạn đến với V-Closet!</h2>
-                <p>Cảm ơn bạn đã đăng ký tài khoản. Vui lòng sử dụng mã OTP dưới đây để hoàn tất kích hoạt tài khoản:</p>
-                <div style='text-align: center; margin: 30px 0;'>
-                    <span style='font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #4F46E5; background-color: #EEF2F6; padding: 10px 20px; border-radius: 5px;'>{otpCode}</span>
-                </div>
-                <p style='color: #666; font-size: 13px;'>Mã OTP này có hiệu lực trong vòng 5 phút. Vui lòng không chia sẻ mã này cho bất kỳ ai.</p>
-            </div>";
+        string content = $@"
+            <h2 style='color: #111827; text-align: center; margin-top: 0;'>Chào mừng bạn đến với V-Closet!</h2>
+            <p style='font-size: 15px; line-height: 1.6;'>Cảm ơn bạn đã đăng ký tài khoản. Vui lòng sử dụng mã OTP dưới đây để hoàn tất kích hoạt tài khoản của bạn:</p>
+            <div style='text-align: center; margin: 30px 0;'>
+                <span style='font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #4F46E5; background-color: #EEF2F6; padding: 12px 24px; border-radius: 8px; display: inline-block;'>{otpCode}</span>
+            </div>
+            <p style='color: #6b7280; font-size: 13px; text-align: center;'>Mã OTP này có hiệu lực trong vòng 5 phút.<br>Vui lòng không chia sẻ mã này cho bất kỳ ai để bảo vệ tài khoản.</p>";
+
+        string html = GetBaseEmailTemplate(content);
         return await SendEmailAsync(toEmail, subject, html);
     }
 
     public async Task<bool> SendForgotPasswordOtpEmailAsync(string toEmail, string otpCode)
     {
         string subject = "V-Closet: Mã xác thực OTP đặt lại mật khẩu";
-        string html = $@"
-            <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;'>
-                <h2 style='color: #4F46E5;'>Yêu cầu đặt lại mật khẩu</h2>
-                <p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản V-Closet của bạn. Vui lòng sử dụng mã OTP dưới đây để xác nhận yêu cầu của bạn:</p>
-                <div style='text-align: center; margin: 30px 0;'>
-                    <span style='font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #4F46E5; background-color: #EEF2F6; padding: 10px 20px; border-radius: 5px;'>{otpCode}</span>
-                </div>
-                <p style='color: #666; font-size: 13px;'>Mã OTP này có hiệu lực trong vòng 15 phút. Nếu bạn không yêu cầu đổi mật khẩu, vui lòng bỏ qua email này để bảo vệ tài khoản.</p>
+        string content = $@"
+            <h2 style='color: #111827; text-align: center; margin-top: 0;'>Yêu cầu đặt lại mật khẩu</h2>
+            <p style='font-size: 15px; line-height: 1.6;'>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản V-Closet của bạn. Vui lòng sử dụng mã OTP dưới đây để xác nhận:</p>
+            <div style='text-align: center; margin: 30px 0;'>
+                <span style='font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #4F46E5; background-color: #EEF2F6; padding: 12px 24px; border-radius: 8px; display: inline-block;'>{otpCode}</span>
+            </div>
+            <p style='color: #6b7280; font-size: 13px; text-align: center;'>Mã OTP này có hiệu lực trong vòng 15 phút.<br>Nếu bạn không yêu cầu đổi mật khẩu, vui lòng bỏ qua email này.</p>";
+
+        string html = GetBaseEmailTemplate(content);
+        return await SendEmailAsync(toEmail, subject, html);
+    }
+
+    public async Task<bool> SendNewAccountEmailAsync(string toEmail, string displayName, string tempPassword)
+    {
+        string subject = "V-Closet: Thông tin tài khoản mới";
+        string content = $@"
+            <h2 style='color: #111827; text-align: center; margin-top: 0;'>Chào {displayName},</h2>
+            <p style='font-size: 15px; line-height: 1.6;'>Tài khoản của bạn đã được tạo thành công bởi quản trị viên hệ thống V-Closet. Dưới đây là thông tin đăng nhập của bạn:</p>
+            
+            <div style='background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 25px 0;'>
+                <p style='margin: 0 0 10px 0;'><strong>Tài khoản:</strong> {toEmail}</p>
+                <p style='margin: 0;'><strong>Mật khẩu tạm thời:</strong> <code style='font-size: 16px; color: #d63384; font-family: monospace; background: #fff; padding: 4px 8px; border-radius: 4px; font-weight: bold;'>{tempPassword}</code></p>
+            </div>
+            
+            <p style='color: #6b7280; font-size: 14px;'>Vui lòng đăng nhập và thực hiện đổi mật khẩu ngay để đảm bảo an toàn bảo mật.</p>";
+
+        string html = GetBaseEmailTemplate(content);
+        return await SendEmailAsync(toEmail, subject, html);
+    }
+
+    public async Task<bool> SendAdminPaymentNotificationAsync(string toEmail, string senderName, string senderEmail, string planName, decimal amount, string currency, string userNote, DateTime createdAt)
+    {
+        string subject = "V-Closet: Thông báo giao dịch chuyển khoản mới";
+        string content = $@"
+            <h2 style='color: #111827; text-align: center; margin-top: 0;'>Yêu cầu duyệt giao dịch</h2>
+            <p style='font-size: 15px; line-height: 1.6;'>Có một giao dịch nạp tiền hoặc thanh toán mới đang chờ bạn xét duyệt.</p>
+            
+            <table style='width: 100%; border-collapse: collapse; margin: 25px 0; font-size: 14px;'>
+                <tr>
+                    <td style='padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: bold; width: 40%;'>Người gửi:</td>
+                    <td style='padding: 12px; border: 1px solid #e5e7eb;'>{senderName} (<a href='mailto:{senderEmail}' style='color: #4F46E5;'>{senderEmail}</a>)</td>
+                </tr>
+                <tr>
+                    <td style='padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: bold;'>Gói đăng ký:</td>
+                    <td style='padding: 12px; border: 1px solid #e5e7eb;'>{planName}</td>
+                </tr>
+                <tr>
+                    <td style='padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: bold;'>Số tiền:</td>
+                    <td style='padding: 12px; border: 1px solid #e5e7eb;'>{amount:N0} {currency}</td>
+                </tr>
+                <tr>
+                    <td style='padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: bold;'>Ghi chú của User:</td>
+                    <td style='padding: 12px; border: 1px solid #e5e7eb;'>{(string.IsNullOrEmpty(userNote) ? "Không có" : userNote)}</td>
+                </tr>
+                <tr>
+                    <td style='padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: bold;'>Thời gian gửi:</td>
+                    <td style='padding: 12px; border: 1px solid #e5e7eb;'>{createdAt.AddHours(7):dd/MM/yyyy HH:mm:ss} (Giờ VN)</td>
+                </tr>
+            </table>
+            
+            <p style='font-size: 14px; text-align: center; margin-bottom: 25px;'>Vui lòng đăng nhập vào hệ thống để kiểm tra và đối soát chứng từ.</p>
+            
+            <div style='text-align: center;'>
+                <a href='https://admin.vcloset.vn/admin/subscriptions' style='background-color: #4F46E5; color: #ffffff; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 6px; display: inline-block;'>Đến Trang Quản Trị</a>
             </div>";
+
+        string html = GetBaseEmailTemplate(content);
         return await SendEmailAsync(toEmail, subject, html);
     }
 }
