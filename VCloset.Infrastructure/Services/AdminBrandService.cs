@@ -137,7 +137,8 @@ public class AdminBrandService : IAdminBrandService
     public async Task<List<CampaignSummaryResponse>> GetCampaignsAsync()
     {
         var campaigns = await _context.SponsoredCampaigns
-            .OrderByDescending(c => c.CreatedAt)
+            .OrderBy(c => c.DisplayRank)
+            .ThenByDescending(c => c.CreatedAt)
             .ToListAsync();
 
         var summaries = new List<CampaignSummaryResponse>();
@@ -258,14 +259,16 @@ public class AdminBrandService : IAdminBrandService
         await _context.SaveChangesAsync();
     }
 
-    // 8. Xóa chiến dịch quảng cáo
+    // 8. Xóa chiến dịch quảng cáo (chuyển thành Dừng hoạt động - Soft-delete)
     public async Task DeleteCampaignAsync(int adminUserId, Guid campaignId)
     {
         var campaign = await _context.SponsoredCampaigns.FirstOrDefaultAsync(c => c.Id == campaignId);
         if (campaign == null)
             throw new Exception("Không tìm thấy chiến dịch quảng cáo yêu cầu.");
 
-        _context.SponsoredCampaigns.Remove(campaign);
+        // Thay vì xóa cứng khỏi DB, ta chuyển trạng thái hoạt động về false (Inactive) để giữ lại lịch sử số liệu
+        campaign.IsActive = false;
+        _context.SponsoredCampaigns.Update(campaign);
         await _context.SaveChangesAsync();
     }
 
@@ -317,13 +320,13 @@ public class AdminBrandService : IAdminBrandService
                 "spent" => query.OrderByDescending(r => r.TotalSpent),
                 "spentasc" => query.OrderBy(r => r.TotalSpent),
                 "ctr" => query.OrderByDescending(r => r.ImpressionCount > 0 ? (double)r.ClickCount / r.ImpressionCount : 0),
-                "rank" => query.OrderBy(r => r.DisplayRank),
-                _ => query.OrderByDescending(r => r.CreatedAt)
+                "rank" => query.OrderBy(r => r.DisplayRank).ThenByDescending(r => r.CreatedAt),
+                _ => query.OrderBy(r => r.DisplayRank).ThenByDescending(r => r.CreatedAt)
             };
         }
         else
         {
-            query = query.OrderByDescending(r => r.CreatedAt);
+            query = query.OrderBy(r => r.DisplayRank).ThenByDescending(r => r.CreatedAt);
         }
 
         var totalCount = query.Count();
@@ -379,5 +382,94 @@ public class AdminBrandService : IAdminBrandService
             TotalClicks = totalClicks,
             OverallCtr = overallCtr
         };
+    }
+
+    // 12. Tạo chiến dịch quảng cáo mới
+    public async Task CreateCampaignAsync(CreateCampaignRequest request)
+    {
+        var brand = await _context.BrandProfiles.FirstOrDefaultAsync(b => b.Id == request.BrandId);
+        if (brand == null)
+            throw new Exception("Không tìm thấy đối tác thương hiệu yêu cầu.");
+
+        // Kiểm tra trạng thái thương hiệu: Chỉ thương hiệu đã VERIFIED mới được tạo quảng cáo
+        if (brand.Status != BrandStatus.Verified)
+            throw new Exception("Chỉ thương hiệu đã được phê duyệt (Verified) mới được phép tạo chiến dịch.");
+
+        var product = await _context.AffiliateProducts.FirstOrDefaultAsync(p => p.Id == request.ProductId);
+        if (product == null)
+            throw new Exception("Không tìm thấy sản phẩm liên kết yêu cầu.");
+
+        // Kiểm tra trạng thái sản phẩm: Sản phẩm phải đang hoạt động
+        if (!product.IsActive)
+            throw new Exception("Sản phẩm tiếp thị liên kết này đang tạm ngưng hoạt động.");
+
+        if (request.DailyBudget <= 0)
+            throw new Exception("Ngân sách hàng ngày phải lớn hơn 0.");
+
+        if (request.DisplayRank <= 0)
+            throw new Exception("Thứ tự hiển thị phải lớn hơn 0.");
+
+        if (request.StartAt >= request.EndAt)
+            throw new Exception("Thời gian bắt đầu phải trước thời gian kết thúc.");
+
+        if (request.EndAt <= DateTime.UtcNow)
+            throw new Exception("Thời gian kết thúc chiến dịch phải nằm ở tương lai.");
+
+        // Làm tròn ngân sách ngày đến hàng nghìn gần nhất (làm tròn 3 số cuối về 000)
+        var roundedBudget = Math.Round(request.DailyBudget / 1000m, MidpointRounding.AwayFromZero) * 1000m;
+        if (roundedBudget <= 0)
+            throw new Exception("Ngân sách hàng ngày sau khi làm tròn phải lớn hơn 0.");
+
+        // Xử lý chèn/cuộn thứ tự hiển thị (Insert/Shift) cho vị trí mới
+        var newRank = request.DisplayRank;
+        var campaignsToShift = await _context.SponsoredCampaigns
+            .Where(c => c.IsActive && c.DisplayRank >= newRank)
+            .OrderBy(c => c.DisplayRank)
+            .ToListAsync();
+
+        short currentShiftRank = (short)(newRank + 1);
+        foreach (var c in campaignsToShift)
+        {
+            if (c.DisplayRank < currentShiftRank)
+            {
+                c.DisplayRank = currentShiftRank;
+                _context.SponsoredCampaigns.Update(c);
+            }
+            currentShiftRank++;
+        }
+
+        var newCampaign = new SponsoredCampaign
+        {
+            Id = Guid.NewGuid(),
+            BrandInternalId = brand.InternalId,
+            AffiliateProductInternalId = product.InternalId,
+            DisplayRank = newRank,
+            DailyBudget = roundedBudget,
+            TotalSpent = 0,
+            ImpressionCount = 0,
+            ClickCount = 0,
+            StartAt = request.StartAt,
+            EndAt = request.EndAt,
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _context.SponsoredCampaigns.AddAsync(newCampaign);
+        await _context.SaveChangesAsync();
+    }
+
+    // 13. Lấy danh sách sản phẩm tiếp thị liên kết đang hoạt động
+    public async Task<List<ProductSelectResponse>> GetActiveProductsAsync()
+    {
+        return await _context.AffiliateProducts
+            .Where(p => p.IsActive)
+            .OrderBy(p => p.Name)
+            .Select(p => new ProductSelectResponse
+            {
+                ProductId = p.Id,
+                ProductName = p.Name,
+                ProductImageUrl = p.ImageUrl
+            })
+            .ToListAsync();
     }
 }

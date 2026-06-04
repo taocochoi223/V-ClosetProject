@@ -204,4 +204,43 @@ public class AdminCampaignsController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    /// <summary>
+    /// API tạo một chiến dịch quảng cáo tài trợ mới
+    /// </summary>
+    [RequirePermission("content.moderate")]
+    [HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CreateCampaign([FromBody] CreateCampaignRequest request)
+    {
+        try
+        {
+            await _adminBrandService.CreateCampaignAsync(request);
+            return Ok(new { message = "Đã tạo chiến dịch quảng cáo mới thành công." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// API lấy danh sách sản phẩm tiếp thị liên kết đang hoạt động (dùng cho dropdown khi tạo chiến dịch)
+    /// </summary>
+    [RequirePermission("analytics.view")]
+    [HttpGet("products")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetActiveProducts()
+    {
+        try
+        {
+            var result = await _adminBrandService.GetActiveProductsAsync();
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }

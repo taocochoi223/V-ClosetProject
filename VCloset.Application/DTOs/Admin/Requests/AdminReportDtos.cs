@@ -29,6 +29,7 @@ public class ReportSummaryResponse
     public string? Description { get; set; }
     public bool IsResolved { get; set; }
     public DateTime CreatedAt { get; set; }
+    public bool IsPostHidden { get; set; } // Trạng thái ẩn/hiện thực tế của bài đăng bị báo cáo
 }
 
 // Chi tiết bài đăng phục vụ Admin xem kỹ trước khi ra quyết định ẩn/xử lý

@@ -30,11 +30,11 @@ public class AdminModerationService : IAdminModerationService
             query = query.Where(r => r.IsResolved == isResolved.Value);
         }
 
-        // Lọc theo lý do báo cáo
+        // Lọc theo lý do báo cáo - Dùng ToLower() thay cho ToLowerInvariant() để EF Core dịch sang SQL được
         if (!string.IsNullOrWhiteSpace(reason))
         {
-            var lowerReason = reason.ToLowerInvariant();
-            query = query.Where(r => r.Reason.ToLowerInvariant().Contains(lowerReason));
+            var lowerReason = reason.ToLower();
+            query = query.Where(r => r.Reason.ToLower().Contains(lowerReason));
         }
 
         var totalCount = await query.CountAsync();
@@ -65,7 +65,8 @@ public class AdminModerationService : IAdminModerationService
                 Reason = r.Reason,
                 Description = r.Description,
                 IsResolved = r.IsResolved,
-                CreatedAt = r.CreatedAt
+                CreatedAt = r.CreatedAt,
+                IsPostHidden = post?.IsHidden ?? false // Truyền thông tin ẩn/hiện thực tế của bài đăng về cho Frontend
             });
         }
 
