@@ -11,5 +11,6 @@ public class NotificationResponseDto
     public string? ReferenceType { get; set; }
     public int? ReferenceId { get; set; }
     public bool IsRead { get; set; }
+    public int UserInternalId { get; set; }
     public DateTime CreatedAt { get; set; }
 }
