@@ -59,6 +59,38 @@ public class TierConfigService : ITierConfigService
         config.UpdatedAt           = DateTime.UtcNow;
         config.UpdatedBy           = updatedBy;
 
+        // Sync credit updates to all active users on this tier
+        var now = DateTime.UtcNow;
+        var normalizedTier = tierName.ToLower().Trim();
+        if (normalizedTier == "premium")
+        {
+            var activePremiumUserIdsQuery = _context.PremiumSubscriptions
+                .Where(ps => ps.IsActive && (!ps.ExpiresAt.HasValue || ps.ExpiresAt > now))
+                .Select(ps => ps.UserInternalId)
+                .Distinct();
+
+            await _context.CustomerProfiles
+                .Where(cp => activePremiumUserIdsQuery.Contains(cp.UserInternalId))
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(cp => cp.BgRemovalCredits, request.BgRemovalCredits)
+                    .SetProperty(cp => cp.TryOnCredits, request.TryOnCredits)
+                    .SetProperty(cp => cp.UpdatedAt, now));
+        }
+        else if (normalizedTier == "free")
+        {
+            var activePremiumUserIdsQuery = _context.PremiumSubscriptions
+                .Where(ps => ps.IsActive && (!ps.ExpiresAt.HasValue || ps.ExpiresAt > now))
+                .Select(ps => ps.UserInternalId)
+                .Distinct();
+
+            await _context.CustomerProfiles
+                .Where(cp => !activePremiumUserIdsQuery.Contains(cp.UserInternalId))
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(cp => cp.BgRemovalCredits, request.BgRemovalCredits)
+                    .SetProperty(cp => cp.TryOnCredits, request.TryOnCredits)
+                    .SetProperty(cp => cp.UpdatedAt, now));
+        }
+
         await _context.SaveChangesAsync();
         return ToResponse(config);
     }

@@ -30,6 +30,7 @@ public class PaymentCleanupService : BackgroundService
             try
             {
                 await CleanupExpiredPaymentsAsync();
+                await CleanupExpiredSubscriptionsAsync();
             }
             catch (Exception ex)
             {
@@ -66,6 +67,48 @@ public class PaymentCleanupService : BackgroundService
 
             await unitOfWork.SaveChangesAsync();
             _logger.LogInformation($"Cleaned up {transactionsList.Count} expired transactions.");
+        }
+    }
+
+    private async Task CleanupExpiredSubscriptionsAsync()
+    {
+        using var scope = _serviceProvider.CreateScope();
+        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        var tierConfigService = scope.ServiceProvider.GetRequiredService<ITierConfigService>();
+
+        var now = DateTime.UtcNow;
+
+        // Tìm các PremiumSubscription đã hết hạn nhưng vẫn đang Active
+        var expiredSubscriptions = await unitOfWork.PremiumSubscriptions.FindAllAsync(ps =>
+            ps.IsActive &&
+            ps.ExpiresAt.HasValue &&
+            ps.ExpiresAt.Value < now);
+
+        var expiredList = expiredSubscriptions.ToList();
+        if (expiredList.Any())
+        {
+            var freeTier = await tierConfigService.GetConfigEntityAsync("free");
+            
+            foreach (var sub in expiredList)
+            {
+                sub.IsActive = false;
+                sub.CancelledAt = now;
+                _logger.LogInformation($"Subscription {sub.Id} for User {sub.UserInternalId} has expired. Deactivating...");
+
+                // Reset user profile credits to free tier configuration
+                var profile = await unitOfWork.CustomerProfiles.FindAsync(cp => cp.UserInternalId == sub.UserInternalId);
+                if (profile != null && freeTier != null)
+                {
+                    profile.BgRemovalCredits = freeTier.BgRemovalCredits;
+                    profile.TryOnCredits = freeTier.TryOnCredits;
+                    profile.UpdatedAt = now;
+                    unitOfWork.CustomerProfiles.Update(profile);
+                    _logger.LogInformation($"Reset credits to Free tier for User {sub.UserInternalId} due to subscription expiration.");
+                }
+            }
+
+            await unitOfWork.SaveChangesAsync();
+            _logger.LogInformation($"Successfully processed expiration for {expiredList.Count} subscriptions.");
         }
     }
 }
