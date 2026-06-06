@@ -211,6 +211,22 @@ public class AdminSubscriptionService : IAdminSubscriptionService
 
         subscription.IsActive = false;
         subscription.CancelledAt = DateTime.UtcNow;
+
+        // Reset user credits to free tier configuration
+        var profile = await _context.CustomerProfiles
+            .FirstOrDefaultAsync(cp => cp.UserInternalId == subscription.UserInternalId);
+        if (profile != null)
+        {
+            var freeTier = await _context.SubscriptionTierConfigs
+                .FirstOrDefaultAsync(tc => tc.TierName.ToLower() == "free");
+            if (freeTier != null)
+            {
+                profile.BgRemovalCredits = freeTier.BgRemovalCredits;
+                profile.TryOnCredits = freeTier.TryOnCredits;
+                profile.UpdatedAt = DateTime.UtcNow;
+                _context.CustomerProfiles.Update(profile);
+            }
+        }
         
         await _context.SaveChangesAsync();
 

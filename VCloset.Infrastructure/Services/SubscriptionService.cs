@@ -51,6 +51,39 @@ public class SubscriptionService : ISubscriptionService
 
         var profile = await _unitOfWork.CustomerProfiles.FindAsync(c => c.UserInternalId == userId);
 
+        // Lazy Update Check: Check if there's any active subscription that has just expired
+        if (active == null)
+        {
+            var expiredActiveSub = await _unitOfWork.PremiumSubscriptions.FindAsync(ps =>
+                ps.UserInternalId == userId &&
+                ps.IsActive &&
+                ps.ExpiresAt.HasValue &&
+                ps.ExpiresAt.Value <= now);
+
+            if (expiredActiveSub != null)
+            {
+                // 1. Deactivate subscription
+                expiredActiveSub.IsActive = false;
+                expiredActiveSub.CancelledAt = now;
+                _unitOfWork.PremiumSubscriptions.Update(expiredActiveSub);
+
+                // 2. Reset profile credits to free tier limits
+                if (profile != null)
+                {
+                    var freeTier = await _tierConfigService.GetConfigEntityAsync("free");
+                    if (freeTier != null)
+                    {
+                        profile.BgRemovalCredits = freeTier.BgRemovalCredits;
+                        profile.TryOnCredits = freeTier.TryOnCredits;
+                        profile.UpdatedAt = now;
+                        _unitOfWork.CustomerProfiles.Update(profile);
+                    }
+                }
+
+                await _unitOfWork.SaveChangesAsync();
+            }
+        }
+
         var outfitCount = await _unitOfWork.CanvasOutfits.Query()
             .CountAsync(o => o.UserInternalId == userId);
 
