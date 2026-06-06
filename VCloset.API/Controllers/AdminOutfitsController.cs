@@ -116,4 +116,30 @@ public class AdminOutfitsController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    /// <summary>
+    /// API xóa hàng loạt bộ phối đồ của người dùng (admin)
+    /// </summary>
+    [RequirePermission("user.moderate")]
+    [HttpPost("bulk-delete")]
+    public async Task<IActionResult> BulkDeleteOutfits([FromBody] System.Collections.Generic.List<Guid> ids)
+    {
+        try
+        {
+            if (ids == null || ids.Count == 0) return BadRequest(new { message = "Danh sách ID không được để trống." });
+
+            var outfits = await _unitOfWork.CanvasOutfits.FindAllAsync(o => ids.Contains(o.Id));
+            foreach (var outfit in outfits)
+            {
+                _unitOfWork.CanvasOutfits.Delete(outfit);
+            }
+            await _unitOfWork.SaveChangesAsync();
+
+            return Ok(new { message = $"Đã xóa hàng loạt {outfits.Count()} bộ phối đồ thành công." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }

@@ -8,6 +8,7 @@ namespace VCloset.Application.DTOs.Admin.Responses;
 public class AdminUserSummaryResponse
 {
     public Guid UserId { get; set; }
+    public int InternalId { get; set; }
     public string Email { get; set; } = null!;
     public string DisplayName { get; set; } = null!;
     public string? AvatarUrl { get; set; }

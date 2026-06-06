@@ -227,6 +227,7 @@ public class AdminUserService : IAdminUserService
         return new AdminUserSummaryResponse
         {
             UserId = user.Id,
+            InternalId = user.InternalId,
             Email = user.Email,
             DisplayName = user.DisplayName,
             AvatarUrl = user.AvatarUrl,
