@@ -397,6 +397,7 @@ public class NotificationService : INotificationService
             ReferenceType = entity.ReferenceType,
             ReferenceId = entity.ReferenceId,
             IsRead = entity.IsRead,
+            UserInternalId = entity.UserInternalId,
             CreatedAt = entity.CreatedAt
         };
     }
