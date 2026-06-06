@@ -75,3 +75,29 @@ public class PagedPaymentTransactionResponse
     public int PageSize { get; set; }
     public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
 }
+
+public class RevenueByGatewayDto
+{
+    public string Gateway { get; set; } = null!;
+    public decimal TotalAmount { get; set; }
+    public int Count { get; set; }
+}
+
+public class RevenueDailyPointDto
+{
+    public string Date { get; set; } = null!; // yyyy-MM-dd
+    public decimal TotalAmount { get; set; }
+    public int Count { get; set; }
+}
+
+public class RevenueStatsResponse
+{
+    public decimal TotalRevenue { get; set; }
+    public int TotalTransactions { get; set; }
+    public int PaidCount { get; set; }
+    public int PendingCount { get; set; }
+    public int FailedCount { get; set; }
+    public List<RevenueByGatewayDto> ByGateway { get; set; } = new();
+    public List<RevenueDailyPointDto> DailyRevenue { get; set; } = new();
+    public string Currency { get; set; } = "VND";
+}
