@@ -130,15 +130,15 @@ public class AdminPaymentsController : ControllerBase
                 .Include(t => t.UserInternal)
                 .AsQueryable();
 
-            // Lọc theo khoảng ngày
+            // Lọc theo khoảng ngày — chuyển về UTC để tránh lỗi PostgreSQL Kind=Unspecified
             if (fromDate.HasValue)
             {
-                var from = fromDate.Value.Date;
+                var from = DateTime.SpecifyKind(fromDate.Value.Date, DateTimeKind.Utc);
                 query = query.Where(t => t.CreatedAt >= from);
             }
             if (toDate.HasValue)
             {
-                var to = toDate.Value.Date.AddDays(1); // bao gồm cả ngày kết thúc
+                var to = DateTime.SpecifyKind(toDate.Value.Date.AddDays(1), DateTimeKind.Utc); // bao gồm cả ngày kết thúc
                 query = query.Where(t => t.CreatedAt < to);
             }
 
