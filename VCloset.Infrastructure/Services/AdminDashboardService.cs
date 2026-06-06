@@ -171,12 +171,10 @@ public class AdminDashboardService : IAdminDashboardService
         return points;
     }
 
-    // 3. Danh sách người dùng mới đăng ký gần đây (cho section "Đăng ký mới gần đây")
-    public async Task<List<RecentSignupResponse>> GetRecentSignupsAsync(int limit = 5)
+    // 3. Danh sách người dùng mới đăng ký gần đây (N người mới nhất, không giới hạn thời gian)
+    public async Task<List<RecentSignupResponse>> GetRecentSignupsAsync(int limit = 8)
     {
-        var last24h = DateTime.UtcNow.AddHours(-24);
         return await _context.Users
-            .Where(u => u.CreatedAt >= last24h)
             .OrderByDescending(u => u.CreatedAt)
             .Take(limit)
             .Select(u => new RecentSignupResponse
