@@ -269,4 +269,42 @@ public class NotificationsController : ControllerBase
 
         return Ok(new { message = "Đã xóa hàng loạt thông báo thành công." });
     }
+
+    /// <summary>
+    /// API của Admin để xóa hàng loạt thông báo khỏi hệ thống
+    /// </summary>
+    [HttpPost("admin/bulk-delete")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> BulkDeleteNotificationsByAdmin([FromBody] System.Collections.Generic.List<Guid> ids)
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+
+        var user = await _unitOfWork.Users.FindAsync(u => u.InternalId == userId);
+        if (user == null || !user.IsActive || (user.Role != UserRole.Admin && user.Role != UserRole.Moderator))
+        {
+            return Forbid();
+        }
+
+        try
+        {
+            if (ids == null || ids.Count == 0) return BadRequest(new { message = "Danh sách ID không được để trống." });
+
+            int count = 0;
+            foreach (var id in ids)
+            {
+                var deleted = await _notificationService.DeleteNotificationByAdminAsync(id);
+                if (deleted) count++;
+            }
+
+            return Ok(new { message = $"Đã thu hồi hàng loạt {count} thông báo thành công." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }
