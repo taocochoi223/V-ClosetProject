@@ -81,6 +81,7 @@ upstream vcloset_active {
 
 server {
     listen 80;
+    client_max_body_size 30M;
 
     location / {
         proxy_pass         http://vcloset_active;
