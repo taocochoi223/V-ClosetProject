@@ -82,53 +82,74 @@ public class PaymentsController : ControllerBase
                         var plan = await _unitOfWork.SubscriptionPlans.GetByIdAsync(transaction.SubscriptionPlanInternalId);
                         if (plan != null)
                         {
-                            var existingPremium = await _unitOfWork.PremiumSubscriptions.FindAsync(
-                                ps => ps.UserInternalId == transaction.UserInternalId && ps.IsActive);
+                            var profile = await _unitOfWork.CustomerProfiles.FindAsync(cp => cp.UserInternalId == transaction.UserInternalId);
+                            bool isTopup = plan.Name.ToLower().Contains("credit") || plan.Name.ToLower().Contains("lượt lẻ") || plan.Name.ToLower().Contains("lượt thử");
 
-                            if (existingPremium != null)
+                            if (isTopup)
                             {
-                                if (plan.DurationDays.HasValue)
+                                if (profile != null)
                                 {
-                                    if (existingPremium.ExpiresAt.HasValue)
+                                    int addedCredits = 10;
+                                    var match = System.Text.RegularExpressions.Regex.Match(plan.Name, @"\d+");
+                                    if (match.Success && int.TryParse(match.Value, out int parsedVal))
                                     {
-                                        existingPremium.ExpiresAt = existingPremium.ExpiresAt.Value > DateTime.UtcNow 
-                                            ? existingPremium.ExpiresAt.Value.AddDays(plan.DurationDays.Value) 
-                                            : DateTime.UtcNow.AddDays(plan.DurationDays.Value);
+                                        addedCredits = parsedVal;
                                     }
-                                }
-                                else
-                                {
-                                    existingPremium.ExpiresAt = null;
+
+                                    profile.TryOnCredits += addedCredits;
+                                    profile.UpdatedAt = DateTime.UtcNow;
+                                    _unitOfWork.CustomerProfiles.Update(profile);
                                 }
                             }
                             else
                             {
-                                var newPremium = new PremiumSubscription
-                                {
-                                    Id = Guid.NewGuid(),
-                                    UserInternalId = transaction.UserInternalId,
-                                    SubscriptionPlanInternalId = plan.InternalId,
-                                    PlanType = !plan.DurationDays.HasValue || plan.DurationDays >= 365 ? PremiumPlan.Yearly : PremiumPlan.Monthly,
-                                    PricePaid = transaction.Amount,
-                                    Currency = transaction.Currency,
-                                    PaymentMethod = "momo",
-                                    PaymentRef = transId,
-                                    StartedAt = DateTime.UtcNow,
-                                    ExpiresAt = plan.DurationDays.HasValue ? DateTime.UtcNow.AddDays(plan.DurationDays.Value) : (DateTime?)null,
-                                    IsActive = true,
-                                    CreatedAt = DateTime.UtcNow
-                                };
-                                await _unitOfWork.PremiumSubscriptions.AddAsync(newPremium);
-                            }
+                                var existingPremium = await _unitOfWork.PremiumSubscriptions.FindAsync(
+                                    ps => ps.UserInternalId == transaction.UserInternalId && ps.IsActive);
 
-                            // Cập nhật lượt AI cho khách hàng theo config premium tier
-                            var profile = await _unitOfWork.CustomerProfiles.FindAsync(cp => cp.UserInternalId == transaction.UserInternalId);
-                            if (profile != null)
-                            {
-                                var premiumTier = await _tierConfigService.GetConfigEntityAsync("premium");
-                                profile.BgRemovalCredits = premiumTier.BgRemovalCredits;
-                                profile.TryOnCredits = premiumTier.TryOnCredits;
-                                _unitOfWork.CustomerProfiles.Update(profile);
+                                if (existingPremium != null)
+                                {
+                                    if (plan.DurationDays.HasValue)
+                                    {
+                                        if (existingPremium.ExpiresAt.HasValue)
+                                        {
+                                            existingPremium.ExpiresAt = existingPremium.ExpiresAt.Value > DateTime.UtcNow 
+                                                ? existingPremium.ExpiresAt.Value.AddDays(plan.DurationDays.Value) 
+                                                : DateTime.UtcNow.AddDays(plan.DurationDays.Value);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        existingPremium.ExpiresAt = null;
+                                    }
+                                }
+                                else
+                                {
+                                    var newPremium = new PremiumSubscription
+                                    {
+                                        Id = Guid.NewGuid(),
+                                        UserInternalId = transaction.UserInternalId,
+                                        SubscriptionPlanInternalId = plan.InternalId,
+                                        PlanType = !plan.DurationDays.HasValue || plan.DurationDays >= 365 ? PremiumPlan.Yearly : PremiumPlan.Monthly,
+                                        PricePaid = transaction.Amount,
+                                        Currency = transaction.Currency,
+                                        PaymentMethod = "momo",
+                                        PaymentRef = transId,
+                                        StartedAt = DateTime.UtcNow,
+                                        ExpiresAt = plan.DurationDays.HasValue ? DateTime.UtcNow.AddDays(plan.DurationDays.Value) : (DateTime?)null,
+                                        IsActive = true,
+                                        CreatedAt = DateTime.UtcNow
+                                    };
+                                    await _unitOfWork.PremiumSubscriptions.AddAsync(newPremium);
+                                }
+
+                                if (profile != null)
+                                {
+                                    var premiumTier = await _tierConfigService.GetConfigEntityAsync("premium");
+                                    profile.BgRemovalCredits = premiumTier.BgRemovalCredits;
+                                    profile.TryOnCredits = premiumTier.TryOnCredits;
+                                    profile.UpdatedAt = DateTime.UtcNow;
+                                    _unitOfWork.CustomerProfiles.Update(profile);
+                                }
                             }
                         }
                     }
@@ -242,53 +263,74 @@ public class PaymentsController : ControllerBase
                     var plan = await _unitOfWork.SubscriptionPlans.GetByIdAsync(transaction.SubscriptionPlanInternalId);
                     if (plan != null)
                     {
-                        var existingPremium = await _unitOfWork.PremiumSubscriptions.FindAsync(
-                            ps => ps.UserInternalId == transaction.UserInternalId && ps.IsActive);
+                        var profile = await _unitOfWork.CustomerProfiles.FindAsync(cp => cp.UserInternalId == transaction.UserInternalId);
+                        bool isTopup = plan.Name.ToLower().Contains("credit") || plan.Name.ToLower().Contains("lượt lẻ") || plan.Name.ToLower().Contains("lượt thử");
 
-                        if (existingPremium != null)
+                        if (isTopup)
                         {
-                            if (plan.DurationDays.HasValue)
+                            if (profile != null)
                             {
-                                if (existingPremium.ExpiresAt.HasValue)
+                                int addedCredits = 10;
+                                var match = System.Text.RegularExpressions.Regex.Match(plan.Name, @"\d+");
+                                if (match.Success && int.TryParse(match.Value, out int parsedVal))
                                 {
-                                    existingPremium.ExpiresAt = existingPremium.ExpiresAt.Value > DateTime.UtcNow 
-                                        ? existingPremium.ExpiresAt.Value.AddDays(plan.DurationDays.Value) 
-                                        : DateTime.UtcNow.AddDays(plan.DurationDays.Value);
+                                    addedCredits = parsedVal;
                                 }
-                            }
-                            else
-                            {
-                                existingPremium.ExpiresAt = null;
+
+                                profile.TryOnCredits += addedCredits;
+                                profile.UpdatedAt = DateTime.UtcNow;
+                                _unitOfWork.CustomerProfiles.Update(profile);
                             }
                         }
                         else
                         {
-                            var newPremium = new PremiumSubscription
-                            {
-                                Id = Guid.NewGuid(),
-                                UserInternalId = transaction.UserInternalId,
-                                SubscriptionPlanInternalId = plan.InternalId,
-                                PlanType = !plan.DurationDays.HasValue || plan.DurationDays >= 365 ? PremiumPlan.Yearly : PremiumPlan.Monthly,
-                                PricePaid = transaction.Amount,
-                                Currency = transaction.Currency,
-                                PaymentMethod = "vnpay",
-                                PaymentRef = vnp_TransactionNo,
-                                StartedAt = DateTime.UtcNow,
-                                ExpiresAt = plan.DurationDays.HasValue ? DateTime.UtcNow.AddDays(plan.DurationDays.Value) : (DateTime?)null,
-                                IsActive = true,
-                                CreatedAt = DateTime.UtcNow
-                            };
-                            await _unitOfWork.PremiumSubscriptions.AddAsync(newPremium);
-                        }
+                            var existingPremium = await _unitOfWork.PremiumSubscriptions.FindAsync(
+                                ps => ps.UserInternalId == transaction.UserInternalId && ps.IsActive);
 
-                        // Cập nhật lượt AI cho khách hàng theo config premium tier
-                        var profile = await _unitOfWork.CustomerProfiles.FindAsync(cp => cp.UserInternalId == transaction.UserInternalId);
-                        if (profile != null)
-                        {
-                            var premiumTier = await _tierConfigService.GetConfigEntityAsync("premium");
-                            profile.BgRemovalCredits = premiumTier.BgRemovalCredits;
-                            profile.TryOnCredits = premiumTier.TryOnCredits;
-                            _unitOfWork.CustomerProfiles.Update(profile);
+                            if (existingPremium != null)
+                            {
+                                if (plan.DurationDays.HasValue)
+                                {
+                                    if (existingPremium.ExpiresAt.HasValue)
+                                    {
+                                        existingPremium.ExpiresAt = existingPremium.ExpiresAt.Value > DateTime.UtcNow 
+                                            ? existingPremium.ExpiresAt.Value.AddDays(plan.DurationDays.Value) 
+                                            : DateTime.UtcNow.AddDays(plan.DurationDays.Value);
+                                    }
+                                }
+                                else
+                                {
+                                    existingPremium.ExpiresAt = null;
+                                }
+                            }
+                            else
+                            {
+                                var newPremium = new PremiumSubscription
+                                {
+                                    Id = Guid.NewGuid(),
+                                    UserInternalId = transaction.UserInternalId,
+                                    SubscriptionPlanInternalId = plan.InternalId,
+                                    PlanType = !plan.DurationDays.HasValue || plan.DurationDays >= 365 ? PremiumPlan.Yearly : PremiumPlan.Monthly,
+                                    PricePaid = transaction.Amount,
+                                    Currency = transaction.Currency,
+                                    PaymentMethod = "vnpay",
+                                    PaymentRef = vnp_TransactionNo,
+                                    StartedAt = DateTime.UtcNow,
+                                    ExpiresAt = plan.DurationDays.HasValue ? DateTime.UtcNow.AddDays(plan.DurationDays.Value) : (DateTime?)null,
+                                    IsActive = true,
+                                    CreatedAt = DateTime.UtcNow
+                                };
+                                await _unitOfWork.PremiumSubscriptions.AddAsync(newPremium);
+                            }
+
+                            if (profile != null)
+                            {
+                                var premiumTier = await _tierConfigService.GetConfigEntityAsync("premium");
+                                profile.BgRemovalCredits = premiumTier.BgRemovalCredits;
+                                profile.TryOnCredits = premiumTier.TryOnCredits;
+                                profile.UpdatedAt = DateTime.UtcNow;
+                                _unitOfWork.CustomerProfiles.Update(profile);
+                            }
                         }
                     }
                 }

@@ -228,60 +228,93 @@ public class ManualPaymentService : IManualPaymentService
         // Cập nhật RawCallbackData với thông tin admin review
         transaction.RawCallbackData = UpdateProofData(transaction.RawCallbackData, adminNote, adminId, DateTime.UtcNow);
 
-        // Tìm plan để tính số ngày Premium
+        // Tìm plan để tính số ngày Premium hoặc số lượt nạp lẻ
         var plan = await _unitOfWork.SubscriptionPlans.GetByIdAsync(transaction.SubscriptionPlanInternalId);
+        bool isTopup = false;
+        int addedCredits = 10;
+
         if (plan != null)
         {
-            var existingPremium = await _unitOfWork.PremiumSubscriptions.FindAsync(
-                ps => ps.UserInternalId == transaction.UserInternalId && ps.IsActive);
+            var profile = await _unitOfWork.CustomerProfiles.FindAsync(cp => cp.UserInternalId == transaction.UserInternalId);
+            isTopup = plan.Name.ToLower().Contains("credit") || plan.Name.ToLower().Contains("lượt lẻ") || plan.Name.ToLower().Contains("lượt thử");
 
-            if (existingPremium != null)
+            if (isTopup)
             {
-                // Kéo dài subscription hiện tại
-                if (plan.DurationDays.HasValue)
+                // TRƯỜNG HỢP 1 & 2: NẠP LƯỢL LẺ (Cộng dồn lượt dùng hiện tại)
+                if (profile != null)
                 {
-                    existingPremium.ExpiresAt = (existingPremium.ExpiresAt.HasValue && existingPremium.ExpiresAt.Value > DateTime.UtcNow)
-                        ? existingPremium.ExpiresAt.Value.AddDays(plan.DurationDays.Value)
-                        : DateTime.UtcNow.AddDays(plan.DurationDays.Value);
-                }
-                else
-                {
-                    existingPremium.ExpiresAt = null;
+                    // Tự động phân tích số lượng credits từ tên gói (Ví dụ: "Gói 10 Credits" -> 10, "Gói 25 Credits" -> 25)
+                    var match = System.Text.RegularExpressions.Regex.Match(plan.Name, @"\d+");
+                    if (match.Success && int.TryParse(match.Value, out int parsedVal))
+                    {
+                        addedCredits = parsedVal;
+                    }
+
+                    profile.TryOnCredits += addedCredits;
+                    // Mặc định gói credits lẻ thử đồ AI thường đi kèm một số lượt xóa nền tương đương (nếu cần thiết, hoặc chỉ cộng try_on)
+                    profile.UpdatedAt = DateTime.UtcNow;
+                    _unitOfWork.CustomerProfiles.Update(profile);
                 }
             }
             else
             {
-                // Tạo mới PremiumSubscription
-                var newPremium = new PremiumSubscription
-                {
-                    Id                        = Guid.NewGuid(),
-                    UserInternalId            = transaction.UserInternalId,
-                    SubscriptionPlanInternalId = plan.InternalId,
-                    PlanType                  = !plan.DurationDays.HasValue || plan.DurationDays >= 365 ? PremiumPlan.Yearly : PremiumPlan.Monthly,
-                    PricePaid                 = transaction.Amount,
-                    Currency                  = transaction.Currency,
-                    PaymentMethod             = GatewayName,
-                    PaymentRef                = transaction.Id.ToString(),
-                    StartedAt                 = DateTime.UtcNow,
-                    ExpiresAt                 = plan.DurationDays.HasValue ? DateTime.UtcNow.AddDays(plan.DurationDays.Value) : (DateTime?)null,
-                    IsActive                  = true,
-                    CreatedAt                 = DateTime.UtcNow
-                };
-                await _unitOfWork.PremiumSubscriptions.AddAsync(newPremium);
-            }
+                // TRƯỜNG HỢP 3: NÂNG CẤP GÓI PREMIUM (Gia hạn thời gian sử dụng)
+                var existingPremium = await _unitOfWork.PremiumSubscriptions.FindAsync(
+                    ps => ps.UserInternalId == transaction.UserInternalId && ps.IsActive);
 
-            // Cập nhật lượt AI cho khách hàng theo config premium tier
-            var profile = await _unitOfWork.CustomerProfiles.FindAsync(cp => cp.UserInternalId == transaction.UserInternalId);
-            if (profile != null)
-            {
-                var premiumTier = await _tierConfigService.GetConfigEntityAsync("premium");
-                profile.BgRemovalCredits = premiumTier.BgRemovalCredits;
-                profile.TryOnCredits = premiumTier.TryOnCredits;
-                _unitOfWork.CustomerProfiles.Update(profile);
+                if (existingPremium != null)
+                {
+                    // Kéo dài subscription hiện tại
+                    if (plan.DurationDays.HasValue)
+                    {
+                        existingPremium.ExpiresAt = (existingPremium.ExpiresAt.HasValue && existingPremium.ExpiresAt.Value > DateTime.UtcNow)
+                            ? existingPremium.ExpiresAt.Value.AddDays(plan.DurationDays.Value)
+                            : DateTime.UtcNow.AddDays(plan.DurationDays.Value);
+                    }
+                    else
+                    {
+                        existingPremium.ExpiresAt = null;
+                    }
+                }
+                else
+                {
+                    // Tạo mới PremiumSubscription
+                    var newPremium = new PremiumSubscription
+                    {
+                        Id                        = Guid.NewGuid(),
+                        UserInternalId            = transaction.UserInternalId,
+                        SubscriptionPlanInternalId = plan.InternalId,
+                        PlanType                  = !plan.DurationDays.HasValue || plan.DurationDays >= 365 ? PremiumPlan.Yearly : PremiumPlan.Monthly,
+                        PricePaid                 = transaction.Amount,
+                        Currency                  = transaction.Currency,
+                        PaymentMethod             = GatewayName,
+                        PaymentRef                = transaction.Id.ToString(),
+                        StartedAt                 = DateTime.UtcNow,
+                        ExpiresAt = plan.DurationDays.HasValue ? DateTime.UtcNow.AddDays(plan.DurationDays.Value) : (DateTime?)null,
+                        IsActive                  = true,
+                        CreatedAt                 = DateTime.UtcNow
+                    };
+                    await _unitOfWork.PremiumSubscriptions.AddAsync(newPremium);
+                }
+
+                // Cập nhật lượt AI cho khách hàng theo cấu hình của premium tier
+                if (profile != null)
+                {
+                    var premiumTier = await _tierConfigService.GetConfigEntityAsync("premium");
+                    profile.BgRemovalCredits = premiumTier.BgRemovalCredits;
+                    profile.TryOnCredits = premiumTier.TryOnCredits;
+                    profile.UpdatedAt = DateTime.UtcNow;
+                    _unitOfWork.CustomerProfiles.Update(profile);
+                }
             }
         }
 
         await _unitOfWork.SaveChangesAsync();
+
+        // Cấu hình thông điệp thông báo tuỳ biến
+        string successMessage = isTopup 
+            ? $"Giao dịch chuyển khoản của bạn đã được phê duyệt thành công! Cộng thêm {addedCredits} lượt thử đồ AI."
+            : "Giao dịch chuyển khoản của bạn đã được phê duyệt thành công! Premium đã được kích hoạt.";
 
         // Lưu thông báo vào CSDL và gửi Real-time Notification qua SignalR
         try
@@ -290,7 +323,7 @@ public class ManualPaymentService : IManualPaymentService
                 transaction.UserInternalId,
                 "Payment",
                 "Thanh toán thành công",
-                "Giao dịch chuyển khoản của bạn đã được phê duyệt thành công! Premium đã được kích hoạt.",
+                successMessage,
                 "ManualPayment",
                 transaction.InternalId
             );
@@ -306,7 +339,7 @@ public class ManualPaymentService : IManualPaymentService
             await _notificationHubService.SendPaymentUpdateAsync(transaction.UserInternalId, new {
                 transactionId = transaction.InternalId,
                 status = "success",
-                message = "Giao dịch chuyển khoản của bạn đã được phê duyệt thành công! Premium đã được kích hoạt."
+                message = successMessage
             });
         }
         catch (Exception ex)

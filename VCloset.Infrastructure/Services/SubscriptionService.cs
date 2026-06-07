@@ -28,7 +28,53 @@ public class SubscriptionService : ISubscriptionService
     public async Task<IEnumerable<SubscriptionPlanResponse>> GetPlansAsync()
     {
         var plans = await _unitOfWork.SubscriptionPlans.FindAllAsync(p => p.IsActive);
-        return plans.OrderBy(p => p.Price).Select(p => new SubscriptionPlanResponse
+        var planList = plans.ToList();
+        bool needsSave = false;
+
+        if (!planList.Any(p => p.Name.Contains("10 Credits") || p.Id == Guid.Parse("fa719b0a-3135-4309-847e-855f7bc74e6c")))
+        {
+            var p3 = new SubscriptionPlan
+            {
+                Id = Guid.Parse("fa719b0a-3135-4309-847e-855f7bc74e6c"),
+                Name = "Gói 10 Credits Thử đồ AI",
+                Description = "Cộng thêm 10 lượt thử đồ AI ảo, sử dụng bất cứ lúc nào.",
+                Price = 29000m,
+                Currency = "VND",
+                DurationDays = null,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            await _unitOfWork.SubscriptionPlans.AddAsync(p3);
+            planList.Add(p3);
+            needsSave = true;
+        }
+
+        if (!planList.Any(p => p.Name.Contains("25 Credits") || p.Id == Guid.Parse("96a84d28-3e5f-4a0b-9df0-dfd35a8bc589")))
+        {
+            var p4 = new SubscriptionPlan
+            {
+                Id = Guid.Parse("96a84d28-3e5f-4a0b-9df0-dfd35a8bc589"),
+                Name = "Gói 25 Credits Thử đồ AI",
+                Description = "Cộng thêm 25 lượt thử đồ AI ảo, sử dụng bất cứ lúc nào.",
+                Price = 69000m,
+                Currency = "VND",
+                DurationDays = null,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            await _unitOfWork.SubscriptionPlans.AddAsync(p4);
+            planList.Add(p4);
+            needsSave = true;
+        }
+
+        if (needsSave)
+        {
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        return planList.OrderBy(p => p.Price).Select(p => new SubscriptionPlanResponse
         {
             Id           = p.Id,
             Name         = p.Name,
