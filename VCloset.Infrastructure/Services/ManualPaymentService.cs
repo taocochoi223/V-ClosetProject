@@ -240,7 +240,7 @@ public class ManualPaymentService : IManualPaymentService
 
             if (isTopup)
             {
-                // TRƯỜNG HỢP 1 & 2: NẠP LƯỢL LẺ (Cộng dồn lượt dùng hiện tại)
+                // TRƯỜNG HỢP 1 & 2: NẠP LƯỢT LẺ (Cộng dồn lượt dùng hiện tại)
                 if (profile != null)
                 {
                     // Tự động phân tích số lượng credits từ tên gói (Ví dụ: "Gói 10 Credits" -> 10, "Gói 25 Credits" -> 25)
@@ -250,8 +250,16 @@ public class ManualPaymentService : IManualPaymentService
                         addedCredits = parsedVal;
                     }
 
-                    profile.TryOnCredits += addedCredits;
-                    // Mặc định gói credits lẻ thử đồ AI thường đi kèm một số lượt xóa nền tương đương (nếu cần thiết, hoặc chỉ cộng try_on)
+                    bool isBgRemoval = plan.Name.ToLower().Contains("xóa nền") || plan.Name.ToLower().Contains("bg");
+                    if (isBgRemoval)
+                    {
+                        profile.BgRemovalCredits += addedCredits;
+                    }
+                    else
+                    {
+                        profile.TryOnCredits += addedCredits;
+                    }
+                    
                     profile.UpdatedAt = DateTime.UtcNow;
                     _unitOfWork.CustomerProfiles.Update(profile);
                 }
@@ -312,8 +320,9 @@ public class ManualPaymentService : IManualPaymentService
         await _unitOfWork.SaveChangesAsync();
 
         // Cấu hình thông điệp thông báo tuỳ biến
+        bool isBgTopup = isTopup && (plan.Name.ToLower().Contains("xóa nền") || plan.Name.ToLower().Contains("bg"));
         string successMessage = isTopup 
-            ? $"Giao dịch chuyển khoản của bạn đã được phê duyệt thành công! Cộng thêm {addedCredits} lượt thử đồ AI."
+            ? $"Giao dịch chuyển khoản của bạn đã được phê duyệt thành công! Cộng thêm {addedCredits} lượt {(isBgTopup ? "xóa nền" : "thử đồ")} AI."
             : "Giao dịch chuyển khoản của bạn đã được phê duyệt thành công! Premium đã được kích hoạt.";
 
         // Lưu thông báo vào CSDL và gửi Real-time Notification qua SignalR

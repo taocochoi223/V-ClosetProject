@@ -96,7 +96,16 @@ public class PaymentsController : ControllerBase
                                         addedCredits = parsedVal;
                                     }
 
-                                    profile.TryOnCredits += addedCredits;
+                                    bool isBgRemoval = plan.Name.ToLower().Contains("xóa nền") || plan.Name.ToLower().Contains("bg");
+                                    if (isBgRemoval)
+                                    {
+                                        profile.BgRemovalCredits += addedCredits;
+                                    }
+                                    else
+                                    {
+                                        profile.TryOnCredits += addedCredits;
+                                    }
+
                                     profile.UpdatedAt = DateTime.UtcNow;
                                     _unitOfWork.CustomerProfiles.Update(profile);
                                 }
@@ -277,7 +286,16 @@ public class PaymentsController : ControllerBase
                                     addedCredits = parsedVal;
                                 }
 
-                                profile.TryOnCredits += addedCredits;
+                                bool isBgRemoval = plan.Name.ToLower().Contains("xóa nền") || plan.Name.ToLower().Contains("bg");
+                                if (isBgRemoval)
+                                {
+                                    profile.BgRemovalCredits += addedCredits;
+                                }
+                                else
+                                {
+                                    profile.TryOnCredits += addedCredits;
+                                }
+
                                 profile.UpdatedAt = DateTime.UtcNow;
                                 _unitOfWork.CustomerProfiles.Update(profile);
                             }
