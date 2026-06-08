@@ -13,6 +13,7 @@ public interface IChatService
     Task<ChatRoomResponseDto> CreateDirectRoomAsync(int userId, CreateDirectRoomRequest request);
     Task<ChatRoomResponseDto> CreateGroupRoomAsync(int userId, CreateGroupRoomRequest request);
     Task<List<ChatRoomResponseDto>> GetChatRoomsAsync(int userId);
+    Task<bool> MarkMessagesAsReadAsync(int userId, Guid roomId);
 
     // Messages
     Task<List<ChatMessageResponseDto>> GetRoomMessagesAsync(int userId, Guid roomId, int page, int pageSize);

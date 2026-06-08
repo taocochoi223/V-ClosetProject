@@ -10,6 +10,9 @@ using VCloset.Application.Interfaces;
 using VCloset.Domain.Entities;
 using VCloset.Domain.Enums;
 
+using VCloset.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+
 namespace VCloset.Infrastructure.Services;
 
 public class ChatService : IChatService
@@ -17,12 +20,14 @@ public class ChatService : IChatService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IStorageService _storageService;
     private readonly IChatHubService _chatHubService;
+    private readonly VClosetVersion30Context _context;
 
-    public ChatService(IUnitOfWork unitOfWork, IStorageService storageService, IChatHubService chatHubService)
+    public ChatService(IUnitOfWork unitOfWork, IStorageService storageService, IChatHubService chatHubService, VClosetVersion30Context context)
     {
         _unitOfWork = unitOfWork;
         _storageService = storageService;
         _chatHubService = chatHubService;
+        _context = context;
     }
 
     public async Task<ChatRoomResponseDto> CreateDirectRoomAsync(int userId, CreateDirectRoomRequest request)
@@ -118,19 +123,16 @@ public class ChatService : IChatService
         await _unitOfWork.ChatRoomMembers.AddAsync(adminMember);
 
         // Add các thành viên khác
-        foreach (var memberId in request.MemberUserIds)
+        var targetUsers = await _context.Users.Where(u => request.MemberUserIds.Contains(u.Id)).ToListAsync();
+        foreach (var user in targetUsers)
         {
-            var user = await _unitOfWork.Users.FindAsync(u => u.Id == memberId);
-            if (user != null)
+            var member = new ChatRoomMember
             {
-                var member = new ChatRoomMember
-                {
-                    RoomInternalId = newRoom.InternalId,
-                    UserInternalId = user.InternalId,
-                    JoinedAt = DateTime.UtcNow
-                };
-                await _unitOfWork.ChatRoomMembers.AddAsync(member);
-            }
+                RoomInternalId = newRoom.InternalId,
+                UserInternalId = user.InternalId,
+                JoinedAt = DateTime.UtcNow
+            };
+            await _unitOfWork.ChatRoomMembers.AddAsync(member);
         }
 
         await _unitOfWork.SaveChangesAsync();
@@ -143,46 +145,66 @@ public class ChatService : IChatService
         var user = await _unitOfWork.Users.GetByIdAsync(userId);
         if (user == null) return new List<ChatRoomResponseDto>();
 
-        // Tìm tất cả các phòng chat của user này
-        var memberships = await _unitOfWork.ChatRoomMembers.FindAllAsync(m => m.UserInternalId == user.InternalId);
-        var roomIds = memberships.Select(m => m.RoomInternalId).ToList();
+        // Tìm tất cả các phòng chat của user này và nạp thông tin cần thiết bằng batch query để tránh N+1
+        var userMemberships = await _context.ChatRoomMembers
+            .Where(m => m.UserInternalId == user.InternalId)
+            .ToListAsync();
+
+        var roomInternalIds = userMemberships.Select(m => m.RoomInternalId).ToList();
+        var roomsData = await _context.ChatRooms
+            .Where(r => roomInternalIds.Contains(r.InternalId) && r.IsActive)
+            .ToListAsync();
+
+        // Lấy tin nhắn cuối cùng của mỗi phòng
+        var lastMessages = await _context.ChatMessages
+            .Where(msg => roomInternalIds.Contains(msg.RoomInternalId) && msg.DeletedAt == null)
+            .GroupBy(msg => msg.RoomInternalId)
+            .Select(g => g.OrderByDescending(m => m.SentAt).FirstOrDefault())
+            .ToListAsync();
+
+        // Lấy thông tin đối phương (thành viên khác) cho các phòng chat 1-1
+        var directRoomIds = roomsData.Where(r => r.RoomType == ChatRoomType.Direct).Select(r => r.InternalId).ToList();
+        
+        var otherMembersData = await (from m in _context.ChatRoomMembers
+                                      where directRoomIds.Contains(m.RoomInternalId) && m.UserInternalId != user.InternalId
+                                      join u in _context.Users on m.UserInternalId equals u.InternalId
+                                      select new { m.RoomInternalId, User = u }).ToListAsync();
+
+        // Đếm số lượng tin nhắn chưa đọc cho mỗi phòng (so với LastReadAt)
+        var unreadCounts = await (from msg in _context.ChatMessages
+                                  join m in _context.ChatRoomMembers on msg.RoomInternalId equals m.RoomInternalId
+                                  where m.UserInternalId == user.InternalId 
+                                        && msg.DeletedAt == null 
+                                        && msg.SentAt > (m.LastReadAt ?? m.JoinedAt)
+                                  group msg by msg.RoomInternalId into g
+                                  select new { RoomId = g.Key, Count = g.Count() })
+                                  .ToDictionaryAsync(x => x.RoomId, x => x.Count);
 
         var result = new List<ChatRoomResponseDto>();
 
-        foreach (var roomId in roomIds)
+        foreach (var room in roomsData)
         {
-            var room = await _unitOfWork.ChatRooms.FindAsync(r => r.InternalId == roomId && r.IsActive);
-            if (room != null)
+            var lastMsg = lastMessages.FirstOrDefault(m => m != null && m.RoomInternalId == room.InternalId);
+            
+            string? displayName = room.Name;
+            string? displayCover = room.CoverUrl;
+
+            if (room.RoomType == ChatRoomType.Direct)
             {
-                // Lấy tin nhắn cuối cùng
-                var messages = await _unitOfWork.ChatMessages.FindAllAsync(m => m.RoomInternalId == roomId && m.DeletedAt == null);
-                var lastMsg = messages.OrderByDescending(m => m.SentAt).FirstOrDefault();
-
-                // Lấy tên hiển thị cho phòng chat Direct dựa vào đối phương
-                string? displayName = room.Name;
-                string? displayCover = room.CoverUrl;
-
-                if (room.RoomType == ChatRoomType.Direct)
+                var otherMember = otherMembersData.FirstOrDefault(m => m.RoomInternalId == room.InternalId);
+                if (otherMember != null && otherMember.User != null)
                 {
-                    var otherMembers = await _unitOfWork.ChatRoomMembers.FindAllAsync(m => m.RoomInternalId == roomId && m.UserInternalId != user.InternalId);
-                    var otherMember = otherMembers.FirstOrDefault();
-                    if (otherMember != null)
-                    {
-                        var otherUser = await _unitOfWork.Users.FindAsync(u => u.InternalId == otherMember.UserInternalId);
-                        if (otherUser != null)
-                        {
-                            displayName = otherUser.DisplayName;
-                            displayCover = otherUser.AvatarUrl;
-                        }
-                    }
+                    displayName = otherMember.User.DisplayName;
+                    displayCover = otherMember.User.AvatarUrl;
                 }
-
-                var dto = MapToRoomDto(room, 0, lastMsg);
-                dto.Name = displayName;
-                dto.CoverUrl = displayCover;
-
-                result.Add(dto);
             }
+
+            var unread = unreadCounts.ContainsKey(room.InternalId) ? unreadCounts[room.InternalId] : 0;
+            var dto = MapToRoomDto(room, unread, lastMsg);
+            dto.Name = displayName;
+            dto.CoverUrl = displayCover;
+
+            result.Add(dto);
         }
 
         return result.OrderByDescending(r => r.LastMessageSentAt ?? r.CreatedAt).ToList();
@@ -191,27 +213,58 @@ public class ChatService : IChatService
     public async Task<List<ChatMessageResponseDto>> GetRoomMessagesAsync(int userId, Guid roomId, int page, int pageSize)
     {
         var user = await _unitOfWork.Users.GetByIdAsync(userId);
-        var room = await _unitOfWork.ChatRooms.FindAsync(r => r.Id == roomId);
+        var room = await _context.ChatRooms.FirstOrDefaultAsync(r => r.Id == roomId);
 
         if (user == null || room == null) throw new Exception("Dữ liệu không hợp lệ.");
 
         // Xác thực người dùng có thuộc phòng chat này không
-        var isMember = await _unitOfWork.ChatRoomMembers.FindAsync(m => m.RoomInternalId == room.InternalId && m.UserInternalId == user.InternalId);
-        if (isMember == null) throw new Exception("Bạn không có quyền xem tin nhắn của phòng chat này.");
+        var isMember = await _context.ChatRoomMembers.AnyAsync(m => m.RoomInternalId == room.InternalId && m.UserInternalId == user.InternalId);
+        if (!isMember) throw new Exception("Bạn không có quyền xem tin nhắn của phòng chat này.");
 
-        var messages = await _unitOfWork.ChatMessages.FindAllAsync(m => m.RoomInternalId == room.InternalId && m.DeletedAt == null);
-
-        var pagedMessages = messages
+        // Phân trang bằng DB (IQueryable) để tránh Memory Leak
+        var pagedMessages = await _context.ChatMessages
+            .Where(m => m.RoomInternalId == room.InternalId && m.DeletedAt == null)
             .OrderByDescending(m => m.SentAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .ToList();
+            .ToListAsync();
+
+        // Lấy hàng loạt thông tin User và Outfit để chống N+1
+        var userInternalIds = pagedMessages.Select(m => m.UserInternalId).Distinct().ToList();
+        var senders = await _context.Users.Where(u => userInternalIds.Contains(u.InternalId)).ToListAsync();
+
+        var outfitInternalIds = pagedMessages.Where(m => m.OutfitInternalId.HasValue).Select(m => m.OutfitInternalId!.Value).Distinct().ToList();
+        var outfits = outfitInternalIds.Any() 
+            ? await _context.CanvasOutfits.Where(o => outfitInternalIds.Contains(o.InternalId)).ToListAsync()
+            : new List<CanvasOutfit>();
 
         var result = new List<ChatMessageResponseDto>();
         foreach (var msg in pagedMessages)
         {
-            var sender = await _unitOfWork.Users.FindAsync(u => u.InternalId == msg.UserInternalId);
-            result.Add(await MapToMessageDtoAsync(msg, room.Id, sender));
+            var sender = senders.FirstOrDefault(u => u.InternalId == msg.UserInternalId);
+            var outfit = msg.OutfitInternalId.HasValue ? outfits.FirstOrDefault(o => o.InternalId == msg.OutfitInternalId.Value) : null;
+            
+            var dto = new ChatMessageResponseDto
+            {
+                Id = msg.Id,
+                RoomId = room.Id,
+                SenderId = sender?.Id ?? Guid.Empty,
+                SenderName = sender?.DisplayName ?? "Người dùng ẩn danh",
+                SenderAvatarUrl = sender?.AvatarUrl,
+                Content = msg.Content,
+                ImageUrl = msg.ImageUrl,
+                MessageType = msg.MessageType,
+                SentAt = msg.SentAt
+            };
+
+            if (outfit != null)
+            {
+                dto.OutfitId = outfit.Id;
+                dto.OutfitName = outfit.Title;
+                dto.OutfitImageUrl = outfit.CanvasSnapshotUrl;
+            }
+
+            result.Add(dto);
         }
 
         return result;
@@ -369,5 +422,22 @@ public class ChatService : IChatService
         }
 
         return dto;
+    }
+
+    public async Task<bool> MarkMessagesAsReadAsync(int userId, Guid roomId)
+    {
+        var user = await _unitOfWork.Users.GetByIdAsync(userId);
+        var room = await _context.ChatRooms.FirstOrDefaultAsync(r => r.Id == roomId);
+
+        if (user == null || room == null) return false;
+
+        var member = await _context.ChatRoomMembers.FirstOrDefaultAsync(m => m.RoomInternalId == room.InternalId && m.UserInternalId == user.InternalId);
+        if (member == null) return false;
+
+        member.LastReadAt = DateTime.UtcNow;
+        _context.ChatRoomMembers.Update(member);
+        await _context.SaveChangesAsync();
+
+        return true;
     }
 }
