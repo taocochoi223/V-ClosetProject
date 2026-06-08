@@ -19,12 +19,14 @@ public class AdminUserService : IAdminUserService
     private readonly IUnitOfWork _unitOfWork;
     private readonly VClosetVersion30Context _context;
     private readonly IEmailService _emailService;
+    private readonly INotificationHubService _notificationHubService;
 
-    public AdminUserService( IUnitOfWork unitOfWork, VClosetVersion30Context context, IEmailService emailService)
+    public AdminUserService( IUnitOfWork unitOfWork, VClosetVersion30Context context, IEmailService emailService, INotificationHubService notificationHubService)
     {
         _unitOfWork = unitOfWork;
         _context = context;
         _emailService = emailService;
+        _notificationHubService = notificationHubService;
     }
 
     public async Task<AdminUserDetailResponse?> GetUserDetailAsync(Guid targetUserId)
@@ -203,6 +205,15 @@ public class AdminUserService : IAdminUserService
 
         _unitOfWork.Users.Update(targetUser);
         await _unitOfWork.SaveChangesAsync();
+
+        await _notificationHubService.SendAdminUserUpdateAlertAsync(new {
+            Action = "Deactivate",
+            UserId = targetUser.Id,
+            DisplayName = targetUser.DisplayName
+        });
+
+        // Gửi email thông báo tài khoản bị vô hiệu hóa
+        await _emailService.SendAccountDeactivatedEmailAsync(targetUser.Email, targetUser.DisplayName);
     }
 
     // ============================
@@ -355,6 +366,12 @@ public class AdminUserService : IAdminUserService
         }
 
         await _unitOfWork.SaveChangesAsync();
+
+        await _notificationHubService.SendAdminUserUpdateAlertAsync(new {
+            Action = "Create",
+            UserId = newUser.Id,
+            DisplayName = newUser.DisplayName
+        });
 
         // 5. Gửi email thông báo tài khoản mới chứa mật khẩu ngẫu nhiên
         var mailSent = await _emailService.SendNewAccountEmailAsync(
@@ -588,6 +605,12 @@ public class AdminUserService : IAdminUserService
 
         _unitOfWork.Users.Update(targetUser);
         await _unitOfWork.SaveChangesAsync();
+
+        await _notificationHubService.SendAdminUserUpdateAlertAsync(new {
+            Action = "Reactivate",
+            UserId = targetUser.Id,
+            DisplayName = targetUser.DisplayName
+        });
     }
 
     public async Task ResetPermissionsToDefaultAsync(int adminUserId, Guid targetUserId)
