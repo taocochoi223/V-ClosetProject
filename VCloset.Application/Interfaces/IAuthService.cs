@@ -6,12 +6,12 @@ namespace VCloset.Application.Interfaces;
 
 public interface IAuthService
 {
-    Task<bool> RegisterAsync(RegisterRequest request);
+    Task<bool> RegisterAsync(RegisterRequest request, string ipAddress);
     Task<AuthResponse?> VerifyOtpAsync(VerifyOtpRequest request);
     Task<AuthResponse?> LoginAsync(LoginRequest request);
     Task<bool> ForgotPasswordAsync(ForgotPasswordRequest request);
     Task<bool> ResetPasswordAsync(ResetPasswordRequest request);
-    Task<AuthResponse?> GoogleLoginAsync(GoogleLoginRequest request);
+    Task<AuthResponse?> GoogleLoginAsync(GoogleLoginRequest request, string ipAddress);
     Task<bool> ResendOtpAsync(ResendOtpRequest request);
     Task<bool> ChangePasswordAsync(int userId, ChangePasswordRequest request);
     Task<AuthResponse> RefreshTokenAsync(RefreshTokenRequest request);

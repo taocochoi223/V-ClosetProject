@@ -36,7 +36,7 @@ public class AuthService : IAuthService
         _tierConfigService = tierConfigService;
     }
 
-    public async Task<bool> RegisterAsync(RegisterRequest request)
+    public async Task<bool> RegisterAsync(RegisterRequest request, string ipAddress)
     {
         var existingUser = await _unitOfWork.Users.FindAsync(u => u.Email == request.Email);
 
@@ -63,7 +63,10 @@ public class AuthService : IAuthService
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
                 Role = UserRole.Customer,
-                AuthProvider = AuthProvider.Local
+                AuthProvider = AuthProvider.Local,
+                AgreedToTermsAt = DateTimeOffset.UtcNow,
+                TermsVersion = "1.0-20260605",
+                AgreedToTermsIp = ipAddress
             };
             await _unitOfWork.Users.AddAsync(newUser);
         }
@@ -205,7 +208,7 @@ public class AuthService : IAuthService
         return true;
     }
 
-    public async Task<AuthResponse?> GoogleLoginAsync(GoogleLoginRequest request)
+    public async Task<AuthResponse?> GoogleLoginAsync(GoogleLoginRequest request, string ipAddress)
     {
         try
         {
@@ -234,7 +237,10 @@ public class AuthService : IAuthService
                     IsActive = true,
                     IsEmailVerified = true,
                     CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
+                    UpdatedAt = DateTime.UtcNow,
+                    AgreedToTermsAt = DateTimeOffset.UtcNow,
+                    TermsVersion = "1.0-20260605",
+                    AgreedToTermsIp = ipAddress
                 };
 
                 await _unitOfWork.Users.AddAsync(user);

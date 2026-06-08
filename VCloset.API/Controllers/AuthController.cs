@@ -25,7 +25,8 @@ public class AuthController : ControllerBase
     {
         try
         {
-            await _authService.RegisterAsync(request);
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
+            await _authService.RegisterAsync(request, ipAddress);
             return Ok("Đăng ký thành công! Vui lòng kiểm tra Email để lấy mã kích hoạt OTP.");
         }
         catch (System.InvalidOperationException ex) when (ex.Message == "EMAIL_ALREADY_EXISTS")
@@ -110,7 +111,8 @@ public class AuthController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        var response = await _authService.GoogleLoginAsync(request);
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
+        var response = await _authService.GoogleLoginAsync(request, ipAddress);
 
         if (response == null)
             return Unauthorized(new { message = "Xác thực Google thất bại hoặc Token không hợp lệ." });
