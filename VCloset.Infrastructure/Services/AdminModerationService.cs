@@ -22,51 +22,53 @@ public class AdminModerationService : IAdminModerationService
     // 1. Lấy danh sách báo cáo vi phạm có phân trang và lọc
     public async Task<PagedReportsResponse> GetReportsAsync(int page, int pageSize, bool? isResolved, string? reason)
     {
-        var query = _context.PostReports.AsQueryable();
+        var query = from r in _context.PostReports
+                    join p in _context.CommunityPosts on r.PostInternalId equals p.InternalId into postJoin
+                    from p in postJoin.DefaultIfEmpty()
+                    join uReporter in _context.Users on r.ReporterInternalId equals uReporter.InternalId into reporterJoin
+                    from uReporter in reporterJoin.DefaultIfEmpty()
+                    join uCreator in _context.Users on p.UserInternalId equals uCreator.InternalId into creatorJoin
+                    from uCreator in creatorJoin.DefaultIfEmpty()
+                    select new { Report = r, Post = p, Reporter = uReporter, Creator = uCreator };
 
         // Lọc theo trạng thái xử lý
         if (isResolved.HasValue)
         {
-            query = query.Where(r => r.IsResolved == isResolved.Value);
+            query = query.Where(x => x.Report.IsResolved == isResolved.Value);
         }
 
         // Lọc theo lý do báo cáo - Dùng ToLower() thay cho ToLowerInvariant() để EF Core dịch sang SQL được
         if (!string.IsNullOrWhiteSpace(reason))
         {
             var lowerReason = reason.ToLower();
-            query = query.Where(r => r.Reason.ToLower().Contains(lowerReason));
+            query = query.Where(x => x.Report.Reason.ToLower().Contains(lowerReason));
         }
 
         var totalCount = await query.CountAsync();
 
         // Phân trang và sắp xếp giảm dần theo ngày tạo
-        var reportsList = await query
-            .OrderByDescending(r => r.CreatedAt)
+        var results = await query
+            .OrderByDescending(x => x.Report.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
 
         var summaries = new List<ReportSummaryResponse>();
 
-        foreach (var r in reportsList)
+        foreach (var x in results)
         {
-            // Nạp thông tin Post và Người dùng liên quan trực tiếp từ DbContext
-            var post = await _context.CommunityPosts.FirstOrDefaultAsync(p => p.InternalId == r.PostInternalId);
-            var reporter = await _context.Users.FirstOrDefaultAsync(u => u.InternalId == r.ReporterInternalId);
-            var postCreator = post != null ? await _context.Users.FirstOrDefaultAsync(u => u.InternalId == post.UserInternalId) : null;
-
             summaries.Add(new ReportSummaryResponse
             {
-                ReportId = r.Id,
-                PostId = post?.Id ?? Guid.Empty,
-                PostCaption = post?.Caption,
-                PostCreatorDisplayName = postCreator?.DisplayName ?? "Không xác định",
-                ReporterDisplayName = reporter?.DisplayName ?? "Không xác định",
-                Reason = r.Reason,
-                Description = r.Description,
-                IsResolved = r.IsResolved,
-                CreatedAt = r.CreatedAt,
-                IsPostHidden = post?.IsHidden ?? false // Truyền thông tin ẩn/hiện thực tế của bài đăng về cho Frontend
+                ReportId = x.Report.Id,
+                PostId = x.Post?.Id ?? Guid.Empty,
+                PostCaption = x.Post?.Caption,
+                PostCreatorDisplayName = x.Creator?.DisplayName ?? "Không xác định",
+                ReporterDisplayName = x.Reporter?.DisplayName ?? "Không xác định",
+                Reason = x.Report.Reason,
+                Description = x.Report.Description,
+                IsResolved = x.Report.IsResolved,
+                CreatedAt = x.Report.CreatedAt,
+                IsPostHidden = x.Post?.IsHidden ?? false // Truyền thông tin ẩn/hiện thực tế của bài đăng về cho Frontend
             });
         }
 
@@ -87,30 +89,29 @@ public class AdminModerationService : IAdminModerationService
 
         var creator = await _context.Users.FirstOrDefaultAsync(u => u.InternalId == post.UserInternalId);
         
-        // Lấy tất cả báo cáo liên kết với bài đăng này
-        var allReports = await _context.PostReports
-            .Where(r => r.PostInternalId == post.InternalId)
-            .OrderByDescending(r => r.CreatedAt)
-            .ToListAsync();
+        // Lấy tất cả báo cáo liên kết với bài đăng này và nạp thông tin User bằng join
+        var allReports = await (from r in _context.PostReports
+                                where r.PostInternalId == post.InternalId
+                                join u in _context.Users on r.ReporterInternalId equals u.InternalId into rJoin
+                                from u in rJoin.DefaultIfEmpty()
+                                join res in _context.Users on r.ResolvedByInternal equals res.InternalId into resJoin
+                                from res in resJoin.DefaultIfEmpty()
+                                orderby r.CreatedAt descending
+                                select new { Report = r, Reporter = u, Resolver = res }).ToListAsync();
         
         var activeReportsDto = new List<PostReportDetailDto>();
-        foreach (var r in allReports)
+        foreach (var x in allReports)
         {
-            var reporter = await _context.Users.FirstOrDefaultAsync(u => u.InternalId == r.ReporterInternalId);
-            var resolver = r.ResolvedByInternal.HasValue 
-                ? await _context.Users.FirstOrDefaultAsync(u => u.InternalId == r.ResolvedByInternal.Value) 
-                : null;
-
             activeReportsDto.Add(new PostReportDetailDto
             {
-                ReportId = r.Id,
-                ReporterName = reporter?.DisplayName ?? "Không xác định",
-                Reason = r.Reason,
-                Description = r.Description,
-                CreatedAt = r.CreatedAt,
-                IsResolved = r.IsResolved,
-                ResolvedByDisplayName = resolver?.DisplayName,
-                ResolvedAt = r.ResolvedAt
+                ReportId = x.Report.Id,
+                ReporterName = x.Reporter?.DisplayName ?? "Không xác định",
+                Reason = x.Report.Reason,
+                Description = x.Report.Description,
+                CreatedAt = x.Report.CreatedAt,
+                IsResolved = x.Report.IsResolved,
+                ResolvedByDisplayName = x.Resolver?.DisplayName,
+                ResolvedAt = x.Report.ResolvedAt
             });
         }
 
@@ -161,6 +162,20 @@ public class AdminModerationService : IAdminModerationService
                 post.IsHidden = true;
                 post.UpdatedAt = DateTime.UtcNow;
                 _context.CommunityPosts.Update(post);
+
+                // Đồng thời tự động đánh dấu ĐÃ GIẢI QUYẾT toàn bộ các báo cáo vi phạm CÒN LẠI liên quan đến bài viết này
+                var pendingReports = await _context.PostReports
+                    .Where(r => r.Id != reportId && r.PostInternalId == post.InternalId && !r.IsResolved)
+                    .ToListAsync();
+
+                foreach (var r in pendingReports)
+                {
+                    r.IsResolved = true;
+                    r.ResolvedByInternal = adminUserId;
+                    r.ResolvedAt = DateTime.UtcNow;
+                    r.Description = $"{r.Description} | [Hệ thống]: Tự động đóng do bài viết đã bị ẩn từ báo cáo khác.";
+                    _context.PostReports.Update(r);
+                }
             }
         }
 
