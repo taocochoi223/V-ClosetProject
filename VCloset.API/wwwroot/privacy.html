@@ -3,162 +3,173 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chính sách quyền riêng tư - V-Closet</title>
-    <style>
-        :root {
-            --primary: #4F46E5;
-            --primary-dark: #3730A3;
-            --bg: #F9FAFB;
-            --card-bg: #FFFFFF;
-            --text-main: #1F2937;
-            --text-muted: #4B5563;
-            --border: #E5E7EB;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: var(--bg);
-            color: var(--text-main);
-            line-height: 1.6;
-            margin: 0;
-            padding: 0;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 0 20px;
-        }
-
-        .card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 40px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
-        }
-
-        .header {
-            text-align: center;
-            border-bottom: 2px solid var(--border);
-            padding-bottom: 20px;
-            margin-bottom: 30px;
-        }
-
-        .logo-text {
-            font-size: 28px;
-            font-weight: 800;
-            color: var(--primary);
-            letter-spacing: 1.5px;
-            margin: 0 0 10px 0;
-        }
-
-        h1 {
-            font-size: 24px;
-            font-weight: 700;
-            margin: 0;
-            color: var(--text-main);
-        }
-
-        .last-updated {
-            font-size: 14px;
-            color: var(--text-muted);
-            margin-top: 8px;
-        }
-
-        h2 {
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--primary);
-            margin-top: 30px;
-            border-left: 4px solid var(--primary);
-            padding-left: 10px;
-        }
-
-        p, li {
-            font-size: 15px;
-            color: var(--text-muted);
-        }
-
-        ul {
-            padding-left: 20px;
-        }
-
-        li {
-            margin-bottom: 8px;
-        }
-
-        .footer {
-            text-align: center;
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid var(--border);
-            font-size: 13px;
-            color: var(--text-muted);
-        }
-
-        @media (max-width: 640px) {
-            .container {
-                margin: 20px auto;
-            }
-            .card {
-                padding: 24px;
-            }
-            h1 {
-                font-size: 20px;
-            }
-        }
-    </style>
+    <title>Chính Sách Bảo Mật - V-Closet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body>
-    <div class="container">
-        <div class="card">
-            <div class="header">
-                <div class="logo-text">V-CLOSET</div>
-                <h1>Chính sách quyền riêng tư</h1>
-                <div class="last-updated">Cập nhật lần cuối: Ngày 04 tháng 06 năm 2026</div>
+<body class="min-h-screen bg-[#FDFBF7] relative overflow-hidden font-sans">
+    <!-- Background decoration -->
+    <div class="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-[#F5F0E8] to-transparent pointer-events-none"></div>
+    <div class="absolute top-[-10%] right-[-5%] w-96 h-96 bg-amber-100/40 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="relative pt-28 pb-20 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="text-left mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div>
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-6 shadow-sm border border-white" style="background-color: #fff; color: #6D4C41;">
+                    <i data-lucide="shield" style="width: 32px; height: 32px; stroke-width: 1.5;"></i>
+                </div>
+                <h1 class="text-4xl md:text-5xl font-black tracking-tight" style="color: #3E2723;">
+                    Chính Sách<br />Bảo Mật
+                </h1>
             </div>
+            <div class="md:text-right">
+                <p class="text-sm font-semibold uppercase tracking-wider text-amber-600 mb-1">Cập nhật lần cuối</p>
+                <p class="text-lg text-[#5D4A3F]">Ngày 05 tháng 06, 2026</p>
+            </div>
+        </div>
 
-            <p>Chào mừng bạn đến với <strong>V-Closet</strong>, ứng dụng quản lý tủ đồ thông minh tích hợp công nghệ thử đồ ảo AI. Chúng tôi coi trọng quyền riêng tư của bạn và cam kết bảo vệ dữ liệu cá nhân của người dùng. Chính sách này giải thích cách chúng tôi thu thập, sử dụng và bảo mật dữ liệu của bạn khi bạn sử dụng ứng dụng.</p>
+        <!-- Content Card -->
+        <div class="bg-white rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#EAE3D9] p-8 md:p-12">
+            <div class="space-y-12">
+                <!-- Section 1 -->
+                <div class="relative">
+                    <h2 class="text-xl md:text-2xl font-bold text-[#3E2723] mb-5 flex items-center gap-4">
+                        <span class="flex-shrink-0 w-8 h-8 rounded-full bg-[#F5F0E8] text-[#6D4C41] flex items-center justify-center text-sm font-black border border-[#EAE3D9]">1</span>
+                        Thu thập thông tin
+                    </h2>
+                    <div class="pl-12">
+                        <p class="text-[#5D4A3F] leading-relaxed mb-4">Khi bạn sử dụng V-Closet, chúng tôi thu thập các thông tin sau để cung cấp dịch vụ tốt nhất:</p>
+                        <ul class="space-y-3">
+                            <li class="flex items-start gap-3 text-[#5D4A3F] leading-relaxed">
+                                <i data-lucide="check-circle-2" class="mt-1 flex-shrink-0 text-amber-600" style="width: 18px; height: 18px;"></i>
+                                <span>Thông tin tài khoản: Email, tên người dùng, và ảnh đại diện khi bạn đăng nhập bằng Google hoặc tạo tài khoản mới.</span>
+                            </li>
+                            <li class="flex items-start gap-3 text-[#5D4A3F] leading-relaxed">
+                                <i data-lucide="check-circle-2" class="mt-1 flex-shrink-0 text-amber-600" style="width: 18px; height: 18px;"></i>
+                                <span>Dữ liệu hình ảnh: Hình ảnh quần áo, trang phục và người mẫu bạn tải lên để sử dụng tính năng thử đồ AI và quản lý tủ đồ.</span>
+                            </li>
+                            <li class="flex items-start gap-3 text-[#5D4A3F] leading-relaxed">
+                                <i data-lucide="check-circle-2" class="mt-1 flex-shrink-0 text-amber-600" style="width: 18px; height: 18px;"></i>
+                                <span>Dữ liệu sử dụng: Lịch sử tương tác, các mục yêu thích và các outfit đã lưu.</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="absolute -bottom-6 left-12 right-0 h-px bg-gradient-to-r from-[#EAE3D9] to-transparent"></div>
+                </div>
 
-            <h2>1. Các dữ liệu chúng tôi thu thập</h2>
-            <ul>
-                <li><strong>Thông tin tài khoản:</strong> Khi đăng ký, chúng tôi thu thập địa chỉ Email và Tên hiển thị của bạn để phục vụ việc xác thực tài khoản và bảo mật thông tin đăng nhập.</li>
-                <li><strong>Hình ảnh trang phục & cá nhân:</strong> Để sử dụng các tính năng thông minh như thử đồ ảo AI (Virtual Try-On) và xóa nền ảnh (Background Removal), bạn sẽ cấp quyền truy cập và tải ảnh trang phục hoặc ảnh cơ thể người mẫu lên hệ thống của chúng tôi để xử lý.</li>
-            </ul>
+                <!-- Section 2 -->
+                <div class="relative">
+                    <h2 class="text-xl md:text-2xl font-bold text-[#3E2723] mb-5 flex items-center gap-4">
+                        <span class="flex-shrink-0 w-8 h-8 rounded-full bg-[#F5F0E8] text-[#6D4C41] flex items-center justify-center text-sm font-black border border-[#EAE3D9]">2</span>
+                        Sử dụng thông tin
+                    </h2>
+                    <div class="pl-12">
+                        <p class="text-[#5D4A3F] leading-relaxed mb-4">Thông tin của bạn được sử dụng vào các mục đích:</p>
+                        <ul class="space-y-3">
+                            <li class="flex items-start gap-3 text-[#5D4A3F] leading-relaxed">
+                                <div class="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 flex-shrink-0"></div>
+                                <span>Vận hành các tính năng cốt lõi của V-Closet (phân loại đồ tự động, gợi ý phối đồ AI).</span>
+                            </li>
+                            <li class="flex items-start gap-3 text-[#5D4A3F] leading-relaxed">
+                                <div class="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 flex-shrink-0"></div>
+                                <span>Đồng bộ tủ đồ trên các thiết bị của bạn.</span>
+                            </li>
+                            <li class="flex items-start gap-3 text-[#5D4A3F] leading-relaxed">
+                                <div class="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 flex-shrink-0"></div>
+                                <span>Cải thiện độ chính xác của thuật toán AI thời trang.</span>
+                            </li>
+                            <li class="flex items-start gap-3 text-[#5D4A3F] leading-relaxed">
+                                <div class="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 flex-shrink-0"></div>
+                                <span>Cung cấp hỗ trợ khách hàng và thông báo về các bản cập nhật mới.</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="absolute -bottom-6 left-12 right-0 h-px bg-gradient-to-r from-[#EAE3D9] to-transparent"></div>
+                </div>
 
-            <h2>2. Quyền truy cập thiết bị (Permissions)</h2>
-            <p>Để vận hành đầy đủ các tính năng, ứng dụng V-Closet yêu cầu các quyền truy cập sau từ điện thoại của bạn:</p>
-            <ul>
-                <li><strong>Quyền Camera:</strong> Cho phép chụp ảnh quần áo trực tiếp để thêm vào tủ đồ.</li>
-                <li><strong>Quyền Bộ nhớ / Thư viện ảnh (Storage/Photo Library):</strong> Cho phép chọn các ảnh trang phục đã lưu sẵn từ thiết bị để tải lên hệ thống.</li>
-                <li><strong>Quyền Mạng & Internet:</strong> Cần thiết để gửi dữ liệu ảnh lên máy chủ xử lý AI và tải kết quả về thiết bị của bạn.</li>
-            </ul>
+                <!-- Section 3 -->
+                <div class="relative">
+                    <h2 class="text-xl md:text-2xl font-bold text-[#3E2723] mb-5 flex items-center gap-4">
+                        <span class="flex-shrink-0 w-8 h-8 rounded-full bg-[#F5F0E8] text-[#6D4C41] flex items-center justify-center text-sm font-black border border-[#EAE3D9]">3</span>
+                        Bảo vệ dữ liệu hình ảnh
+                    </h2>
+                    <div class="pl-12">
+                        <p class="text-[#5D4A3F] leading-relaxed">
+                            Chúng tôi hiểu rằng hình ảnh cá nhân là dữ liệu nhạy cảm. Quá trình xử lý ảnh bằng AI (tách nền, thử đồ) được thực hiện qua các kênh mã hóa an toàn. Chúng tôi <strong class="text-[#3E2723]">không</strong> sử dụng hình ảnh cá nhân của bạn để huấn luyện các mô hình AI thương mại khác cho bên thứ ba, và bạn có quyền xóa toàn bộ hình ảnh khỏi máy chủ bất kỳ lúc nào.
+                        </p>
+                    </div>
+                    <div class="absolute -bottom-6 left-12 right-0 h-px bg-gradient-to-r from-[#EAE3D9] to-transparent"></div>
+                </div>
 
-            <h2>3. Cách chúng tôi sử dụng và chia sẻ thông tin</h2>
-            <ul>
-                <li>Chúng tôi sử dụng ảnh bạn tải lên **chỉ nhằm mục đích xử lý thuật toán tách nền và ghép quần áo bằng trí tuệ nhân tạo (AI)** theo đúng yêu cầu thao tác của bạn trong ứng dụng.</li>
-                <li>Chúng tôi **cam kết KHÔNG chia sẻ, bán, hoặc công khai hình ảnh và thông tin cá nhân của bạn** cho bất kỳ bên thứ ba nào vì mục đích thương mại hoặc quảng cáo.</li>
-                <li>Ứng dụng có sử dụng một số dịch vụ bên thứ ba uy tín như **Google Play Services** (để đăng nhập Google) và **AdMob** (để hiển thị video quảng cáo nhận lượt). Các dịch vụ này có thể thu thập thông tin định danh quảng cáo ẩn danh theo chính sách của Google.</li>
-            </ul>
+                <!-- Section 4 -->
+                <div class="relative">
+                    <h2 class="text-xl md:text-2xl font-bold text-[#3E2723] mb-5 flex items-center gap-4">
+                        <span class="flex-shrink-0 w-8 h-8 rounded-full bg-[#F5F0E8] text-[#6D4C41] flex items-center justify-center text-sm font-black border border-[#EAE3D9]">4</span>
+                        Chia sẻ thông tin
+                    </h2>
+                    <div class="pl-12">
+                        <p class="text-[#5D4A3F] leading-relaxed">
+                            Chúng tôi <strong class="text-[#3E2723]">không bán</strong> dữ liệu cá nhân của bạn cho bên thứ ba. Chúng tôi chỉ chia sẻ dữ liệu với các đối tác cung cấp dịch vụ đám mây (Cloud Providers) nhằm mục đích lưu trữ và xử lý AI, tuân thủ nghiêm ngặt các tiêu chuẩn bảo mật quốc tế.
+                        </p>
+                    </div>
+                    <div class="absolute -bottom-6 left-12 right-0 h-px bg-gradient-to-r from-[#EAE3D9] to-transparent"></div>
+                </div>
 
-            <h2>4. Bảo mật dữ liệu</h2>
-            <p>Tất cả các tệp hình ảnh và dữ liệu cá nhân truyền tải giữa ứng dụng và máy chủ của chúng tôi đều được bảo vệ bằng các giao thức mã hóa an toàn **SSL/TLS**. Dữ liệu xử lý AI của bạn được bảo mật nghiêm ngặt trên hệ thống lưu trữ đám mây.</p>
+                <!-- Section 5 -->
+                <div class="relative">
+                    <h2 class="text-xl md:text-2xl font-bold text-[#3E2723] mb-5 flex items-center gap-4">
+                        <span class="flex-shrink-0 w-8 h-8 rounded-full bg-[#F5F0E8] text-[#6D4C41] flex items-center justify-center text-sm font-black border border-[#EAE3D9]">5</span>
+                        Quyền của người dùng
+                    </h2>
+                    <div class="pl-12">
+                        <p class="text-[#5D4A3F] leading-relaxed mb-4">Bạn có toàn quyền:</p>
+                        <ul class="space-y-3">
+                            <li class="flex items-start gap-3 text-[#5D4A3F] leading-relaxed">
+                                <div class="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 flex-shrink-0"></div>
+                                <span>Yêu cầu truy xuất bản sao toàn bộ dữ liệu cá nhân.</span>
+                            </li>
+                            <li class="flex items-start gap-3 text-[#5D4A3F] leading-relaxed">
+                                <div class="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 flex-shrink-0"></div>
+                                <span>Chỉnh sửa hoặc cập nhật thông tin sai lệch.</span>
+                            </li>
+                            <li class="flex items-start gap-3 text-[#5D4A3F] leading-relaxed">
+                                <div class="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 flex-shrink-0"></div>
+                                <span>Yêu cầu xóa vĩnh viễn tài khoản và toàn bộ dữ liệu (bao gồm cả ảnh) khỏi hệ thống V-Closet.</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="absolute -bottom-6 left-12 right-0 h-px bg-gradient-to-r from-[#EAE3D9] to-transparent"></div>
+                </div>
 
-            <h2>5. Yêu cầu xóa dữ liệu (Data Deletion Request)</h2>
-            <p>Bạn có toàn quyền yêu cầu xóa bỏ tài khoản và toàn bộ hình ảnh tủ đồ đã tải lên máy chủ của chúng tôi bất kỳ lúc nào. Để yêu cầu xóa dữ liệu, vui lòng gửi email về hòm thư hỗ trợ: <strong>support@vcloset.vn</strong>. Chúng tôi sẽ xử lý và xóa sạch dữ liệu của bạn khỏi hệ thống trong vòng 24 giờ làm việc.</p>
+                <!-- Section 6 -->
+                <div class="relative">
+                    <h2 class="text-xl md:text-2xl font-bold text-[#3E2723] mb-5 flex items-center gap-4">
+                        <span class="flex-shrink-0 w-8 h-8 rounded-full bg-[#F5F0E8] text-[#6D4C41] flex items-center justify-center text-sm font-black border border-[#EAE3D9]">6</span>
+                        Liên hệ
+                    </h2>
+                    <div class="pl-12">
+                        <div class="space-y-4">
+                            <p class="text-[#5D4A3F] leading-relaxed">
+                                Nếu bạn có bất kỳ câu hỏi nào về Chính Sách Bảo Mật này, vui lòng liên hệ với chúng tôi qua email:
+                            </p>
+                            <div class="bg-[#FDFBF7] p-4 rounded-xl border border-[#EAE3D9] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <span class="text-[#5D4A3F]">Email Trung tâm Hỗ trợ Bảo mật:</span>
+                                <a href="mailto:support@vcloset.vn" class="font-bold text-[#3E2723] hover:text-amber-700 transition-colors">
+                                    support@vcloset.vn
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-            <h2>6. Thông tin liên hệ</h2>
-            <p>Nếu bạn có bất kỳ câu hỏi hoặc đóng góp ý kiến nào về Chính sách quyền riêng tư này, xin vui lòng liên hệ với chúng tôi qua:</p>
-            <ul>
-                <li><strong>Email hỗ trợ:</strong> support@vcloset.vn</li>
-                <li><strong>Trang web:</strong> https://vcloset.vn</li>
-            </ul>
-
-            <div class="footer">
-                &copy; 2026 V-Closet. Tất cả các quyền được bảo lưu.
             </div>
         </div>
     </div>
+    
+    <!-- Initialize Lucide Icons -->
+    <script>
+      lucide.createIcons();
+    </script>
 </body>
 </html>

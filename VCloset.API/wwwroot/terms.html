@@ -3,172 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Điều khoản dịch vụ - V-Closet</title>
-    <style>
-        :root {
-            --primary: #4F46E5;
-            --primary-dark: #3730A3;
-            --bg: #F9FAFB;
-            --card-bg: #FFFFFF;
-            --text-main: #1F2937;
-            --text-muted: #4B5563;
-            --border: #E5E7EB;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: var(--bg);
-            color: var(--text-main);
-            line-height: 1.6;
-            margin: 0;
-            padding: 0;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 0 20px;
-        }
-
-        .card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 40px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
-        }
-
-        .header {
-            text-align: center;
-            border-bottom: 2px solid var(--border);
-            padding-bottom: 20px;
-            margin-bottom: 30px;
-        }
-
-        .logo-text {
-            font-size: 28px;
-            font-weight: 800;
-            color: var(--primary);
-            letter-spacing: 1.5px;
-            margin: 0 0 10px 0;
-        }
-
-        h1 {
-            font-size: 24px;
-            font-weight: 700;
-            margin: 0;
-            color: var(--text-main);
-        }
-
-        .last-updated {
-            font-size: 14px;
-            color: var(--text-muted);
-            margin-top: 8px;
-        }
-
-        h2 {
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--primary);
-            margin-top: 30px;
-            border-left: 4px solid var(--primary);
-            padding-left: 10px;
-        }
-
-        p, li {
-            font-size: 15px;
-            color: var(--text-muted);
-        }
-
-        ul {
-            padding-left: 20px;
-        }
-
-        li {
-            margin-bottom: 8px;
-        }
-
-        .footer {
-            text-align: center;
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid var(--border);
-            font-size: 13px;
-            color: var(--text-muted);
-        }
-
-        @media (max-width: 640px) {
-            .container {
-                margin: 20px auto;
-            }
-            .card {
-                padding: 24px;
-            }
-            h1 {
-                font-size: 20px;
-            }
-        }
-    </style>
+    <title>Điều Khoản Dịch Vụ - V-Closet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body>
-    <div class="container">
-        <div class="card">
-            <div class="header">
-                <div class="logo-text">V-CLOSET</div>
-                <h1>Điều khoản dịch vụ</h1>
-                <div class="last-updated">Cập nhật lần cuối: Ngày 08 tháng 06 năm 2026</div>
+<body class="min-h-screen bg-[#FDFBF7] relative overflow-hidden font-sans">
+    <!-- Background decoration -->
+    <div class="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-[#F5F0E8] to-transparent pointer-events-none"></div>
+    <div class="absolute top-[-10%] right-[-5%] w-96 h-96 bg-amber-100/40 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="relative pt-28 pb-20 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="text-left mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div>
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-6 shadow-sm border border-white" style="background-color: #fff; color: #6D4C41;">
+                    <i data-lucide="file-text" style="width: 32px; height: 32px; stroke-width: 1.5;"></i>
+                </div>
+                <h1 class="text-4xl md:text-5xl font-black tracking-tight" style="color: #3E2723;">
+                    Điều Khoản<br />Dịch Vụ
+                </h1>
             </div>
+            <div class="md:text-right">
+                <p class="text-sm font-semibold uppercase tracking-wider text-amber-600 mb-1">Cập nhật lần cuối</p>
+                <p class="text-lg text-[#5D4A3F]">Ngày 05 tháng 06, 2026</p>
+            </div>
+        </div>
 
-            <p>Chào mừng bạn đến với <strong>V-Closet</strong>, ứng dụng quản lý tủ đồ thông minh tích hợp công nghệ thử đồ ảo AI. Bằng việc tải xuống, cài đặt hoặc sử dụng ứng dụng này, bạn đồng ý tuân thủ và chịu sự ràng buộc bởi các Điều khoản dịch vụ dưới đây. Nếu bạn không đồng ý với bất kỳ điều khoản nào, vui lòng ngừng sử dụng ứng dụng ngay lập tức.</p>
+        <!-- Content Card -->
+        <div class="bg-white rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#EAE3D9] p-8 md:p-12">
+            <div class="space-y-12">
+                <!-- Section 1 -->
+                <div class="relative">
+                    <h2 class="text-xl md:text-2xl font-bold text-[#3E2723] mb-5 flex items-center gap-4">
+                        <span class="flex-shrink-0 w-8 h-8 rounded-full bg-[#F5F0E8] text-[#6D4C41] flex items-center justify-center text-sm font-black border border-[#EAE3D9]">1</span>
+                        Chấp nhận điều khoản
+                    </h2>
+                    <div class="pl-12">
+                        <p class="text-[#5D4A3F] leading-relaxed">
+                            Bằng việc đăng ký, truy cập hoặc sử dụng ứng dụng và trang web V-Closet ("Dịch vụ"), bạn đồng ý bị ràng buộc bởi các Điều khoản Dịch vụ này. Nếu bạn không đồng ý với bất kỳ phần nào của các điều khoản, bạn không được phép sử dụng Dịch vụ của chúng tôi.
+                        </p>
+                    </div>
+                    <div class="absolute -bottom-6 left-12 right-0 h-px bg-gradient-to-r from-[#EAE3D9] to-transparent"></div>
+                </div>
 
-            <h2>1. Sử dụng dịch vụ và Tài khoản</h2>
-            <ul>
-                <li><strong>Đăng ký:</strong> Để trải nghiệm toàn bộ tính năng của ứng dụng, bạn cần đăng ký một tài khoản cá nhân thông qua email hoặc tài khoản Google. Bạn cam kết cung cấp thông tin chính xác và cập nhật khi đăng ký.</li>
-                <li><strong>Bảo mật tài khoản:</strong> Bạn hoàn toàn chịu trách nhiệm về việc bảo mật thông tin đăng nhập và mọi hoạt động diễn ra dưới tài khoản của mình. Vui lòng liên hệ với chúng tôi ngay lập tức nếu phát hiện hành vi truy cập trái phép.</li>
-            </ul>
+                <!-- Section 2 -->
+                <div class="relative">
+                    <h2 class="text-xl md:text-2xl font-bold text-[#3E2723] mb-5 flex items-center gap-4">
+                        <span class="flex-shrink-0 w-8 h-8 rounded-full bg-[#F5F0E8] text-[#6D4C41] flex items-center justify-center text-sm font-black border border-[#EAE3D9]">2</span>
+                        Sử dụng dịch vụ và Hành vi người dùng
+                    </h2>
+                    <div class="pl-12">
+                        <p class="text-[#5D4A3F] leading-relaxed mb-4">Khi sử dụng V-Closet, bạn cam kết:</p>
+                        <ul class="space-y-3">
+                            <li class="flex items-start gap-3 text-[#5D4A3F] leading-relaxed">
+                                <i data-lucide="check-circle-2" class="mt-1 flex-shrink-0 text-amber-600" style="width: 18px; height: 18px;"></i>
+                                <span>Cung cấp thông tin chính xác khi tạo tài khoản.</span>
+                            </li>
+                            <li class="flex items-start gap-3 text-[#5D4A3F] leading-relaxed">
+                                <i data-lucide="check-circle-2" class="mt-1 flex-shrink-0 text-amber-600" style="width: 18px; height: 18px;"></i>
+                                <span>Chịu trách nhiệm bảo mật mật khẩu và tài khoản của bạn.</span>
+                            </li>
+                            <li class="flex items-start gap-3 text-[#5D4A3F] leading-relaxed">
+                                <i data-lucide="check-circle-2" class="mt-1 flex-shrink-0 text-amber-600" style="width: 18px; height: 18px;"></i>
+                                <span>Không tải lên hình ảnh vi phạm bản quyền, đồi trụy, bạo lực hoặc vi phạm pháp luật hiện hành. V-Closet có quyền gỡ bỏ nội dung và khóa tài khoản vi phạm mà không cần báo trước.</span>
+                            </li>
+                            <li class="flex items-start gap-3 text-[#5D4A3F] leading-relaxed">
+                                <i data-lucide="check-circle-2" class="mt-1 flex-shrink-0 text-amber-600" style="width: 18px; height: 18px;"></i>
+                                <span>Không sử dụng Dịch vụ cho các mục đích thương mại khi chưa có sự cho phép bằng văn bản từ V-Closet.</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="absolute -bottom-6 left-12 right-0 h-px bg-gradient-to-r from-[#EAE3D9] to-transparent"></div>
+                </div>
 
-            <h2>2. Quyền sở hữu trí tuệ và Dữ liệu hình ảnh</h2>
-            <ul>
-                <li><strong>Hình ảnh của bạn tải lên:</strong> Bạn giữ toàn bộ quyền sở hữu đối với các hình ảnh trang phục và chân dung mà bạn tải lên tủ đồ cá nhân.</li>
-                <li><strong>Cấp quyền xử lý:</strong> Bạn cấp quyền cho hệ thống V-Closet được xử lý các hình ảnh này thông qua thuật toán trí tuệ nhân tạo (AI) để thực hiện các tính năng như tách nền, ghép thử đồ theo đúng thao tác của bạn trong ứng dụng.</li>
-                <li><strong>Nội dung của hệ thống:</strong> Toàn bộ giao diện, thiết kế, logo, mã nguồn, thuật toán AI và các tính năng của V-Closet là tài sản độc quyền của chúng tôi hoặc các đối tác cấp phép. Bạn không được sao chép, đảo ngược mã nguồn hoặc phân phối lại.</li>
-            </ul>
+                <!-- Section 3 -->
+                <div class="relative">
+                    <h2 class="text-xl md:text-2xl font-bold text-[#3E2723] mb-5 flex items-center gap-4">
+                        <span class="flex-shrink-0 w-8 h-8 rounded-full bg-[#F5F0E8] text-[#6D4C41] flex items-center justify-center text-sm font-black border border-[#EAE3D9]">3</span>
+                        Nội dung do người dùng tạo (UGC)
+                    </h2>
+                    <div class="pl-12">
+                        <p class="text-[#5D4A3F] leading-relaxed">
+                            Bạn giữ mọi quyền sở hữu đối với hình ảnh (quần áo, người mẫu) mà bạn tải lên. Bằng việc tải nội dung lên V-Closet, bạn cấp cho chúng tôi giấy phép toàn cầu, không độc quyền, miễn phí bản quyền để lưu trữ, sửa đổi (như tách nền, áp dụng thuật toán thử đồ) và hiển thị nội dung đó <strong class="text-[#3E2723]">chỉ nhằm mục đích cung cấp dịch vụ cho chính bạn</strong>.
+                        </p>
+                    </div>
+                    <div class="absolute -bottom-6 left-12 right-0 h-px bg-gradient-to-r from-[#EAE3D9] to-transparent"></div>
+                </div>
 
-            <h2>3. Gói dịch vụ Premium và Credits AI</h2>
-            <ul>
-                <li><strong>Quy định Credits:</strong> V-Closet cung cấp một số tính năng thông minh bị giới hạn theo hạn mức credits (lượt dùng). Mỗi lượt tách nền hoặc thử đồ ảo AI sẽ trừ đi số credits tương ứng trong tài khoản của bạn theo quy định hiện hành.</li>
-                <li><strong>Thanh toán và Cộng dồn:</strong> Bạn có thể đăng ký các gói Premium (Tháng/Năm) hoặc mua thêm các gói credits lẻ bằng các phương thức thanh toán tích hợp sẵn (VietQR, MoMo, VNPay). Hạn mức sẽ được cộng trực tiếp vào tài khoản ngay khi giao dịch thành công.</li>
-                <li><strong>Chính sách hoàn tiền:</strong> Mọi giao dịch mua gói Premium hoặc nạp credit lẻ đều là giao dịch mua đứt và không được hoàn tiền hoặc quy đổi thành tiền mặt, ngoại trừ các trường hợp lỗi giao dịch xuất phát từ hệ thống của chúng tôi đã được đội ngũ hỗ trợ kỹ thuật xác nhận.</li>
-            </ul>
+                <!-- Section 4 -->
+                <div class="relative">
+                    <h2 class="text-xl md:text-2xl font-bold text-[#3E2723] mb-5 flex items-center gap-4">
+                        <span class="flex-shrink-0 w-8 h-8 rounded-full bg-[#F5F0E8] text-[#6D4C41] flex items-center justify-center text-sm font-black border border-[#EAE3D9]">4</span>
+                        Gói Premium và Thanh toán
+                    </h2>
+                    <div class="pl-12">
+                        <p class="text-[#5D4A3F] leading-relaxed mb-4">
+                            V-Closet cung cấp các gói dịch vụ Premium với tính năng nâng cao (Studio AI nâng cao, lưu trữ không giới hạn).
+                        </p>
+                        <ul class="space-y-3">
+                            <li class="flex items-start gap-3 text-[#5D4A3F] leading-relaxed">
+                                <div class="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 flex-shrink-0"></div>
+                                <span>Các khoản phí sẽ được tính qua tài khoản Apple App Store, Google Play hoặc cổng thanh toán trên Web tại thời điểm xác nhận mua hàng.</span>
+                            </li>
+                            <li class="flex items-start gap-3 text-[#5D4A3F] leading-relaxed">
+                                <div class="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 flex-shrink-0"></div>
+                                <span>Gói đăng ký sẽ tự động gia hạn trừ khi bạn hủy ít nhất 24 giờ trước khi kết thúc chu kỳ hiện tại.</span>
+                            </li>
+                            <li class="flex items-start gap-3 text-[#5D4A3F] leading-relaxed">
+                                <div class="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 flex-shrink-0"></div>
+                                <span>Bạn có thể quản lý hoặc hủy đăng ký thông qua cài đặt tài khoản của mình. Không hoàn tiền cho các chu kỳ thanh toán đã bắt đầu.</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="absolute -bottom-6 left-12 right-0 h-px bg-gradient-to-r from-[#EAE3D9] to-transparent"></div>
+                </div>
 
-            <h2>4. Các hành vi bị nghiêm cấm</h2>
-            <p>Khi sử dụng ứng dụng V-Closet, bạn cam kết KHÔNG thực hiện các hành vi sau:</p>
-            <ul>
-                <li>Tải lên hình ảnh nhạy cảm, đồi trụy, bạo lực, hoặc vi phạm thuần phong mỹ tục và các quy định pháp luật hiện hành.</li>
-                <li>Tải lên hình ảnh xâm phạm quyền sở hữu trí tuệ hoặc quyền riêng tư của bất kỳ cá nhân hoặc tổ chức nào khác.</li>
-                <li>Sử dụng các công cụ tự động, phần mềm giả lập hoặc can thiệp kỹ thuật nhằm spam, phá hoại hoặc làm quá tải máy chủ xử lý AI của hệ thống.</li>
-            </ul>
+                <!-- Section 5 -->
+                <div class="relative">
+                    <h2 class="text-xl md:text-2xl font-bold text-[#3E2723] mb-5 flex items-center gap-4">
+                        <span class="flex-shrink-0 w-8 h-8 rounded-full bg-[#F5F0E8] text-[#6D4C41] flex items-center justify-center text-sm font-black border border-[#EAE3D9]">5</span>
+                        Từ chối bảo đảm & Giới hạn trách nhiệm
+                    </h2>
+                    <div class="pl-12">
+                        <div class="space-y-4">
+                            <p class="text-[#5D4A3F] leading-relaxed">
+                                Các tính năng AI (như gợi ý phối đồ, thử đồ ảo) được cung cấp "như hiện trạng". Dù chúng tôi luôn cố gắng tối ưu thuật toán, V-Closet không đảm bảo kết quả từ AI sẽ luôn chính xác 100% hoặc phù hợp tuyệt đối với kỳ vọng thẩm mỹ cá nhân của bạn.
+                            </p>
+                            <p class="text-[#5D4A3F] leading-relaxed">
+                                Trong phạm vi tối đa được pháp luật cho phép, V-Closet sẽ không chịu trách nhiệm đối với bất kỳ thiệt hại gián tiếp, ngẫu nhiên, hoặc do hậu quả nào phát sinh từ việc bạn sử dụng hoặc không thể sử dụng Dịch vụ.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="absolute -bottom-6 left-12 right-0 h-px bg-gradient-to-r from-[#EAE3D9] to-transparent"></div>
+                </div>
 
-            <h2>5. Giới hạn trách nhiệm</h2>
-            <ul>
-                <li>Chúng tôi cam kết nỗ lực tối đa để duy trì tính ổn định của dịch vụ. Tuy nhiên, các thuật toán xử lý hình ảnh AI được cung cấp trên cơ sở "sẵn có" và kết quả thử đồ ảo chỉ mang tính chất tham khảo trực quan, không cam kết chính xác 100% so với trang phục thực tế ngoài đời thực.</li>
-                <li>Chúng tôi không chịu trách nhiệm đối với bất kỳ thiệt hại trực tiếp hoặc gián tiếp nào phát sinh do lỗi kết nối mạng từ phía người dùng, gián đoạn bảo trì hệ thống, hoặc sự cố bất khả kháng.</li>
-            </ul>
+                <!-- Section 6 -->
+                <div class="relative">
+                    <h2 class="text-xl md:text-2xl font-bold text-[#3E2723] mb-5 flex items-center gap-4">
+                        <span class="flex-shrink-0 w-8 h-8 rounded-full bg-[#F5F0E8] text-[#6D4C41] flex items-center justify-center text-sm font-black border border-[#EAE3D9]">6</span>
+                        Thay đổi điều khoản & Liên hệ
+                    </h2>
+                    <div class="pl-12">
+                        <div class="space-y-4">
+                            <p class="text-[#5D4A3F] leading-relaxed">
+                                Chúng tôi có quyền sửa đổi các điều khoản này vào bất kỳ lúc nào. Những thay đổi quan trọng sẽ được thông báo đến người dùng qua email hoặc thông báo trực tiếp trên ứng dụng trước khi có hiệu lực.
+                            </p>
+                            <div class="bg-[#FDFBF7] p-4 rounded-xl border border-[#EAE3D9] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <span class="text-[#5D4A3F]">Mọi thắc mắc liên hệ qua Email:</span>
+                                <a href="mailto:support@vcloset.vn" class="font-bold text-[#3E2723] hover:text-amber-700 transition-colors">
+                                    support@vcloset.vn
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-            <h2>6. Thay đổi điều khoản</h2>
-            <p>Chúng tôi có quyền cập nhật hoặc điều chỉnh các Điều khoản dịch vụ này bất kỳ lúc nào để phù hợp với sự phát triển của ứng dụng và các quy định pháp luật mới. Mọi thay đổi sẽ có hiệu lực ngay khi được đăng tải công khai trên ứng dụng hoặc trang web chính thức.</p>
-
-            <h2>7. Thông tin liên hệ</h2>
-            <p>Nếu bạn có bất kỳ thắc mắc, phản hồi hoặc cần hỗ trợ về Điều khoản dịch vụ này, vui lòng liên hệ:</p>
-            <ul>
-                <li><strong>Email hỗ trợ:</strong> support@vcloset.vn</li>
-                <li><strong>Trang web chính thức:</strong> https://vcloset.vn</li>
-            </ul>
-
-            <div class="footer">
-                &copy; 2026 V-Closet. Tất cả các quyền được bảo lưu.
             </div>
         </div>
     </div>
+
+    <!-- Initialize Lucide Icons -->
+    <script>
+      lucide.createIcons();
+    </script>
 </body>
 </html>
