@@ -187,4 +187,29 @@ public class ChatController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Đánh dấu đã đọc tất cả tin nhắn trong phòng chat
+    /// </summary>
+    [HttpPut("rooms/{roomId:guid}/read")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> MarkMessagesAsRead(Guid roomId)
+    {
+        try
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+
+            var success = await _chatService.MarkMessagesAsReadAsync(userId, roomId);
+            if (!success) return BadRequest(new { message = "Không thể đánh dấu đã đọc. Vui lòng kiểm tra lại phòng chat." });
+
+            return Ok(new { message = "Đã đánh dấu đọc tin nhắn thành công." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }
