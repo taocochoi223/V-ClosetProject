@@ -23,48 +23,50 @@ public class AdminBrandService : IAdminBrandService
     // 1. Lấy danh sách Brand Partner có lọc và tìm kiếm
     public async Task<List<BrandSummaryResponse>> GetBrandsAsync(BrandStatus? status, string? search)
     {
-        var query = _context.BrandProfiles.AsQueryable();
+        var query = from b in _context.BrandProfiles
+                    join u in _context.Users on b.UserInternalId equals u.InternalId into userJoin
+                    from u in userJoin.DefaultIfEmpty()
+                    select new { Brand = b, User = u };
 
         // Lọc theo trạng thái Brand
         if (status.HasValue)
         {
-            query = query.Where(b => b.Status == status.Value);
+            query = query.Where(x => x.Brand.Status == status.Value);
         }
 
         // Tìm kiếm theo tên thương hiệu hoặc mã số thuế
         if (!string.IsNullOrWhiteSpace(search))
         {
             var lowerSearch = search.ToLowerInvariant();
-            query = query.Where(b =>
-                b.BrandName.ToLowerInvariant().Contains(lowerSearch) ||
-                (b.TaxCode != null && b.TaxCode.ToLowerInvariant().Contains(lowerSearch)));
+            query = query.Where(x =>
+                x.Brand.BrandName.ToLowerInvariant().Contains(lowerSearch) ||
+                (x.Brand.TaxCode != null && x.Brand.TaxCode.ToLowerInvariant().Contains(lowerSearch)));
         }
 
-        var brandProfiles = await query
-            .OrderByDescending(b => b.CreatedAt)
+        var results = await query
+            .OrderByDescending(x => x.Brand.CreatedAt)
             .ToListAsync();
 
         var summaries = new List<BrandSummaryResponse>();
 
-        foreach (var b in brandProfiles)
+        foreach (var r in results)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.InternalId == b.UserInternalId);
-            if (user == null) continue;
+            if (r.User == null) continue;
 
             summaries.Add(new BrandSummaryResponse
             {
-                BrandId = b.Id,
-                BrandName = b.BrandName,
-                LogoUrl = b.LogoUrl,
-                WebsiteUrl = b.WebsiteUrl,
-                ContactPhone = b.ContactPhone,
-                TaxCode = b.TaxCode,
-                CreditBalance = b.CreditBalance,
-                Status = b.Status,
-                CreatedAt = b.CreatedAt,
-                UserId = user.Id,
-                UserEmail = user.Email,
-                UserDisplayName = user.DisplayName
+                BrandId = r.Brand.Id,
+                BrandName = r.Brand.BrandName,
+                LogoUrl = r.Brand.LogoUrl,
+                WebsiteUrl = r.Brand.WebsiteUrl,
+                ContactPhone = r.Brand.ContactPhone,
+                TaxCode = r.Brand.TaxCode,
+                CreditBalance = r.Brand.CreditBalance,
+                Status = r.Brand.Status,
+                CreatedAt = r.Brand.CreatedAt,
+                UserId = r.User.Id,
+                UserEmail = r.User.Email,
+                UserDisplayName = r.User.DisplayName
             });
         }
 
@@ -179,8 +181,19 @@ public class AdminBrandService : IAdminBrandService
         if (!campaign.IsActive)
             throw new Exception("Chiến dịch quảng cáo này hiện đang không hoạt động (đã dừng).");
 
-        // Dừng chiến dịch
+        // Khi dừng, các chiến dịch đang chạy phía dưới sẽ được đẩy lên 1 hạng
+        var campaignsToShift = await _context.SponsoredCampaigns
+            .Where(c => c.Id != campaignId && c.IsActive && c.DisplayRank > campaign.DisplayRank)
+            .ToListAsync();
+
+        foreach (var c in campaignsToShift)
+        {
+            c.DisplayRank--;
+            _context.SponsoredCampaigns.Update(c);
+        }
+
         campaign.IsActive = false;
+        campaign.DisplayRank = 0; // Đưa về 0 để không chiếm thứ hạng
         _context.SponsoredCampaigns.Update(campaign);
         await _context.SaveChangesAsync();
     }
@@ -195,7 +208,12 @@ public class AdminBrandService : IAdminBrandService
         if (campaign.IsActive)
             throw new Exception("Chiến dịch quảng cáo này hiện đang hoạt động.");
 
-        // Kích hoạt lại
+        // Khi chạy lại, tự động xếp vào vị trí cuối cùng
+        var maxRank = await _context.SponsoredCampaigns
+            .Where(c => c.IsActive)
+            .MaxAsync(c => (short?)c.DisplayRank) ?? 0;
+
+        campaign.DisplayRank = (short)(maxRank + 1);
         campaign.IsActive = true;
         _context.SponsoredCampaigns.Update(campaign);
         await _context.SaveChangesAsync();
@@ -269,8 +287,23 @@ public class AdminBrandService : IAdminBrandService
         if (campaign == null)
             throw new Exception("Không tìm thấy chiến dịch quảng cáo yêu cầu.");
 
+        if (campaign.IsActive)
+        {
+            // Nếu đang chạy mà bị xóa, cần đẩy các chiến dịch phía dưới lên
+            var campaignsToShift = await _context.SponsoredCampaigns
+                .Where(c => c.Id != campaignId && c.IsActive && c.DisplayRank > campaign.DisplayRank)
+                .ToListAsync();
+
+            foreach (var c in campaignsToShift)
+            {
+                c.DisplayRank--;
+                _context.SponsoredCampaigns.Update(c);
+            }
+        }
+
         // Thay vì xóa cứng khỏi DB, ta chuyển trạng thái hoạt động về false (Inactive) để giữ lại lịch sử số liệu
         campaign.IsActive = false;
+        campaign.DisplayRank = 0;
         _context.SponsoredCampaigns.Update(campaign);
         await _context.SaveChangesAsync();
     }
@@ -278,7 +311,7 @@ public class AdminBrandService : IAdminBrandService
     // 9. Tìm kiếm, phân trang và sắp xếp chiến dịch quảng cáo
     public async Task<PagedCampaignsResponse> SearchCampaignsAsync(string? search, bool? isActive, string? sortBy, int page, int pageSize)
     {
-        var rawList = await (from c in _context.SponsoredCampaigns
+        var query = (from c in _context.SponsoredCampaigns
                              join b in _context.BrandProfiles on c.BrandInternalId equals b.InternalId into brandJoin
                              from b in brandJoin.DefaultIfEmpty()
                              join p in _context.AffiliateProducts on c.AffiliateProductInternalId equals p.InternalId into productJoin
@@ -298,9 +331,7 @@ public class AdminBrandService : IAdminBrandService
                                  StartAt = c.StartAt,
                                  EndAt = c.EndAt,
                                  CreatedAt = c.CreatedAt
-                             }).ToListAsync();
-
-        var query = rawList.AsQueryable();
+                             }).AsQueryable();
 
         if (isActive.HasValue)
         {
@@ -332,8 +363,8 @@ public class AdminBrandService : IAdminBrandService
             query = query.OrderBy(r => r.DisplayRank).ThenByDescending(r => r.CreatedAt);
         }
 
-        var totalCount = query.Count();
-        var pagedList = query.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        var totalCount = await query.CountAsync();
+        var pagedList = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
         return new PagedCampaignsResponse
         {
