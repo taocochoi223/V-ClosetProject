@@ -30,6 +30,12 @@ public partial class User
 
     public DateTime UpdatedAt { get; set; }
 
+    public DateTimeOffset? AgreedToTermsAt { get; set; }
+
+    public string? TermsVersion { get; set; }
+    
+    public string? AgreedToTermsIp { get; set; }
+
     public virtual ICollection<AdminPermission> AdminPermissionGrantedByInternalNavigations { get; set; } = new List<AdminPermission>();
 
     public virtual ICollection<AdminPermission> AdminPermissionUserInternals { get; set; } = new List<AdminPermission>();

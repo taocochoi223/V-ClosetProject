@@ -1212,6 +1212,14 @@ public partial class VClosetVersion30Context : DbContext
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("now()")
                 .HasColumnName("updated_at");
+
+            entity.Property(e => e.AgreedToTermsAt).HasColumnName("agreed_to_terms_at");
+            entity.Property(e => e.TermsVersion)
+                .HasMaxLength(50)
+                .HasColumnName("terms_version");
+            entity.Property(e => e.AgreedToTermsIp)
+                .HasMaxLength(45)
+                .HasColumnName("agreed_to_terms_ip");
         });
 
         modelBuilder.Entity<UserBanLog>(entity =>

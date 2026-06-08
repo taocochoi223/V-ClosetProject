@@ -15,4 +15,7 @@ public class RegisterRequest
     [Required(ErrorMessage = "Tên hiển thị không được để trống.")]
     [StringLength(100, ErrorMessage = "Tên hiển thị không được vượt quá 100 ký tự.")]
     public string DisplayName { get; set; } = null!;
+
+    [Range(typeof(bool), "true", "true", ErrorMessage = "Bạn phải đồng ý với Điều khoản và Chính sách bảo mật để tiếp tục.")]
+    public bool IsAgreedToTerms { get; set; }
 }
