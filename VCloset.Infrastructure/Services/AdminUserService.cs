@@ -855,9 +855,9 @@ public class AdminUserService : IAdminUserService
         if (targetUser == null)
             throw new Exception("Không tìm thấy người dùng mục tiêu.");
 
-        if (targetUser.Role != UserRole.Admin && targetUser.Role != UserRole.Moderator && targetUser.Role != UserRole.SuperAdmin)
+        if (targetUser.Role != UserRole.Admin && targetUser.Role != UserRole.Moderator)
         {
-            throw new Exception("Chỉ được cập nhật thông tin nội bộ cho tài khoản có vai trò Admin, Moderator hoặc SuperAdmin.");
+            throw new Exception("Chỉ được cập nhật thông tin nội bộ cho tài khoản có vai trò Admin hoặc Moderator.");
         }
 
         var targetProfile = await _unitOfWork.AdminProfiles.FindAsync(ap => ap.UserInternalId == targetUser.InternalId);
