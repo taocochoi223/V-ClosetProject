@@ -10,4 +10,5 @@ public interface INotificationHubService
     Task SendNotificationAlertAsync(int userId, NotificationResponseDto notification);
     Task SendPaymentUpdateAsync(int userId, object paymentUpdate);
     Task SendPendingPaymentAlertAsync(object pendingPayment);
+    Task SendAdminUserUpdateAlertAsync(object userUpdate);
 }

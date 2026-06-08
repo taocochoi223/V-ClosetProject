@@ -9,4 +9,5 @@ public interface IEmailService
     Task<bool> SendForgotPasswordOtpEmailAsync(string toEmail, string otpCode);
     Task<bool> SendNewAccountEmailAsync(string toEmail, string displayName, string tempPassword);
     Task<bool> SendAdminPaymentNotificationAsync(string toEmail, string senderName, string senderEmail, string planName, decimal amount, string currency, string userNote, DateTime createdAt);
+    Task<bool> SendAccountDeactivatedEmailAsync(string toEmail, string displayName);
 }

@@ -44,4 +44,10 @@ public class NotificationHubService : INotificationHubService
         // Gửi cảnh báo giao dịch chờ duyệt mới đến AdminGroup
         await _hubContext.Clients.Group("AdminGroup").SendAsync("ReceivePendingPayment", pendingPayment);
     }
+
+    public async Task SendAdminUserUpdateAlertAsync(object userUpdate)
+    {
+        // Gửi thông báo cập nhật trạng thái người dùng (tạo mới, khoá, mở khoá) đến AdminGroup
+        await _hubContext.Clients.Group("AdminGroup").SendAsync("ReceiveAdminUserUpdate", userUpdate);
+    }
 }
