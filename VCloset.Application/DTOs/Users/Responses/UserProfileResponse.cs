@@ -28,4 +28,9 @@ public class UserProfileResponse
     public string? Lifestyle { get; set; }
     public string? EyeColor { get; set; }
     public string? Hair { get; set; }
+
+    // Admin internal info
+    public string? Department { get; set; }
+    public string? JobTitle { get; set; }
+    public string? EmployeeCode { get; set; }
 }

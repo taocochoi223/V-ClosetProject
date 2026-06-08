@@ -841,6 +841,39 @@ public class AdminUserService : IAdminUserService
 
         await _unitOfWork.SaveChangesAsync();
     }
+    public async Task UpdateAdminInternalInfoAsync(int adminUserId, Guid targetUserId, UpdateAdminInternalInfoRequest request)
+    {
+        // 1. Kiểm tra người gọi có phải là SuperAdmin không
+        var callerProfile = await _unitOfWork.AdminProfiles.FindAsync(ap => ap.UserInternalId == adminUserId);
+        if (callerProfile == null || callerProfile.PermissionLevel != 3) // 3 is SuperAdmin usually, checking PermissionLevel
+        {
+            throw new UnauthorizedAccessException("Chỉ có SuperAdmin mới được điều chuyển/sửa thông tin nội bộ của người dùng khác.");
+        }
+
+        // 2. Tìm người dùng mục tiêu
+        var targetUser = await _unitOfWork.Users.FindAsync(u => u.Id == targetUserId);
+        if (targetUser == null)
+            throw new Exception("Không tìm thấy người dùng mục tiêu.");
+
+        if (targetUser.Role != UserRole.Admin && targetUser.Role != UserRole.Moderator && targetUser.Role != UserRole.SuperAdmin)
+        {
+            throw new Exception("Chỉ được cập nhật thông tin nội bộ cho tài khoản có vai trò Admin, Moderator hoặc SuperAdmin.");
+        }
+
+        var targetProfile = await _unitOfWork.AdminProfiles.FindAsync(ap => ap.UserInternalId == targetUser.InternalId);
+        if (targetProfile == null)
+        {
+            throw new Exception("Người dùng này không có AdminProfile.");
+        }
+
+        if (request.Department != null) targetProfile.Department = request.Department;
+        if (request.JobTitle != null) targetProfile.JobTitle = request.JobTitle;
+        if (request.EmployeeCode != null) targetProfile.EmployeeCode = request.EmployeeCode;
+        if (request.Notes != null) targetProfile.Notes = request.Notes;
+
+        _unitOfWork.AdminProfiles.Update(targetProfile);
+        await _unitOfWork.SaveChangesAsync();
+    }
 
     private static string GenerateRandomPassword(int length = 12)
     {

@@ -205,4 +205,30 @@ public class AdminUsersController : ControllerBase
             return BadRequest(ex.Message);
         }
     }
+
+    /// <summary>
+    /// API điều chuyển/cập nhật thông tin nội bộ của Admin (Phòng ban, Chức danh, Mã NV).
+    /// Yêu cầu SuperAdmin (admin.create).
+    /// </summary>
+    [RequirePermission("admin.create")]
+    [HttpPut("{targetUserId:guid}/internal-info")]
+    public async Task<IActionResult> UpdateAdminInternalInfo(Guid targetUserId, [FromBody] UpdateAdminInternalInfoRequest request)
+    {
+        try
+        {
+            var adminIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(adminIdString, out int adminId)) return Unauthorized();
+
+            await _adminUserService.UpdateAdminInternalInfoAsync(adminId, targetUserId, request);
+            return Ok(new { Message = "Đã cập nhật thông tin nội bộ thành công." });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
 }

@@ -19,4 +19,5 @@ public interface IAdminUserService
     Task ReactivateUserAsync(int adminUserId, Guid targetUserId);
     Task ResetPermissionsToDefaultAsync(int adminUserId, Guid targetUserId);
     Task UpdateUserRoleAsync(int adminUserId, Guid targetUserId, UserRole newRole);
+    Task UpdateAdminInternalInfoAsync(int adminUserId, Guid targetUserId, UpdateAdminInternalInfoRequest request);
 }
