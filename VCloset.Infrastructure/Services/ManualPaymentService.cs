@@ -320,7 +320,7 @@ public class ManualPaymentService : IManualPaymentService
         await _unitOfWork.SaveChangesAsync();
 
         // Cấu hình thông điệp thông báo tuỳ biến
-        bool isBgTopup = isTopup && (plan.Name.ToLower().Contains("xóa nền") || plan.Name.ToLower().Contains("bg"));
+        bool isBgTopup = isTopup && plan != null && (plan.Name.ToLower().Contains("xóa nền") || plan.Name.ToLower().Contains("bg"));
         string successMessage = isTopup 
             ? $"Giao dịch chuyển khoản của bạn đã được phê duyệt thành công! Cộng thêm {addedCredits} lượt {(isBgTopup ? "xóa nền" : "thử đồ")} AI."
             : "Giao dịch chuyển khoản của bạn đã được phê duyệt thành công! Premium đã được kích hoạt.";
