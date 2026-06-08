@@ -208,10 +208,13 @@ public class AdminBrandService : IAdminBrandService
         if (campaign == null)
             throw new Exception("Không tìm thấy chiến dịch quảng cáo yêu cầu.");
 
-        // 1. Làm tròn ngân sách ngày đến hàng nghìn gần nhất (làm tròn 3 số cuối về 000)
-        var roundedBudget = Math.Round(request.DailyBudget / 1000m, MidpointRounding.AwayFromZero) * 1000m;
-        if (roundedBudget <= 0)
-            throw new Exception("Ngân sách hàng ngày sau khi làm tròn phải lớn hơn 0.");
+        if (request.DailyBudget <= 0)
+            throw new Exception("Ngân sách hàng ngày phải lớn hơn 0.");
+
+        if (request.DailyBudget % 1000 != 0)
+            throw new Exception("Ngân sách hàng ngày phải là số chẵn chia hết cho 1,000 đ (ví dụ: 100000, không được nhập lẻ như 100001).");
+            
+        var roundedBudget = request.DailyBudget;
 
         // 2. Dịch chuyển thứ tự theo kiểu Chèn/Cuộn (Insert/Shift)
         short oldRank = campaign.DisplayRank;
@@ -412,13 +415,19 @@ public class AdminBrandService : IAdminBrandService
         if (request.StartAt >= request.EndAt)
             throw new Exception("Thời gian bắt đầu phải trước thời gian kết thúc.");
 
+        if (request.StartAt < DateTime.UtcNow.AddMinutes(-5))
+            throw new Exception("Thời gian bắt đầu chiến dịch không được nằm trong quá khứ.");
+
         if (request.EndAt <= DateTime.UtcNow)
             throw new Exception("Thời gian kết thúc chiến dịch phải nằm ở tương lai.");
 
-        // Làm tròn ngân sách ngày đến hàng nghìn gần nhất (làm tròn 3 số cuối về 000)
-        var roundedBudget = Math.Round(request.DailyBudget / 1000m, MidpointRounding.AwayFromZero) * 1000m;
-        if (roundedBudget <= 0)
-            throw new Exception("Ngân sách hàng ngày sau khi làm tròn phải lớn hơn 0.");
+        if (request.DailyBudget <= 0)
+            throw new Exception("Ngân sách hàng ngày phải lớn hơn 0.");
+
+        if (request.DailyBudget % 1000 != 0)
+            throw new Exception("Ngân sách hàng ngày phải là số chẵn chia hết cho 1,000 đ (ví dụ: 100000, không được nhập lẻ như 100001).");
+            
+        var roundedBudget = request.DailyBudget;
 
         // Xử lý chèn/cuộn thứ tự hiển thị (Insert/Shift) cho vị trí mới
         var newRank = request.DisplayRank;
