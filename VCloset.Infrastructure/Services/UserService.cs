@@ -55,6 +55,9 @@ public class UserService : IUserService
         {
             var adminProfile = await _unitOfWork.AdminProfiles.FindAsync(a => a.UserInternalId == userId);
             response.PhoneNumber = adminProfile?.PhoneNumber;
+            response.Department = adminProfile?.Department;
+            response.JobTitle = adminProfile?.JobTitle;
+            response.EmployeeCode = adminProfile?.EmployeeCode;
             response.IsOnboardingCompleted = true;
         }
 
