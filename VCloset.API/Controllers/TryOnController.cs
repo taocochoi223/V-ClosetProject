@@ -10,6 +10,7 @@ using VCloset.Infrastructure.Data;
 using VCloset.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace VCloset.API.Controllers;
 
@@ -22,17 +23,20 @@ public class TryOnController : ControllerBase
     private readonly IStorageService _storageService;
     private readonly IWardrobeService _wardrobeService;
     private readonly VClosetVersion30Context _context;
+    private readonly IDistributedCache _cache;
 
     public TryOnController(
         IVirtualTryOnService tryOnService,
         IStorageService storageService,
         IWardrobeService wardrobeService,
-        VClosetVersion30Context context)
+        VClosetVersion30Context context,
+        IDistributedCache cache)
     {
         _tryOnService = tryOnService;
         _storageService = storageService;
         _wardrobeService = wardrobeService;
         _context = context;
+        _cache = cache;
     }
 
     private async Task<CustomerProfile?> ValidateAndDeductTryOnCreditAsync(int userId)
@@ -215,6 +219,35 @@ public class TryOnController : ControllerBase
         try
         {
             var (status, outputUrl, error) = await _tryOnService.GetTryOnStatusAsync(id);
+
+            // Nếu tiến trình AI bị thất bại, tiến hành hoàn lại 1 lượt thử đồ cho người dùng
+            if (status == "failed")
+            {
+                var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (int.TryParse(userIdString, out int userId))
+                {
+                    // Sử dụng cache để đảm bảo không hoàn tiền trùng lặp cho cùng một ID prediction
+                    var cacheKey = $"refunded_prediction_{id}";
+                    var isRefunded = await _cache.GetStringAsync(cacheKey);
+                    if (isRefunded == null)
+                    {
+                        var profile = await _context.CustomerProfiles.FirstOrDefaultAsync(cp => cp.UserInternalId == userId);
+                        if (profile != null)
+                        {
+                            profile.TryOnCredits += 1;
+                            profile.UpdatedAt = DateTime.UtcNow;
+                            await _context.SaveChangesAsync();
+
+                            // Lưu dấu đã hoàn tiền vào cache (hết hạn sau 24 giờ)
+                            await _cache.SetStringAsync(cacheKey, "true", new DistributedCacheEntryOptions
+                            {
+                                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(24)
+                            });
+                        }
+                    }
+                }
+            }
+
             return Ok(new
             {
                 status,
