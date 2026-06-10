@@ -55,9 +55,10 @@ public class FashnTryOnService : IVirtualTryOnService
             throw new Exception("Fashn AI returned an invalid or empty response.");
         }
 
-        if (!string.IsNullOrEmpty(result.Error))
+        var errorMsg = GetErrorString(result.Error);
+        if (!string.IsNullOrEmpty(errorMsg))
         {
-            throw new Exception($"Fashn AI Prediction Error: {result.Error}");
+            throw new Exception($"Fashn AI Prediction Error: {errorMsg}");
         }
 
         return result.Id;
@@ -104,7 +105,7 @@ public class FashnTryOnService : IVirtualTryOnService
             }
         }
 
-        return (status, null, result.Error);
+        return (status, null, GetErrorString(result.Error));
     }
 
     private static string MapCategory(string category)
@@ -136,13 +137,32 @@ public class FashnTryOnService : IVirtualTryOnService
         public string ProductImage { get; set; } = null!;
     }
 
+    private static string? GetErrorString(JsonElement? errorElement)
+    {
+        if (errorElement == null || errorElement.Value.ValueKind == JsonValueKind.Null)
+            return null;
+
+        if (errorElement.Value.ValueKind == JsonValueKind.String)
+            return errorElement.Value.GetString();
+
+        if (errorElement.Value.ValueKind == JsonValueKind.Object)
+        {
+            if (errorElement.Value.TryGetProperty("message", out var msgProp) && msgProp.ValueKind == JsonValueKind.String)
+            {
+                return msgProp.GetString();
+            }
+        }
+
+        return errorElement.Value.ToString();
+    }
+
     private class FashnRunResponse
     {
         [JsonPropertyName("id")]
         public string Id { get; set; } = null!;
 
         [JsonPropertyName("error")]
-        public string? Error { get; set; }
+        public JsonElement? Error { get; set; }
     }
 
     private class FashnStatusResponse
@@ -157,6 +177,6 @@ public class FashnTryOnService : IVirtualTryOnService
         public string[]? Output { get; set; }
 
         [JsonPropertyName("error")]
-        public string? Error { get; set; }
+        public JsonElement? Error { get; set; }
     }
 }
