@@ -212,4 +212,54 @@ public class ChatController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Thu hồi tin nhắn
+    /// </summary>
+    [HttpDelete("messages/{messageId:guid}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> RecallMessage(Guid messageId)
+    {
+        try
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+
+            var success = await _chatService.RecallMessageAsync(userId, messageId);
+            if (!success) return BadRequest(new { message = "Không thể thu hồi tin nhắn này. Tin nhắn có thể không tồn tại, hoặc bạn không có quyền thu hồi." });
+
+            return Ok(new { message = "Đã thu hồi tin nhắn thành công." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Rời khỏi nhóm chat
+    /// </summary>
+    [HttpDelete("rooms/{roomId:guid}/leave")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> LeaveGroupRoom(Guid roomId)
+    {
+        try
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+
+            var success = await _chatService.LeaveGroupRoomAsync(userId, roomId);
+            if (!success) return BadRequest(new { message = "Không thể rời khỏi nhóm chat. Vui lòng kiểm tra lại." });
+
+            return Ok(new { message = "Bạn đã rời khỏi nhóm chat thành công." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }

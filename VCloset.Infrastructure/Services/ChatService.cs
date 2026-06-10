@@ -440,4 +440,47 @@ public class ChatService : IChatService
 
         return true;
     }
+
+    public async Task<bool> RecallMessageAsync(int userId, Guid messageId)
+    {
+        var user = await _unitOfWork.Users.GetByIdAsync(userId);
+        var message = await _context.ChatMessages.FirstOrDefaultAsync(m => m.Id == messageId);
+
+        if (user == null || message == null) return false;
+
+        // Chỉ cho phép thu hồi tin nhắn do chính user gửi và chưa bị xóa
+        if (message.UserInternalId != user.InternalId || message.DeletedAt != null)
+        {
+            return false;
+        }
+
+        message.DeletedAt = DateTime.UtcNow;
+        _context.ChatMessages.Update(message);
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+
+    public async Task<bool> LeaveGroupRoomAsync(int userId, Guid roomId)
+    {
+        var user = await _unitOfWork.Users.GetByIdAsync(userId);
+        var room = await _context.ChatRooms.FirstOrDefaultAsync(r => r.Id == roomId);
+
+        if (user == null || room == null) return false;
+
+        // Chỉ cho phép thoát khỏi phòng chat nhóm (Topic), không áp dụng cho chat 1-1 (Direct)
+        if (room.RoomType != ChatRoomType.Topic)
+        {
+            throw new Exception("Không thể thoát khỏi phòng chat 1-1.");
+        }
+
+        var member = await _context.ChatRoomMembers.FirstOrDefaultAsync(m => m.RoomInternalId == room.InternalId && m.UserInternalId == user.InternalId);
+        if (member == null) return false;
+
+        // Xóa thành viên khỏi nhóm
+        _context.ChatRoomMembers.Remove(member);
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
 }
