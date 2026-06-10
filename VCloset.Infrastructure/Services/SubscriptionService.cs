@@ -255,7 +255,8 @@ public class SubscriptionService : ISubscriptionService
         }
         else if (rewardType == "try_on" || rewardType == "tryon")
         {
-            profile.TryOnCredits += 1;
+            // Tắt tính năng đổi quảng cáo lấy lượt thử đồ AI do chi phí GPU cao
+            throw new InvalidOperationException("Không hỗ trợ nhận lượt thử đồ AI miễn phí qua quảng cáo. Vui lòng nâng cấp gói Premium.");
         }
         else
         {
