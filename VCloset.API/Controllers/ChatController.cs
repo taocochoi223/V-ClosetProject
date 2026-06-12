@@ -262,4 +262,32 @@ public class ChatController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Thêm thành viên vào nhóm chat
+    /// </summary>
+    [HttpPost("rooms/{roomId:guid}/members")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> AddMembersToGroup(Guid roomId, [FromBody] AddGroupMembersRequest request)
+    {
+        try
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+
+            if (request.MemberUserIds == null || !request.MemberUserIds.Any())
+                return BadRequest(new { message = "Danh sách thành viên không được để trống." });
+
+            var success = await _chatService.AddMembersToGroupAsync(userId, roomId, request);
+            if (!success) return BadRequest(new { message = "Không thể thêm thành viên vào nhóm chat này." });
+
+            return Ok(new { message = "Đã thêm thành viên vào nhóm chat thành công." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }

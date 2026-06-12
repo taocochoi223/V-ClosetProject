@@ -140,6 +140,52 @@ public class ChatService : IChatService
         return MapToRoomDto(newRoom, 0, null);
     }
 
+    public async Task<bool> AddMembersToGroupAsync(int userId, Guid roomId, AddGroupMembersRequest request)
+    {
+        var user = await _unitOfWork.Users.GetByIdAsync(userId);
+        var room = await _context.ChatRooms.FirstOrDefaultAsync(r => r.Id == roomId);
+
+        if (user == null || room == null) return false;
+
+        // Chỉ cho phép phòng chat nhóm (Topic)
+        if (room.RoomType != ChatRoomType.Topic) return false;
+
+        // Người thêm phải là thành viên trong nhóm
+        var isMember = await _context.ChatRoomMembers.AnyAsync(m => m.RoomInternalId == room.InternalId && m.UserInternalId == user.InternalId);
+        if (!isMember) throw new Exception("Bạn không phải là thành viên của phòng chat này.");
+
+        // Lấy danh sách thành viên hiện tại để tránh thêm trùng
+        var existingMemberIds = await _context.ChatRoomMembers
+            .Where(m => m.RoomInternalId == room.InternalId)
+            .Select(m => m.UserInternalId)
+            .ToListAsync();
+
+        var targetUsers = await _context.Users.Where(u => request.MemberUserIds.Contains(u.Id)).ToListAsync();
+        bool addedAny = false;
+
+        foreach (var tUser in targetUsers)
+        {
+            if (!existingMemberIds.Contains(tUser.InternalId))
+            {
+                var newMember = new ChatRoomMember
+                {
+                    RoomInternalId = room.InternalId,
+                    UserInternalId = tUser.InternalId,
+                    JoinedAt = DateTime.UtcNow
+                };
+                await _unitOfWork.ChatRoomMembers.AddAsync(newMember);
+                addedAny = true;
+            }
+        }
+
+        if (addedAny)
+        {
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        return true;
+    }
+
     public async Task<List<ChatRoomResponseDto>> GetChatRoomsAsync(int userId)
     {
         var user = await _unitOfWork.Users.GetByIdAsync(userId);
