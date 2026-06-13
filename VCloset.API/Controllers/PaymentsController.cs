@@ -153,8 +153,8 @@ public class PaymentsController : ControllerBase
 
                                 if (profile != null)
                                 {
-                                    profile.BgRemovalCredits = plan.GrantedBgCredits;
-                                    profile.TryOnCredits = plan.GrantedTryOnCredits;
+                                    profile.BgRemovalCredits += plan.GrantedBgCredits;
+                                    profile.TryOnCredits += plan.GrantedTryOnCredits;
                                     profile.UpdatedAt = DateTime.UtcNow;
                                     _unitOfWork.CustomerProfiles.Update(profile);
                                 }
@@ -342,8 +342,8 @@ public class PaymentsController : ControllerBase
 
                             if (profile != null)
                             {
-                                profile.BgRemovalCredits = plan.GrantedBgCredits;
-                                profile.TryOnCredits = plan.GrantedTryOnCredits;
+                                profile.BgRemovalCredits += plan.GrantedBgCredits;
+                                profile.TryOnCredits += plan.GrantedTryOnCredits;
                                 profile.UpdatedAt = DateTime.UtcNow;
                                 _unitOfWork.CustomerProfiles.Update(profile);
                             }
