@@ -83,52 +83,26 @@ public class PaymentsController : ControllerBase
                         if (plan != null)
                         {
                             var profile = await _unitOfWork.CustomerProfiles.FindAsync(cp => cp.UserInternalId == transaction.UserInternalId);
-                            bool isTopup = plan.Name.ToLower().Contains("credit") || plan.Name.ToLower().Contains("lượt lẻ") || plan.Name.ToLower().Contains("lượt thử");
-
-                            if (isTopup)
+                            if (profile != null)
                             {
-                                if (profile != null)
-                                {
-                                    int addedCredits = 10;
-                                    var match = System.Text.RegularExpressions.Regex.Match(plan.Name, @"\d+");
-                                    if (match.Success && int.TryParse(match.Value, out int parsedVal))
-                                    {
-                                        addedCredits = parsedVal;
-                                    }
-
-                                    bool isBgRemoval = plan.Name.ToLower().Contains("xóa nền") || plan.Name.ToLower().Contains("bg");
-                                    if (isBgRemoval)
-                                    {
-                                        profile.BgRemovalCredits += addedCredits;
-                                    }
-                                    else
-                                    {
-                                        profile.TryOnCredits += addedCredits;
-                                    }
-
-                                    profile.UpdatedAt = DateTime.UtcNow;
-                                    _unitOfWork.CustomerProfiles.Update(profile);
-                                }
+                                profile.BgRemovalCredits += plan.GrantedBgCredits;
+                                profile.TryOnCredits += plan.GrantedTryOnCredits;
+                                profile.UpdatedAt = DateTime.UtcNow;
+                                _unitOfWork.CustomerProfiles.Update(profile);
                             }
-                            else
+
+                            if (plan.DurationDays.HasValue && plan.DurationDays.Value > 0)
                             {
                                 var existingPremium = await _unitOfWork.PremiumSubscriptions.FindAsync(
                                     ps => ps.UserInternalId == transaction.UserInternalId && ps.IsActive);
 
                                 if (existingPremium != null)
                                 {
-                                    if (plan.DurationDays.HasValue)
+                                    if (existingPremium.ExpiresAt.HasValue)
                                     {
-                                        if (existingPremium.ExpiresAt.HasValue)
-                                        {
-                                            existingPremium.ExpiresAt = existingPremium.ExpiresAt.Value > DateTime.UtcNow 
-                                                ? existingPremium.ExpiresAt.Value.AddDays(plan.DurationDays.Value) 
-                                                : DateTime.UtcNow.AddDays(plan.DurationDays.Value);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        existingPremium.ExpiresAt = null;
+                                        existingPremium.ExpiresAt = existingPremium.ExpiresAt.Value > DateTime.UtcNow 
+                                            ? existingPremium.ExpiresAt.Value.AddDays(plan.DurationDays.Value) 
+                                            : DateTime.UtcNow.AddDays(plan.DurationDays.Value);
                                     }
                                 }
                                 else
@@ -138,25 +112,17 @@ public class PaymentsController : ControllerBase
                                         Id = Guid.NewGuid(),
                                         UserInternalId = transaction.UserInternalId,
                                         SubscriptionPlanInternalId = plan.InternalId,
-                                        PlanType = !plan.DurationDays.HasValue || plan.DurationDays >= 365 ? PremiumPlan.Yearly : PremiumPlan.Monthly,
+                                        PlanType = plan.DurationDays >= 365 ? PremiumPlan.Yearly : PremiumPlan.Monthly,
                                         PricePaid = transaction.Amount,
                                         Currency = transaction.Currency,
                                         PaymentMethod = "momo",
                                         PaymentRef = transId,
                                         StartedAt = DateTime.UtcNow,
-                                        ExpiresAt = plan.DurationDays.HasValue ? DateTime.UtcNow.AddDays(plan.DurationDays.Value) : (DateTime?)null,
+                                        ExpiresAt = DateTime.UtcNow.AddDays(plan.DurationDays.Value),
                                         IsActive = true,
                                         CreatedAt = DateTime.UtcNow
                                     };
                                     await _unitOfWork.PremiumSubscriptions.AddAsync(newPremium);
-                                }
-
-                                if (profile != null)
-                                {
-                                    profile.BgRemovalCredits += plan.GrantedBgCredits;
-                                    profile.TryOnCredits += plan.GrantedTryOnCredits;
-                                    profile.UpdatedAt = DateTime.UtcNow;
-                                    _unitOfWork.CustomerProfiles.Update(profile);
                                 }
                             }
                         }
@@ -272,52 +238,26 @@ public class PaymentsController : ControllerBase
                     if (plan != null)
                     {
                         var profile = await _unitOfWork.CustomerProfiles.FindAsync(cp => cp.UserInternalId == transaction.UserInternalId);
-                        bool isTopup = plan.Name.ToLower().Contains("credit") || plan.Name.ToLower().Contains("lượt lẻ") || plan.Name.ToLower().Contains("lượt thử");
-
-                        if (isTopup)
+                        if (profile != null)
                         {
-                            if (profile != null)
-                            {
-                                int addedCredits = 10;
-                                var match = System.Text.RegularExpressions.Regex.Match(plan.Name, @"\d+");
-                                if (match.Success && int.TryParse(match.Value, out int parsedVal))
-                                {
-                                    addedCredits = parsedVal;
-                                }
-
-                                bool isBgRemoval = plan.Name.ToLower().Contains("xóa nền") || plan.Name.ToLower().Contains("bg");
-                                if (isBgRemoval)
-                                {
-                                    profile.BgRemovalCredits += addedCredits;
-                                }
-                                else
-                                {
-                                    profile.TryOnCredits += addedCredits;
-                                }
-
-                                profile.UpdatedAt = DateTime.UtcNow;
-                                _unitOfWork.CustomerProfiles.Update(profile);
-                            }
+                            profile.BgRemovalCredits += plan.GrantedBgCredits;
+                            profile.TryOnCredits += plan.GrantedTryOnCredits;
+                            profile.UpdatedAt = DateTime.UtcNow;
+                            _unitOfWork.CustomerProfiles.Update(profile);
                         }
-                        else
+
+                        if (plan.DurationDays.HasValue && plan.DurationDays.Value > 0)
                         {
                             var existingPremium = await _unitOfWork.PremiumSubscriptions.FindAsync(
                                 ps => ps.UserInternalId == transaction.UserInternalId && ps.IsActive);
 
                             if (existingPremium != null)
                             {
-                                if (plan.DurationDays.HasValue)
+                                if (existingPremium.ExpiresAt.HasValue)
                                 {
-                                    if (existingPremium.ExpiresAt.HasValue)
-                                    {
-                                        existingPremium.ExpiresAt = existingPremium.ExpiresAt.Value > DateTime.UtcNow 
-                                            ? existingPremium.ExpiresAt.Value.AddDays(plan.DurationDays.Value) 
-                                            : DateTime.UtcNow.AddDays(plan.DurationDays.Value);
-                                    }
-                                }
-                                else
-                                {
-                                    existingPremium.ExpiresAt = null;
+                                    existingPremium.ExpiresAt = existingPremium.ExpiresAt.Value > DateTime.UtcNow 
+                                        ? existingPremium.ExpiresAt.Value.AddDays(plan.DurationDays.Value) 
+                                        : DateTime.UtcNow.AddDays(plan.DurationDays.Value);
                                 }
                             }
                             else
@@ -327,25 +267,17 @@ public class PaymentsController : ControllerBase
                                     Id = Guid.NewGuid(),
                                     UserInternalId = transaction.UserInternalId,
                                     SubscriptionPlanInternalId = plan.InternalId,
-                                    PlanType = !plan.DurationDays.HasValue || plan.DurationDays >= 365 ? PremiumPlan.Yearly : PremiumPlan.Monthly,
+                                    PlanType = plan.DurationDays >= 365 ? PremiumPlan.Yearly : PremiumPlan.Monthly,
                                     PricePaid = transaction.Amount,
                                     Currency = transaction.Currency,
                                     PaymentMethod = "vnpay",
                                     PaymentRef = vnp_TransactionNo,
                                     StartedAt = DateTime.UtcNow,
-                                    ExpiresAt = plan.DurationDays.HasValue ? DateTime.UtcNow.AddDays(plan.DurationDays.Value) : (DateTime?)null,
+                                    ExpiresAt = DateTime.UtcNow.AddDays(plan.DurationDays.Value),
                                     IsActive = true,
                                     CreatedAt = DateTime.UtcNow
                                 };
                                 await _unitOfWork.PremiumSubscriptions.AddAsync(newPremium);
-                            }
-
-                            if (profile != null)
-                            {
-                                profile.BgRemovalCredits += plan.GrantedBgCredits;
-                                profile.TryOnCredits += plan.GrantedTryOnCredits;
-                                profile.UpdatedAt = DateTime.UtcNow;
-                                _unitOfWork.CustomerProfiles.Update(profile);
                             }
                         }
                     }
