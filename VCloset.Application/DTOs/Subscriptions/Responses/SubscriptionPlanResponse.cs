@@ -13,5 +13,7 @@ public class SubscriptionPlanResponse
     public decimal Price { get; set; }
     public string Currency { get; set; } = "VND";
     public int? DurationDays { get; set; }
+    public int GrantedBgCredits { get; set; }
+    public int GrantedTryOnCredits { get; set; }
     public bool IsActive { get; set; }
 }

@@ -22,6 +22,10 @@ public partial class SubscriptionPlan
 
     public int? DurationDays { get; set; }
 
+    public int GrantedBgCredits { get; set; } = 0;
+
+    public int GrantedTryOnCredits { get; set; } = 0;
+
     public bool IsActive { get; set; }
 
     public DateTime CreatedAt { get; set; }
