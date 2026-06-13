@@ -40,6 +40,8 @@ public class AdminSubscriptionService : IAdminSubscriptionService
                 Price = p.Price,
                 Currency = p.Currency,
                 DurationDays = p.DurationDays,
+                GrantedBgCredits = p.GrantedBgCredits,
+                GrantedTryOnCredits = p.GrantedTryOnCredits,
                 IsActive = p.IsActive
             })
             .ToListAsync();
@@ -59,6 +61,8 @@ public class AdminSubscriptionService : IAdminSubscriptionService
             Price = plan.Price,
             Currency = plan.Currency,
             DurationDays = plan.DurationDays,
+            GrantedBgCredits = plan.GrantedBgCredits,
+            GrantedTryOnCredits = plan.GrantedTryOnCredits,
             IsActive = plan.IsActive
         };
     }
@@ -73,6 +77,8 @@ public class AdminSubscriptionService : IAdminSubscriptionService
             Price = request.Price,
             Currency = request.Currency,
             DurationDays = request.DurationDays == 0 ? null : request.DurationDays,
+            GrantedBgCredits = request.GrantedBgCredits,
+            GrantedTryOnCredits = request.GrantedTryOnCredits,
             IsActive = request.IsActive,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -89,6 +95,8 @@ public class AdminSubscriptionService : IAdminSubscriptionService
             Price = plan.Price,
             Currency = plan.Currency,
             DurationDays = plan.DurationDays,
+            GrantedBgCredits = plan.GrantedBgCredits,
+            GrantedTryOnCredits = plan.GrantedTryOnCredits,
             IsActive = plan.IsActive
         };
     }
@@ -104,6 +112,8 @@ public class AdminSubscriptionService : IAdminSubscriptionService
         if (request.Price.HasValue) plan.Price = request.Price.Value;
         if (!string.IsNullOrWhiteSpace(request.Currency)) plan.Currency = request.Currency;
         if (request.DurationDays.HasValue) plan.DurationDays = request.DurationDays.Value == 0 ? null : request.DurationDays.Value;
+        plan.GrantedBgCredits = request.GrantedBgCredits;
+        plan.GrantedTryOnCredits = request.GrantedTryOnCredits;
         if (request.IsActive.HasValue) plan.IsActive = request.IsActive.Value;
         
         plan.UpdatedAt = DateTime.UtcNow;
@@ -118,6 +128,8 @@ public class AdminSubscriptionService : IAdminSubscriptionService
             Price = plan.Price,
             Currency = plan.Currency,
             DurationDays = plan.DurationDays,
+            GrantedBgCredits = plan.GrantedBgCredits,
+            GrantedTryOnCredits = plan.GrantedTryOnCredits,
             IsActive = plan.IsActive
         };
     }

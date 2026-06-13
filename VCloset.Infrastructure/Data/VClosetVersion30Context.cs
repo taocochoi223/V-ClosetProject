@@ -1045,6 +1045,8 @@ public partial class VClosetVersion30Context : DbContext
             entity.Property(e => e.Price).HasPrecision(10, 2).HasColumnName("price");
             entity.Property(e => e.Currency).HasMaxLength(10).HasDefaultValue("VND").HasColumnName("currency");
             entity.Property(e => e.DurationDays).HasColumnName("duration_days");
+            entity.Property(e => e.GrantedBgCredits).HasDefaultValue(0).HasColumnName("granted_bg_credits");
+            entity.Property(e => e.GrantedTryOnCredits).HasDefaultValue(0).HasColumnName("granted_try_on_credits");
             entity.Property(e => e.IsActive).HasDefaultValue(true).HasColumnName("is_active");
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("now()").HasColumnName("created_at");
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("now()").HasColumnName("updated_at");
@@ -1060,6 +1062,8 @@ public partial class VClosetVersion30Context : DbContext
                     Price = 49000m,
                     Currency = "VND",
                     DurationDays = 30,
+                    GrantedBgCredits = 30,
+                    GrantedTryOnCredits = 30,
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
@@ -1073,6 +1077,8 @@ public partial class VClosetVersion30Context : DbContext
                     Price = 399000m,
                     Currency = "VND",
                     DurationDays = 365,
+                    GrantedBgCredits = 360,
+                    GrantedTryOnCredits = 360,
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow

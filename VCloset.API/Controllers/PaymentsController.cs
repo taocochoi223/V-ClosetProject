@@ -153,9 +153,8 @@ public class PaymentsController : ControllerBase
 
                                 if (profile != null)
                                 {
-                                    var premiumTier = await _tierConfigService.GetConfigEntityAsync("premium");
-                                    profile.BgRemovalCredits = premiumTier.BgRemovalCredits;
-                                    profile.TryOnCredits = premiumTier.TryOnCredits;
+                                    profile.BgRemovalCredits = plan.GrantedBgCredits;
+                                    profile.TryOnCredits = plan.GrantedTryOnCredits;
                                     profile.UpdatedAt = DateTime.UtcNow;
                                     _unitOfWork.CustomerProfiles.Update(profile);
                                 }
@@ -343,9 +342,8 @@ public class PaymentsController : ControllerBase
 
                             if (profile != null)
                             {
-                                var premiumTier = await _tierConfigService.GetConfigEntityAsync("premium");
-                                profile.BgRemovalCredits = premiumTier.BgRemovalCredits;
-                                profile.TryOnCredits = premiumTier.TryOnCredits;
+                                profile.BgRemovalCredits = plan.GrantedBgCredits;
+                                profile.TryOnCredits = plan.GrantedTryOnCredits;
                                 profile.UpdatedAt = DateTime.UtcNow;
                                 _unitOfWork.CustomerProfiles.Update(profile);
                             }
