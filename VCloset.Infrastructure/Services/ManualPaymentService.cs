@@ -236,52 +236,29 @@ public class ManualPaymentService : IManualPaymentService
         if (plan != null)
         {
             var profile = await _unitOfWork.CustomerProfiles.FindAsync(cp => cp.UserInternalId == transaction.UserInternalId);
-            isTopup = plan.Name.ToLower().Contains("credit") || plan.Name.ToLower().Contains("lượt lẻ") || plan.Name.ToLower().Contains("lượt thử");
 
-            if (isTopup)
+            if (profile != null)
             {
-                // TRƯỜNG HỢP 1 & 2: NẠP LƯỢT LẺ (Cộng dồn lượt dùng hiện tại)
-                if (profile != null)
-                {
-                    // Tự động phân tích số lượng credits từ tên gói (Ví dụ: "Gói 10 Credits" -> 10, "Gói 25 Credits" -> 25)
-                    var match = System.Text.RegularExpressions.Regex.Match(plan.Name, @"\d+");
-                    if (match.Success && int.TryParse(match.Value, out int parsedVal))
-                    {
-                        addedCredits = parsedVal;
-                    }
-
-                    bool isBgRemoval = plan.Name.ToLower().Contains("xóa nền") || plan.Name.ToLower().Contains("bg");
-                    if (isBgRemoval)
-                    {
-                        profile.BgRemovalCredits += addedCredits;
-                    }
-                    else
-                    {
-                        profile.TryOnCredits += addedCredits;
-                    }
-                    
-                    profile.UpdatedAt = DateTime.UtcNow;
-                    _unitOfWork.CustomerProfiles.Update(profile);
-                }
+                profile.BgRemovalCredits += plan.GrantedBgCredits;
+                profile.TryOnCredits += plan.GrantedTryOnCredits;
+                profile.UpdatedAt = DateTime.UtcNow;
+                _unitOfWork.CustomerProfiles.Update(profile);
             }
-            else
+
+            if (plan.DurationDays.HasValue && plan.DurationDays.Value > 0)
             {
-                // TRƯỜNG HỢP 3: NÂNG CẤP GÓI PREMIUM (Gia hạn thời gian sử dụng)
+                // NÂNG CẤP HOẶC GIA HẠN GÓI PREMIUM
                 var existingPremium = await _unitOfWork.PremiumSubscriptions.FindAsync(
                     ps => ps.UserInternalId == transaction.UserInternalId && ps.IsActive);
 
                 if (existingPremium != null)
                 {
                     // Kéo dài subscription hiện tại
-                    if (plan.DurationDays.HasValue)
+                    if (existingPremium.ExpiresAt.HasValue)
                     {
-                        existingPremium.ExpiresAt = (existingPremium.ExpiresAt.HasValue && existingPremium.ExpiresAt.Value > DateTime.UtcNow)
+                        existingPremium.ExpiresAt = existingPremium.ExpiresAt.Value > DateTime.UtcNow
                             ? existingPremium.ExpiresAt.Value.AddDays(plan.DurationDays.Value)
                             : DateTime.UtcNow.AddDays(plan.DurationDays.Value);
-                    }
-                    else
-                    {
-                        existingPremium.ExpiresAt = null;
                     }
                 }
                 else
@@ -292,27 +269,17 @@ public class ManualPaymentService : IManualPaymentService
                         Id                        = Guid.NewGuid(),
                         UserInternalId            = transaction.UserInternalId,
                         SubscriptionPlanInternalId = plan.InternalId,
-                        PlanType                  = !plan.DurationDays.HasValue || plan.DurationDays >= 365 ? PremiumPlan.Yearly : PremiumPlan.Monthly,
+                        PlanType                  = plan.DurationDays >= 365 ? PremiumPlan.Yearly : PremiumPlan.Monthly,
                         PricePaid                 = transaction.Amount,
                         Currency                  = transaction.Currency,
                         PaymentMethod             = GatewayName,
                         PaymentRef                = transaction.Id.ToString(),
                         StartedAt                 = DateTime.UtcNow,
-                        ExpiresAt = plan.DurationDays.HasValue ? DateTime.UtcNow.AddDays(plan.DurationDays.Value) : (DateTime?)null,
+                        ExpiresAt = DateTime.UtcNow.AddDays(plan.DurationDays.Value),
                         IsActive                  = true,
                         CreatedAt                 = DateTime.UtcNow
                     };
                     await _unitOfWork.PremiumSubscriptions.AddAsync(newPremium);
-                }
-
-                // Cập nhật lượt AI cho khách hàng theo cấu hình của premium tier
-                if (profile != null)
-                {
-                    var premiumTier = await _tierConfigService.GetConfigEntityAsync("premium");
-                    profile.BgRemovalCredits = premiumTier.BgRemovalCredits;
-                    profile.TryOnCredits = premiumTier.TryOnCredits;
-                    profile.UpdatedAt = DateTime.UtcNow;
-                    _unitOfWork.CustomerProfiles.Update(profile);
                 }
             }
         }
