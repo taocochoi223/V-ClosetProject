@@ -19,5 +19,11 @@ public class CreateOrUpdatePlanRequest
 
     public int? DurationDays { get; set; }
 
+    [Range(0, 10000, ErrorMessage = "Số lượt xóa nền không hợp lệ")]
+    public int GrantedBgCredits { get; set; } = 0;
+
+    [Range(0, 10000, ErrorMessage = "Số lượt thử đồ không hợp lệ")]
+    public int GrantedTryOnCredits { get; set; } = 0;
+
     public bool IsActive { get; set; } = true;
 }
