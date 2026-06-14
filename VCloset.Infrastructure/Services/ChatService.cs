@@ -186,6 +186,67 @@ public class ChatService : IChatService
         return true;
     }
 
+    public async Task<List<ChatRoomMemberResponseDto>> GetRoomMembersAsync(int userId, Guid roomId)
+    {
+        var user = await _unitOfWork.Users.GetByIdAsync(userId);
+        var room = await _context.ChatRooms.FirstOrDefaultAsync(r => r.Id == roomId);
+
+        if (user == null || room == null) return new List<ChatRoomMemberResponseDto>();
+
+        // Chỉ cho xem nếu người này đang trong phòng
+        var isMember = await _context.ChatRoomMembers.AnyAsync(m => m.RoomInternalId == room.InternalId && m.UserInternalId == user.InternalId);
+        if (!isMember) throw new Exception("Bạn không phải là thành viên của phòng chat này.");
+
+        var members = await _context.ChatRoomMembers
+            .Include(m => m.UserInternal)
+            .Where(m => m.RoomInternalId == room.InternalId)
+            .Select(m => new ChatRoomMemberResponseDto
+            {
+                UserId = m.UserInternal.Id,
+                DisplayName = m.UserInternal.DisplayName,
+                Email = m.UserInternal.Email,
+                AvatarUrl = m.UserInternal.AvatarUrl,
+                JoinedAt = m.JoinedAt,
+                IsAdmin = (room.CreatedByInternal == m.UserInternal.InternalId)
+            })
+            .ToListAsync();
+
+        return members;
+    }
+
+    public async Task<bool> RemoveMemberFromGroupAsync(int userId, Guid roomId, Guid targetUserId)
+    {
+        var user = await _unitOfWork.Users.GetByIdAsync(userId);
+        var room = await _context.ChatRooms.FirstOrDefaultAsync(r => r.Id == roomId);
+        var targetUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == targetUserId);
+
+        if (user == null || room == null || targetUser == null) return false;
+
+        if (room.RoomType != ChatRoomType.Topic) throw new Exception("Chỉ có thể kích thành viên trong nhóm chat.");
+
+        // Kiểm tra quyền Admin (người tạo nhóm)
+        if (room.CreatedByInternal != user.InternalId)
+        {
+            throw new Exception("Bạn không có quyền xoá thành viên khỏi nhóm.");
+        }
+
+        // Không thể tự kích chính mình bằng API này (dùng API Leave thay thế)
+        if (user.InternalId == targetUser.InternalId)
+        {
+            throw new Exception("Bạn không thể tự kích chính mình.");
+        }
+
+        var memberToRemove = await _context.ChatRoomMembers
+            .FirstOrDefaultAsync(m => m.RoomInternalId == room.InternalId && m.UserInternalId == targetUser.InternalId);
+
+        if (memberToRemove == null) return false;
+
+        _context.ChatRoomMembers.Remove(memberToRemove);
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+
     public async Task<List<ChatRoomResponseDto>> GetChatRoomsAsync(int userId)
     {
         var user = await _unitOfWork.Users.GetByIdAsync(userId);
