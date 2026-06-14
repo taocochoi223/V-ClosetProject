@@ -290,4 +290,52 @@ public class ChatController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Lấy danh sách thành viên trong nhóm chat
+    /// </summary>
+    [HttpGet("rooms/{roomId:guid}/members")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetRoomMembers(Guid roomId)
+    {
+        try
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+
+            var members = await _chatService.GetRoomMembersAsync(userId, roomId);
+            return Ok(members);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Đuổi (Kích) thành viên ra khỏi nhóm chat
+    /// </summary>
+    [HttpDelete("rooms/{roomId:guid}/members/{memberUserId:guid}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> RemoveMember(Guid roomId, Guid memberUserId)
+    {
+        try
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+
+            var success = await _chatService.RemoveMemberFromGroupAsync(userId, roomId, memberUserId);
+            if (!success) return BadRequest(new { message = "Không thể kích thành viên này khỏi nhóm." });
+
+            return Ok(new { message = "Đã kích thành viên ra khỏi nhóm thành công." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }
