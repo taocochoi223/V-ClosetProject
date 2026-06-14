@@ -338,4 +338,50 @@ public class ChatController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Cập nhật thông tin nhóm chat (Đổi tên, Đổi ảnh đại diện)
+    /// </summary>
+    [HttpPut("rooms/{roomId:guid}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> UpdateGroupRoom(Guid roomId, [FromBody] UpdateGroupRoomRequest request)
+    {
+        try
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+
+            var room = await _chatService.UpdateGroupRoomAsync(userId, roomId, request);
+            return Ok(new { message = "Cập nhật nhóm thành công.", room });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Bật / Tắt thông báo phòng chat
+    /// </summary>
+    [HttpPut("rooms/{roomId:guid}/mute")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> ToggleMuteRoom(Guid roomId)
+    {
+        try
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+
+            var isMuted = await _chatService.ToggleMuteRoomAsync(userId, roomId);
+            return Ok(new { message = isMuted ? "Đã tắt thông báo phòng chat." : "Đã bật thông báo phòng chat.", isMuted });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }

@@ -140,6 +140,34 @@ public class ChatService : IChatService
         return MapToRoomDto(newRoom, 0, null);
     }
 
+    public async Task<ChatRoomResponseDto> UpdateGroupRoomAsync(int userId, Guid roomId, UpdateGroupRoomRequest request)
+    {
+        var user = await _unitOfWork.Users.GetByIdAsync(userId);
+        var room = await _context.ChatRooms.FirstOrDefaultAsync(r => r.Id == roomId);
+
+        if (user == null || room == null) throw new Exception("Không tìm thấy phòng chat.");
+
+        if (room.RoomType != ChatRoomType.Topic) throw new Exception("Chỉ có thể cập nhật thông tin cho nhóm chat.");
+
+        // Chỉ Admin nhóm mới được cập nhật
+        if (room.CreatedByInternal != user.InternalId) throw new Exception("Bạn không có quyền cập nhật nhóm này.");
+
+        if (!string.IsNullOrWhiteSpace(request.Name))
+        {
+            room.Name = request.Name;
+        }
+
+        if (request.CoverUrl != null)
+        {
+            room.CoverUrl = request.CoverUrl; // Cập nhật hoặc xóa ảnh nếu url rỗng
+        }
+
+        _context.ChatRooms.Update(room);
+        await _context.SaveChangesAsync();
+
+        return MapToRoomDto(room, 0, null);
+    }
+
     public async Task<bool> AddMembersToGroupAsync(int userId, Guid roomId, AddGroupMembersRequest request)
     {
         var user = await _unitOfWork.Users.GetByIdAsync(userId);
@@ -589,5 +617,24 @@ public class ChatService : IChatService
         await _context.SaveChangesAsync();
 
         return true;
+    }
+
+    public async Task<bool> ToggleMuteRoomAsync(int userId, Guid roomId)
+    {
+        var user = await _unitOfWork.Users.GetByIdAsync(userId);
+        var room = await _context.ChatRooms.FirstOrDefaultAsync(r => r.Id == roomId);
+
+        if (user == null || room == null) return false;
+
+        var member = await _context.ChatRoomMembers.FirstOrDefaultAsync(m => m.RoomInternalId == room.InternalId && m.UserInternalId == user.InternalId);
+        if (member == null) return false;
+
+        // Đảo ngược trạng thái Mute
+        member.IsMuted = !member.IsMuted;
+        
+        _context.ChatRoomMembers.Update(member);
+        await _context.SaveChangesAsync();
+
+        return member.IsMuted;
     }
 }
