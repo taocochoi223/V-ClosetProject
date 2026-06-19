@@ -334,31 +334,31 @@ public class AdminDashboardService : IAdminDashboardService
         // Group BodyShapes
         dto.BodyShapes = completedProfiles
             .Where(x => x.BodyShape.HasValue)
-            .GroupBy(x => x.BodyShape.Value.ToString())
+            .GroupBy(x => x.BodyShape!.Value.ToString())
             .ToDictionary(g => g.Key, g => g.Count());
 
         // Group Lifestyles
         dto.Lifestyles = completedProfiles
             .Where(x => !string.IsNullOrEmpty(x.Lifestyle))
-            .GroupBy(x => x.Lifestyle)
+            .GroupBy(x => x.Lifestyle!)
             .ToDictionary(g => g.Key, g => g.Count());
 
         // Group EyeColors
         dto.EyeColors = completedProfiles
             .Where(x => !string.IsNullOrEmpty(x.EyeColor))
-            .GroupBy(x => x.EyeColor)
+            .GroupBy(x => x.EyeColor!)
             .ToDictionary(g => g.Key, g => g.Count());
 
         // Group HairColors
         dto.HairColors = completedProfiles
             .Where(x => !string.IsNullOrEmpty(x.Hair))
-            .GroupBy(x => x.Hair)
+            .GroupBy(x => x.Hair!)
             .ToDictionary(g => g.Key, g => g.Count());
 
         // Group Genders
         dto.Genders = completedProfiles
             .Where(x => !string.IsNullOrEmpty(x.Gender))
-            .GroupBy(x => x.Gender)
+            .GroupBy(x => x.Gender!)
             .ToDictionary(g => g.Key, g => g.Count());
 
         // Group Age
