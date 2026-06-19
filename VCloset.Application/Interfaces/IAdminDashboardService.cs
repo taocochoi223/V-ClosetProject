@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using VCloset.Application.DTOs.Admin.Requests;
+using VCloset.Application.DTOs.Admin.Responses;
 
 namespace VCloset.Application.Interfaces;
 
@@ -20,5 +21,8 @@ public interface IAdminDashboardService
 
     // 5. Xuất báo cáo tổng hợp ra file CSV
     Task<byte[]> ExportDashboardReportAsync(DateTime? from, DateTime? to);
+
+    // 6. Phân tích nhân khẩu học dựa trên khảo sát Onboarding
+    Task<OnboardingDemographicsDto> GetOnboardingDemographicsAsync();
 }
 

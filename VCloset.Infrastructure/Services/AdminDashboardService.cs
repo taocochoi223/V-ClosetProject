@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using VCloset.Application.DTOs.Admin.Requests;
+using VCloset.Application.DTOs.Admin.Responses;
 using VCloset.Application.Interfaces;
 using VCloset.Domain.Enums;
 using VCloset.Infrastructure.Data;
@@ -302,6 +303,86 @@ public class AdminDashboardService : IAdminDashboardService
         }
 
         return Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(csv.ToString())).ToArray();
+    }
+
+    // 6. Phân tích nhân khẩu học dựa trên khảo sát Onboarding
+    public async Task<OnboardingDemographicsDto> GetOnboardingDemographicsAsync()
+    {
+        var dto = new OnboardingDemographicsDto();
+
+        // Lấy tất cả CustomerProfiles đã hoàn thành Onboarding
+        var completedProfiles = await _context.CustomerProfiles
+            .Where(cp => cp.IsOnboardingCompleted)
+            .Select(cp => new
+            {
+                cp.BodyShape,
+                cp.Lifestyle,
+                cp.EyeColor,
+                cp.Hair,
+                cp.Gender,
+                cp.DateOfBirth
+            })
+            .ToListAsync();
+
+        dto.TotalCompletedOnboarding = completedProfiles.Count;
+
+        if (dto.TotalCompletedOnboarding == 0)
+        {
+            return dto;
+        }
+
+        // Group BodyShapes
+        dto.BodyShapes = completedProfiles
+            .Where(x => x.BodyShape.HasValue)
+            .GroupBy(x => x.BodyShape.Value.ToString())
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        // Group Lifestyles
+        dto.Lifestyles = completedProfiles
+            .Where(x => !string.IsNullOrEmpty(x.Lifestyle))
+            .GroupBy(x => x.Lifestyle)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        // Group EyeColors
+        dto.EyeColors = completedProfiles
+            .Where(x => !string.IsNullOrEmpty(x.EyeColor))
+            .GroupBy(x => x.EyeColor)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        // Group HairColors
+        dto.HairColors = completedProfiles
+            .Where(x => !string.IsNullOrEmpty(x.Hair))
+            .GroupBy(x => x.Hair)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        // Group Genders
+        dto.Genders = completedProfiles
+            .Where(x => !string.IsNullOrEmpty(x.Gender))
+            .GroupBy(x => x.Gender)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        // Group Age
+        var now = DateTime.UtcNow;
+        foreach (var p in completedProfiles)
+        {
+            if (p.DateOfBirth.HasValue)
+            {
+                int age = now.Year - p.DateOfBirth.Value.Year;
+                if (p.DateOfBirth.Value.Date > now.AddYears(-age)) age--;
+
+                string ageGroup = "Unknown";
+                if (age < 18) ageGroup = "< 18";
+                else if (age <= 24) ageGroup = "18 - 24";
+                else if (age <= 34) ageGroup = "25 - 34";
+                else if (age <= 44) ageGroup = "35 - 44";
+                else ageGroup = "45+";
+
+                if (!dto.AgeGroups.ContainsKey(ageGroup)) dto.AgeGroups[ageGroup] = 0;
+                dto.AgeGroups[ageGroup]++;
+            }
+        }
+
+        return dto;
     }
 }
 

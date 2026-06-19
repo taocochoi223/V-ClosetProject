@@ -120,5 +120,25 @@ public class AdminDashboardController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Lấy dữ liệu phân tích nhân khẩu học dựa trên khảo sát Onboarding của người dùng
+    /// </summary>
+    [RequirePermission("analytics.view")]
+    [HttpGet("onboarding-demographics")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetOnboardingDemographics()
+    {
+        try
+        {
+            var result = await _adminDashboardService.GetOnboardingDemographicsAsync();
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }
 
