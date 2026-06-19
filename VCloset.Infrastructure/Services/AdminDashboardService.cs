@@ -315,12 +315,12 @@ public class AdminDashboardService : IAdminDashboardService
             .Where(cp => cp.IsOnboardingCompleted)
             .Select(cp => new
             {
-                cp.BodyShape,
                 cp.Lifestyle,
                 cp.EyeColor,
                 cp.Hair,
                 cp.Gender,
-                cp.DateOfBirth
+                cp.DateOfBirth,
+                cp.Country
             })
             .ToListAsync();
 
@@ -330,12 +330,6 @@ public class AdminDashboardService : IAdminDashboardService
         {
             return dto;
         }
-
-        // Group BodyShapes
-        dto.BodyShapes = completedProfiles
-            .Where(x => x.BodyShape.HasValue)
-            .GroupBy(x => x.BodyShape!.Value.ToString())
-            .ToDictionary(g => g.Key, g => g.Count());
 
         // Group Lifestyles
         dto.Lifestyles = completedProfiles
@@ -359,6 +353,12 @@ public class AdminDashboardService : IAdminDashboardService
         dto.Genders = completedProfiles
             .Where(x => !string.IsNullOrEmpty(x.Gender))
             .GroupBy(x => x.Gender!)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        // Group Countries
+        dto.Countries = completedProfiles
+            .Where(x => !string.IsNullOrEmpty(x.Country))
+            .GroupBy(x => x.Country!)
             .ToDictionary(g => g.Key, g => g.Count());
 
         // Group Age
