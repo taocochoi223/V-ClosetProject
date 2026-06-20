@@ -24,4 +24,6 @@ public class MySubscriptionResponse
     // Outfit limits
     public int OutfitCount { get; set; }
     public int? OutfitLimit { get; set; }  // null = không giới hạn
+
+    public bool HasCompletedSurvey { get; set; }
 }
