@@ -140,6 +140,7 @@ public class SubscriptionService : ISubscriptionService
             BgRemovalCredits  = profile?.BgRemovalCredits ?? 1,
             TryOnCredits      = profile?.TryOnCredits ?? 1,
             OutfitCount       = outfitCount,
+            HasCompletedSurvey = profile?.HasCompletedSurvey ?? false,
         };
 
         if (active != null)
