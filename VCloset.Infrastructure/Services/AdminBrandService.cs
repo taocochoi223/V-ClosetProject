@@ -226,11 +226,8 @@ public class AdminBrandService : IAdminBrandService
         if (campaign == null)
             throw new Exception("Không tìm thấy chiến dịch quảng cáo yêu cầu.");
 
-        if (request.DailyBudget <= 0)
-            throw new Exception("Ngân sách hàng ngày phải lớn hơn 0.");
-
-        if (request.DailyBudget % 1000 != 0)
-            throw new Exception("Ngân sách hàng ngày phải là số chẵn chia hết cho 1,000 đ (ví dụ: 100000, không được nhập lẻ như 100001).");
+        if (request.DailyBudget < 20000)
+            throw new Exception("Ngân sách hàng ngày tối thiểu là 20,000 đ để đảm bảo hiệu suất quảng cáo.");
             
         var roundedBudget = request.DailyBudget;
 
@@ -437,8 +434,7 @@ public class AdminBrandService : IAdminBrandService
         if (!product.IsActive)
             throw new Exception("Sản phẩm tiếp thị liên kết này đang tạm ngưng hoạt động.");
 
-        if (request.DailyBudget <= 0)
-            throw new Exception("Ngân sách hàng ngày phải lớn hơn 0.");
+
 
         if (request.DisplayRank <= 0)
             throw new Exception("Thứ tự hiển thị phải lớn hơn 0.");
@@ -452,11 +448,8 @@ public class AdminBrandService : IAdminBrandService
         if (request.EndAt <= DateTime.UtcNow)
             throw new Exception("Thời gian kết thúc chiến dịch phải nằm ở tương lai.");
 
-        if (request.DailyBudget <= 0)
-            throw new Exception("Ngân sách hàng ngày phải lớn hơn 0.");
-
-        if (request.DailyBudget % 1000 != 0)
-            throw new Exception("Ngân sách hàng ngày phải là số chẵn chia hết cho 1,000 đ (ví dụ: 100000, không được nhập lẻ như 100001).");
+        if (request.DailyBudget < 20000)
+            throw new Exception("Ngân sách hàng ngày tối thiểu là 20,000 đ để đảm bảo hiệu suất quảng cáo.");
             
         var roundedBudget = request.DailyBudget;
 
