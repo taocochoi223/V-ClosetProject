@@ -49,6 +49,9 @@ public partial class CustomerProfile
     public DateTime? PostBannedUntil { get; set; }
 
     public bool IsOnboardingCompleted { get; set; }
+
+    [Column("has_completed_survey")]
+    public bool HasCompletedSurvey { get; set; }
     
     public string? Country { get; set; }
 

@@ -142,6 +142,7 @@ public class SubscriptionService : ISubscriptionService
             BgRemovalCredits  = profile?.BgRemovalCredits ?? 1,
             TryOnCredits      = profile?.TryOnCredits ?? 1,
             OutfitCount       = outfitCount,
+            HasCompletedSurvey = profile?.HasCompletedSurvey ?? false,
         };
 
         if (active != null)
@@ -269,6 +270,15 @@ public class SubscriptionService : ISubscriptionService
         {
             // Tắt tính năng đổi quảng cáo lấy lượt thử đồ AI do chi phí GPU cao
             throw new InvalidOperationException("Không hỗ trợ nhận lượt thử đồ AI miễn phí qua quảng cáo. Vui lòng nâng cấp gói Premium.");
+        }
+        else if (rewardType == "survey")
+        {
+            if (profile.HasCompletedSurvey)
+            {
+                throw new InvalidOperationException("Bạn đã nhận 3 lượt thử đồ miễn phí từ khảo sát này rồi. Mỗi tài khoản chỉ được nhận một lần.");
+            }
+            profile.TryOnCredits += 3;
+            profile.HasCompletedSurvey = true;
         }
         else
         {
