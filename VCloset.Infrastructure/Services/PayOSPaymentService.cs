@@ -28,8 +28,8 @@ public class PayOSPaymentService : IPayOSPaymentService
         
         _payOS = new PayOSClient(_clientId, _apiKey, _checksumKey);
         
-        _returnUrl = configuration["VNPAY_RETURN_FE_URL"] ?? "vcloset://payment/result";
-        _cancelUrl = configuration["VNPAY_RETURN_FE_URL"] ?? "vcloset://payment/result";
+        _returnUrl = configuration["PAYMENT_RETURN_FE_URL"] ?? "vcloset://payment/result";
+        _cancelUrl = configuration["PAYMENT_RETURN_FE_URL"] ?? "vcloset://payment/result";
     }
 
     public async Task<PayOSPaymentResponse> CreatePaymentAsync(VCloset.Domain.Entities.PaymentTransaction transaction, string planName)

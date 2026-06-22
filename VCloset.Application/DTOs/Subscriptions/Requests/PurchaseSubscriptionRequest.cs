@@ -10,7 +10,7 @@ public class PurchaseSubscriptionRequest
     public Guid PlanId { get; set; }
     
     /// <summary>
-    /// Cổng thanh toán (momo, vnpay). Mặc định là momo.
+    /// Cổng thanh toán (payos). Mặc định là payos.
     /// </summary>
-    public string PaymentGateway { get; set; } = "momo";
+    public string PaymentGateway { get; set; } = "payos";
 }

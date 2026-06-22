@@ -13,16 +13,12 @@ namespace VCloset.Infrastructure.Services;
 public class SubscriptionService : ISubscriptionService
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMoMoPaymentService _momoPaymentService;
-    private readonly IVNPayService _vnPayService;
     private readonly IPayOSPaymentService _payOSPaymentService;
     private readonly ITierConfigService _tierConfigService;
 
-    public SubscriptionService(IUnitOfWork unitOfWork, IMoMoPaymentService momoPaymentService, IVNPayService vnPayService, IPayOSPaymentService payOSPaymentService, ITierConfigService tierConfigService)
+    public SubscriptionService(IUnitOfWork unitOfWork, IPayOSPaymentService payOSPaymentService, ITierConfigService tierConfigService)
     {
         _unitOfWork = unitOfWork;
-        _momoPaymentService = momoPaymentService;
-        _vnPayService = vnPayService;
         _payOSPaymentService = payOSPaymentService;
         _tierConfigService = tierConfigService;
     }
@@ -194,12 +190,12 @@ public class SubscriptionService : ISubscriptionService
         return result;
     }
 
-    public async Task<VCloset.Application.DTOs.Payment.Responses.PaymentInitializationResponse> InitiatePurchaseAsync(int userId, Guid planId, string paymentGateway = "momo")
+    public async Task<VCloset.Application.DTOs.Payment.Responses.PaymentInitializationResponse> InitiatePurchaseAsync(int userId, Guid planId, string paymentGateway = "payos")
     {
         paymentGateway = paymentGateway.ToLower();
-        if (paymentGateway != "momo" && paymentGateway != "vnpay" && paymentGateway != "payos")
+        if (paymentGateway != "payos")
         {
-            throw new Exception("Cổng thanh toán không hợp lệ (chỉ hỗ trợ momo, vnpay hoặc payos).");
+            throw new Exception("Cổng thanh toán không hợp lệ (hiện tại chỉ hỗ trợ payos).");
         }
 
         var plan = await _unitOfWork.SubscriptionPlans.FindAsync(p => p.Id == planId && p.IsActive);
@@ -222,36 +218,13 @@ public class SubscriptionService : ISubscriptionService
         await _unitOfWork.PaymentTransactions.AddAsync(transaction);
         await _unitOfWork.SaveChangesAsync();
 
-        if (paymentGateway == "vnpay")
+        var payosResponse = await _payOSPaymentService.CreatePaymentAsync(transaction, plan.Name);
+        return new VCloset.Application.DTOs.Payment.Responses.PaymentInitializationResponse
         {
-            var vnpayResponse = await _vnPayService.CreatePaymentAsync(transaction, plan.Name);
-            return new VCloset.Application.DTOs.Payment.Responses.PaymentInitializationResponse
-            {
-                PayUrl = vnpayResponse.PayUrl,
-                PaymentGateway = "vnpay"
-            };
-        }
-        else if (paymentGateway == "payos")
-        {
-            var payosResponse = await _payOSPaymentService.CreatePaymentAsync(transaction, plan.Name);
-            return new VCloset.Application.DTOs.Payment.Responses.PaymentInitializationResponse
-            {
-                PayUrl = payosResponse.PayUrl,
-                QrCodeUrl = payosResponse.QrCodeUrl,
-                PaymentGateway = "payos"
-            };
-        }
-        else
-        {
-            var momoResponse = await _momoPaymentService.CreatePaymentAsync(transaction, plan.Name);
-            return new VCloset.Application.DTOs.Payment.Responses.PaymentInitializationResponse
-            {
-                PayUrl = momoResponse.PayUrl,
-                Deeplink = momoResponse.Deeplink,
-                QrCodeUrl = momoResponse.QrCodeUrl,
-                PaymentGateway = "momo"
-            };
-        }
+            PayUrl = payosResponse.PayUrl,
+            QrCodeUrl = payosResponse.QrCodeUrl,
+            PaymentGateway = "payos"
+        };
     }
 
     public async Task<MySubscriptionResponse> ClaimAdRewardAsync(int userId, string rewardType)
