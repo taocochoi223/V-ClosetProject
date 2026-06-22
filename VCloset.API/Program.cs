@@ -154,8 +154,6 @@ builder.Services.AddScoped<ICanvasService, CanvasService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<INotificationHubService, NotificationHubService>();
 builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
-builder.Services.AddHttpClient<IMoMoPaymentService, MoMoPaymentService>();
-builder.Services.AddScoped<IVNPayService, VNPayService>();
 builder.Services.AddScoped<IPayOSPaymentService, PayOSPaymentService>();
 builder.Services.AddScoped<IManualPaymentService, ManualPaymentService>();
 

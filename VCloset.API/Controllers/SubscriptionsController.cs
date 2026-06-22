@@ -86,8 +86,8 @@ public class SubscriptionsController : ControllerBase
     }
 
     /// <summary>
-    /// Khởi tạo giao dịch mua gói Premium. Trả về link thanh toán PayOS/MoMo/VNPay.
-    /// Body: { "planId": "uuid-of-plan", "paymentGateway": "momo" }
+    /// Khởi tạo giao dịch mua gói Premium. Trả về link thanh toán PayOS.
+    /// Body: { "planId": "uuid-of-plan", "paymentGateway": "payos" }
     /// </summary>
     [HttpPost("purchase")]
     public async Task<IActionResult> Purchase([FromBody] PurchaseSubscriptionRequest request)
