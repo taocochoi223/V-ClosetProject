@@ -26,4 +26,5 @@ public class MySubscriptionResponse
     public int? OutfitLimit { get; set; }  // null = không giới hạn
 
     public bool HasCompletedSurvey { get; set; }
+    public string? SurveyUrl { get; set; }
 }

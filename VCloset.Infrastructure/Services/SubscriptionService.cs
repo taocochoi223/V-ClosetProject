@@ -135,6 +135,9 @@ public class SubscriptionService : ISubscriptionService
         var outfitCount = await _unitOfWork.CanvasOutfits.Query()
             .CountAsync(o => o.UserInternalId == userId);
 
+        var surveyUrlSetting = await _unitOfWork.SystemSettings.FindAsync(s => s.SettingKey == "survey_url");
+        var surveyUrl = surveyUrlSetting?.SettingValue ?? "https://forms.gle/YOUR_GOOGLE_FORM_LINK";
+
         var response = new MySubscriptionResponse
         {
             HasActivePremium  = active != null,
@@ -143,6 +146,7 @@ public class SubscriptionService : ISubscriptionService
             TryOnCredits      = profile?.TryOnCredits ?? 1,
             OutfitCount       = outfitCount,
             HasCompletedSurvey = profile?.HasCompletedSurvey ?? false,
+            SurveyUrl         = surveyUrl,
         };
 
         if (active != null)

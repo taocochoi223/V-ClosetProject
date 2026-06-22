@@ -81,6 +81,9 @@ public class UnitOfWork : IUnitOfWork
     private IGenericRepository<WardrobeItem>? _wardrobeItems;
     public IGenericRepository<WardrobeItem> WardrobeItems => _wardrobeItems ??= new GenericRepository<WardrobeItem>(_context);
 
+    private IGenericRepository<SystemSetting>? _systemSettings;
+    public IGenericRepository<SystemSetting> SystemSettings => _systemSettings ??= new GenericRepository<SystemSetting>(_context);
+
     public async Task<int> SaveChangesAsync()
     {
         return await _context.SaveChangesAsync();
