@@ -156,6 +156,7 @@ builder.Services.AddScoped<INotificationHubService, NotificationHubService>();
 builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 builder.Services.AddHttpClient<IMoMoPaymentService, MoMoPaymentService>();
 builder.Services.AddScoped<IVNPayService, VNPayService>();
+builder.Services.AddScoped<IPayOSPaymentService, PayOSPaymentService>();
 builder.Services.AddScoped<IManualPaymentService, ManualPaymentService>();
 
 // Khởi tạo Firebase Admin SDK
