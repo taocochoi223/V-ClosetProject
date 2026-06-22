@@ -276,4 +276,76 @@ public class AdminSubscriptionService : IAdminSubscriptionService
 
         return true;
     }
+
+    public async Task<PremiumSubscriptionStatsResponse> GetSubscriptionStatsAsync()
+    {
+        var now = DateTime.UtcNow;
+
+        // 1. Doanh thu tháng này và biến động
+        var startOfCurrentMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        var startOfPreviousMonth = startOfCurrentMonth.AddMonths(-1);
+
+        var currentMonthRevenue = await _context.PaymentTransactions
+            .Where(t => t.Status == PaymentStatus.Success && t.CreatedAt >= startOfCurrentMonth && t.CreatedAt <= now)
+            .SumAsync(t => t.Amount);
+
+        var previousMonthRevenue = await _context.PaymentTransactions
+            .Where(t => t.Status == PaymentStatus.Success && t.CreatedAt >= startOfPreviousMonth && t.CreatedAt < startOfCurrentMonth)
+            .SumAsync(t => t.Amount);
+
+        double revenuePercentageChange = previousMonthRevenue == 0 
+            ? (currentMonthRevenue > 0 ? 100 : 0) 
+            : (double)((currentMonthRevenue - previousMonthRevenue) / previousMonthRevenue * 100);
+
+        // 2. Đăng ký mới 30 ngày và biến động
+        var startOfCurrent30Days = now.AddDays(-30);
+        var startOfPrevious30Days = now.AddDays(-60);
+
+        var current30DaysSubs = await _context.PremiumSubscriptions
+            .Where(ps => ps.CreatedAt >= startOfCurrent30Days && ps.CreatedAt <= now)
+            .CountAsync();
+
+        var previous30DaysSubs = await _context.PremiumSubscriptions
+            .Where(ps => ps.CreatedAt >= startOfPrevious30Days && ps.CreatedAt < startOfCurrent30Days)
+            .CountAsync();
+
+        double newSubsPercentageChange = previous30DaysSubs == 0
+            ? (current30DaysSubs > 0 ? 100 : 0)
+            : (double)(current30DaysSubs - previous30DaysSubs) / previous30DaysSubs * 100;
+
+        // 3. Tỷ lệ hủy (Churn rate) 30 ngày qua và biến động
+        var activeStartCurrent = await _context.PremiumSubscriptions
+            .Where(ps => ps.CreatedAt < startOfCurrent30Days && (ps.ExpiresAt == null || ps.ExpiresAt >= startOfCurrent30Days))
+            .CountAsync();
+
+        var lostCurrent = await _context.PremiumSubscriptions
+            .Where(ps => ps.CreatedAt < startOfCurrent30Days && ps.ExpiresAt >= startOfCurrent30Days && ps.ExpiresAt <= now && ps.IsActive == false)
+            .CountAsync();
+
+        double currentChurnRate = activeStartCurrent == 0 ? 0 : (double)lostCurrent / activeStartCurrent * 100;
+
+        var activeStartPrevious = await _context.PremiumSubscriptions
+            .Where(ps => ps.CreatedAt < startOfPrevious30Days && (ps.ExpiresAt == null || ps.ExpiresAt >= startOfPrevious30Days))
+            .CountAsync();
+
+        var lostPrevious = await _context.PremiumSubscriptions
+            .Where(ps => ps.CreatedAt < startOfPrevious30Days && ps.ExpiresAt >= startOfPrevious30Days && ps.ExpiresAt < startOfCurrent30Days && ps.IsActive == false)
+            .CountAsync();
+
+        double previousChurnRate = activeStartPrevious == 0 ? 0 : (double)lostPrevious / activeStartPrevious * 100;
+
+        double churnPercentageChange = previousChurnRate == 0
+            ? (currentChurnRate > 0 ? 100 : 0)
+            : (currentChurnRate - previousChurnRate) / previousChurnRate * 100;
+
+        return new PremiumSubscriptionStatsResponse
+        {
+            CurrentMonthRevenue = currentMonthRevenue,
+            RevenuePercentageChange = Math.Round(revenuePercentageChange, 1),
+            NewSubscriptions = current30DaysSubs,
+            NewSubscriptionsPercentageChange = Math.Round(newSubsPercentageChange, 1),
+            ChurnRate = Math.Round(currentChurnRate, 1),
+            ChurnRatePercentageChange = Math.Round(churnPercentageChange, 1)
+        };
+    }
 }

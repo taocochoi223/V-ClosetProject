@@ -70,6 +70,24 @@ public class AdminPremiumSubscriptionsController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    /// <summary>
+    /// API lấy dữ liệu thống kê tổng quan các gói Premium.
+    /// </summary>
+    [RequirePermission("subscription.manage")]
+    [HttpGet("stats")]
+    public async Task<IActionResult> GetSubscriptionStats()
+    {
+        try
+        {
+            var stats = await _adminSubscriptionService.GetSubscriptionStatsAsync();
+            return Ok(stats);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }
 
 /// <summary>
