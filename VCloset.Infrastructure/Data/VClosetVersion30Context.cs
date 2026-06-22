@@ -82,6 +82,8 @@ public partial class VClosetVersion30Context : DbContext
 
     public virtual DbSet<SubscriptionTierConfig> SubscriptionTierConfigs { get; set; }
 
+    public virtual DbSet<SystemSetting> SystemSettings { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (!optionsBuilder.IsConfigured)
@@ -1440,6 +1442,21 @@ public partial class VClosetVersion30Context : DbContext
                     UpdatedBy          = "system"
                 }
             );
+        });
+
+        modelBuilder.Entity<SystemSetting>(entity =>
+        {
+            entity.HasKey(e => e.SettingKey).HasName("system_settings_pkey");
+            entity.ToTable("system_settings");
+            entity.Property(e => e.SettingKey).HasColumnName("setting_key").HasMaxLength(100);
+            entity.Property(e => e.SettingValue).HasColumnName("setting_value");
+            
+            // Seed a default survey URL
+            entity.HasData(new SystemSetting
+            {
+                SettingKey = "survey_url",
+                SettingValue = "https://forms.gle/YOUR_GOOGLE_FORM_LINK"
+            });
         });
 
         OnModelCreatingPartial(modelBuilder);
