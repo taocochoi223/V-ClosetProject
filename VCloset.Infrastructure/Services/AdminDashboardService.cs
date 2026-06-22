@@ -34,13 +34,15 @@ public class AdminDashboardService : IAdminDashboardService
         var newUsersLast24h = await _context.Users.CountAsync(u => u.CreatedAt >= last24h);
 
         // KPI Card 2: Doanh thu Premium
-        var totalPremiumRevenue = await _context.PremiumSubscriptions.SumAsync(ps => ps.PricePaid);
-        var revenueThisMonth = await _context.PremiumSubscriptions
-            .Where(ps => ps.StartedAt >= startOfThisMonth)
-            .SumAsync(ps => ps.PricePaid);
-        var revenueLastMonth = await _context.PremiumSubscriptions
-            .Where(ps => ps.StartedAt >= startOfLastMonth && ps.StartedAt < startOfThisMonth)
-            .SumAsync(ps => ps.PricePaid);
+        var totalPremiumRevenue = await _context.PaymentTransactions
+            .Where(t => t.Status == PaymentStatus.Success)
+            .SumAsync(t => t.Amount);
+        var revenueThisMonth = await _context.PaymentTransactions
+            .Where(t => t.Status == PaymentStatus.Success && t.CreatedAt >= startOfThisMonth)
+            .SumAsync(t => t.Amount);
+        var revenueLastMonth = await _context.PaymentTransactions
+            .Where(t => t.Status == PaymentStatus.Success && t.CreatedAt >= startOfLastMonth && t.CreatedAt < startOfThisMonth)
+            .SumAsync(t => t.Amount);
         var premiumGrowthPercent = revenueLastMonth > 0
             ? Math.Round((double)((revenueThisMonth - revenueLastMonth) / revenueLastMonth * 100), 1)
             : 0;
@@ -99,9 +101,9 @@ public class AdminDashboardService : IAdminDashboardService
             var currentWeekMonday = today.AddDays(-diff);
             var startLimit = currentWeekMonday.AddDays(-7 * 7);
 
-            var subscriptions = await _context.PremiumSubscriptions
-                .Where(ps => ps.StartedAt >= startLimit)
-                .Select(ps => new { ps.StartedAt, ps.PricePaid })
+            var subscriptions = await _context.PaymentTransactions
+                .Where(t => t.Status == PaymentStatus.Success && t.CreatedAt >= startLimit)
+                .Select(t => new { StartedAt = t.CreatedAt, PricePaid = t.Amount })
                 .ToListAsync();
 
             var conversions = await _context.AffiliateConversions
@@ -137,9 +139,9 @@ public class AdminDashboardService : IAdminDashboardService
             var sixMonthsAgo = now.AddMonths(-5);
             var startOfMonthLimit = new DateTime(sixMonthsAgo.Year, sixMonthsAgo.Month, 1, 0, 0, 0, DateTimeKind.Utc);
 
-            var subscriptions = await _context.PremiumSubscriptions
-                .Where(ps => ps.StartedAt >= startOfMonthLimit)
-                .Select(ps => new { ps.StartedAt, ps.PricePaid })
+            var subscriptions = await _context.PaymentTransactions
+                .Where(t => t.Status == PaymentStatus.Success && t.CreatedAt >= startOfMonthLimit)
+                .Select(t => new { StartedAt = t.CreatedAt, PricePaid = t.Amount })
                 .ToListAsync();
 
             var conversions = await _context.AffiliateConversions
@@ -213,14 +215,14 @@ public class AdminDashboardService : IAdminDashboardService
 
         // Thông báo 2: Giao dịch Premium thành công trong 24h gần đây
         var last24h = now.AddHours(-24);
-        var recentPremiumTxCount = await _context.PremiumSubscriptions
-            .Where(ps => ps.StartedAt >= last24h)
+        var recentPremiumTxCount = await _context.PaymentTransactions
+            .Where(t => t.Status == PaymentStatus.Success && t.CreatedAt >= last24h)
             .CountAsync();
         if (recentPremiumTxCount > 0)
         {
-            var totalRevenue24h = await _context.PremiumSubscriptions
-                .Where(ps => ps.StartedAt >= last24h)
-                .SumAsync(ps => ps.PricePaid);
+            var totalRevenue24h = await _context.PaymentTransactions
+                .Where(t => t.Status == PaymentStatus.Success && t.CreatedAt >= last24h)
+                .SumAsync(t => t.Amount);
             alerts.Add(new SystemAlertResponse
             {
                 Type = "success",
@@ -280,9 +282,10 @@ public class AdminDashboardService : IAdminDashboardService
         var fromDate = from ?? DateTime.UtcNow.AddMonths(-1);
         var toDate = to ?? DateTime.UtcNow;
 
-        var subscriptions = await _context.PremiumSubscriptions
-            .Where(ps => ps.StartedAt >= fromDate && ps.StartedAt <= toDate)
-            .Include(ps => ps.UserInternal)
+        var subscriptions = await _context.PaymentTransactions
+            .Where(t => t.Status == PaymentStatus.Success && t.CreatedAt >= fromDate && t.CreatedAt <= toDate)
+            .Include(t => t.UserInternal)
+            .Include(t => t.SubscriptionPlan)
             .ToListAsync();
 
         var conversions = await _context.AffiliateConversions
@@ -292,9 +295,10 @@ public class AdminDashboardService : IAdminDashboardService
         var csv = new StringBuilder();
         csv.AppendLine("Loại,Mô tả,Ngày,Số tiền (USD)");
 
-        foreach (var ps in subscriptions)
+        foreach (var t in subscriptions)
         {
-            csv.AppendLine($"\"Premium\",\"Gói {ps.PlanType} - {ps.UserInternal?.Email ?? "N/A"}\",\"{ps.StartedAt:yyyy-MM-dd HH:mm:ss}\",{ps.PricePaid}");
+            var planName = t.SubscriptionPlan?.Name ?? "Unknown";
+            csv.AppendLine($"\"Premium\",\"Gói {planName} - {t.UserInternal?.Email ?? "N/A"}\",\"{t.CreatedAt:yyyy-MM-dd HH:mm:ss}\",{t.Amount}");
         }
 
         foreach (var conv in conversions)
