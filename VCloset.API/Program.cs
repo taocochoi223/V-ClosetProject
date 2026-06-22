@@ -156,6 +156,7 @@ builder.Services.AddScoped<INotificationHubService, NotificationHubService>();
 builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 builder.Services.AddScoped<IPayOSPaymentService, PayOSPaymentService>();
 builder.Services.AddScoped<IManualPaymentService, ManualPaymentService>();
+builder.Services.AddScoped<IGooglePlayReviewService, GooglePlayReviewService>();
 
 // Khởi tạo Firebase Admin SDK
 var firebaseCredentialPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "firebase-service-account.json");
