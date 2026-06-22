@@ -29,4 +29,5 @@ public interface IUnitOfWork : IDisposable
     IGenericRepository<SubscriptionPlan> SubscriptionPlans { get; }
     IGenericRepository<PremiumSubscription> PremiumSubscriptions { get; }
     IGenericRepository<WardrobeItem> WardrobeItems { get; }
+    IGenericRepository<SystemSetting> SystemSettings { get; }
 }
