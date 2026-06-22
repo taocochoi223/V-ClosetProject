@@ -5,6 +5,7 @@ using System;
 using System.Threading.Tasks;
 using VCloset.Application.Interfaces;
 using VCloset.Infrastructure.Security;
+using System.Linq;
 
 namespace VCloset.API.Controllers;
 
@@ -140,5 +141,42 @@ public class AdminDashboardController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
-}
+    /// <summary>
+    /// Lấy thống kê đánh giá và bình luận ứng dụng từ Google Play
+    /// </summary>
+    [RequirePermission("analytics.view")]
+    [HttpGet("app-reviews")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetAppReviews([FromServices] IGooglePlayReviewService googlePlayReviewService)
+    {
+        try
+        {
+            var reviews = await googlePlayReviewService.FetchAppReviewsAsync("com.sentinels.vcloset");
+            
+            int totalReviews = reviews.Count;
+            double averageRating = totalReviews > 0 ? Math.Round(reviews.Average(r => r.StarRating), 1) : 0;
+            
+            var distribution = new 
+            {
+                Star5 = reviews.Count(r => r.StarRating == 5),
+                Star4 = reviews.Count(r => r.StarRating == 4),
+                Star3 = reviews.Count(r => r.StarRating == 3),
+                Star2 = reviews.Count(r => r.StarRating == 2),
+                Star1 = reviews.Count(r => r.StarRating == 1)
+            };
 
+            return Ok(new 
+            {
+                AverageRating = averageRating,
+                TotalReviews = totalReviews,
+                RatingDistribution = distribution,
+                RecentReviews = reviews.OrderByDescending(r => r.LastModified).Take(10)
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+}
