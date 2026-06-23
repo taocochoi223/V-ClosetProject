@@ -27,6 +27,12 @@ namespace VCloset.Infrastructure.Services
             var jsonKey = Environment.GetEnvironmentVariable("GOOGLE_PLAY_CREDENTIAL_JSON") 
                           ?? _configuration["GOOGLE_PLAY_CREDENTIAL_JSON"];
 
+            if (!string.IsNullOrEmpty(jsonKey))
+            {
+                jsonKey = jsonKey.Trim('\'', '\"');
+                jsonKey = jsonKey.Replace("\\\\n", "\\n");
+            }
+
             if (string.IsNullOrEmpty(jsonKey))
             {
                 Console.WriteLine("[ERROR] GOOGLE_PLAY_CREDENTIAL_JSON is not configured.");
