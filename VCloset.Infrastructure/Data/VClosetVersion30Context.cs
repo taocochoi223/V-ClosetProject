@@ -770,6 +770,10 @@ public partial class VClosetVersion30Context : DbContext
             entity.Property(e => e.Lifestyle).HasMaxLength(200).HasColumnName("lifestyle");
             entity.Property(e => e.EyeColor).HasMaxLength(50).HasColumnName("eye_color");
             entity.Property(e => e.Hair).HasMaxLength(100).HasColumnName("hair");
+            entity.Property(e => e.SkinTone).HasMaxLength(100).HasColumnName("skin_tone");
+            entity.Property(e => e.BodyType).HasMaxLength(100).HasColumnName("body_type");
+            entity.Property(e => e.StylePref).HasMaxLength(200).HasColumnName("style_pref");
+            entity.Property(e => e.ColorPref).HasMaxLength(200).HasColumnName("color_pref");
 
             entity.HasOne(d => d.UserInternal).WithOne(p => p.CustomerProfile)
                 .HasForeignKey<CustomerProfile>(d => d.UserInternalId)

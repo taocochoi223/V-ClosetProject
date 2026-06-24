@@ -50,6 +50,10 @@ public class UserService : IUserService
             response.Lifestyle = profile?.Lifestyle;
             response.EyeColor = profile?.EyeColor;
             response.Hair = profile?.Hair;
+            response.SkinTone = profile?.SkinTone;
+            response.BodyType = profile?.BodyType;
+            response.StylePref = profile?.StylePref;
+            response.ColorPref = profile?.ColorPref;
         }
         else
         {
@@ -108,6 +112,10 @@ public class UserService : IUserService
             if (!string.IsNullOrEmpty(request.Lifestyle)) profile.Lifestyle = request.Lifestyle;
             if (!string.IsNullOrEmpty(request.EyeColor)) profile.EyeColor = request.EyeColor;
             if (!string.IsNullOrEmpty(request.Hair)) profile.Hair = request.Hair;
+            if (!string.IsNullOrEmpty(request.SkinTone)) profile.SkinTone = request.SkinTone;
+            if (!string.IsNullOrEmpty(request.BodyType)) profile.BodyType = request.BodyType;
+            if (!string.IsNullOrEmpty(request.StylePref)) profile.StylePref = request.StylePref;
+            if (!string.IsNullOrEmpty(request.ColorPref)) profile.ColorPref = request.ColorPref;
 
             profile.IsOnboardingCompleted = true;
             profile.UpdatedAt = DateTime.UtcNow;

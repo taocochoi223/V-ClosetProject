@@ -15,4 +15,8 @@ public class UpdateProfileRequest
     public string? Lifestyle { get; set; }
     public string? EyeColor { get; set; }
     public string? Hair { get; set; }
+    public string? SkinTone { get; set; }
+    public string? BodyType { get; set; }
+    public string? StylePref { get; set; }
+    public string? ColorPref { get; set; }
 }
