@@ -69,5 +69,17 @@ public partial class CustomerProfile
 
     [Column("hair")]
     public string? Hair { get; set; }
+
+    [Column("skin_tone")]
+    public string? SkinTone { get; set; }
+
+    [Column("body_type")]
+    public string? BodyType { get; set; }
+
+    [Column("style_pref")]
+    public string? StylePref { get; set; }
+
+    [Column("color_pref")]
+    public string? ColorPref { get; set; }
 }
 
