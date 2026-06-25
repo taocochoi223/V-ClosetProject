@@ -9,8 +9,8 @@ namespace VCloset.Application.Interfaces;
 public interface INotificationService
 {
     // For System/Internal use (Group C) - triggers creation of a new notification record in DB
-    Task<NotificationResponseDto> SendNotificationAsync(int userId, string type, string title, string body, string? referenceType, int? referenceId);
-    Task SendBroadcastNotificationAsync(string type, string title, string body, string? referenceType, int? referenceId);
+    Task<NotificationResponseDto> SendNotificationAsync(int userId, string type, string title, string body, string? referenceType, int? referenceId, bool sendViaApp = true, bool sendViaEmail = false);
+    Task SendBroadcastNotificationAsync(string type, string title, string body, string? referenceType, int? referenceId, bool sendViaApp = true, bool sendViaEmail = false);
     Task SaveDeviceTokenAsync(int userId, SaveDeviceTokenRequest request);
     Task<bool> BulkDeleteNotificationsAsync(int userId, List<Guid> notificationIds);
 

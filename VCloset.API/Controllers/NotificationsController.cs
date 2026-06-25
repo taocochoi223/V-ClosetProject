@@ -122,7 +122,9 @@ public class NotificationsController : ControllerBase
                 request.Title,
                 request.Body,
                 request.ReferenceType,
-                request.ReferenceId
+                request.ReferenceId,
+                request.SendViaApp,
+                request.SendViaEmail
             );
             return Ok(new { message = "Đã phát loa thông báo thành công tới toàn bộ người dùng." });
         }
@@ -165,7 +167,9 @@ public class NotificationsController : ControllerBase
                 request.Title,
                 request.Body,
                 request.ReferenceType,
-                request.ReferenceId
+                request.ReferenceId,
+                request.SendViaApp,
+                request.SendViaEmail
             );
             return Ok(new { message = "Gửi thông báo thành công.", data = result });
         }

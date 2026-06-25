@@ -7,4 +7,6 @@ public class BroadcastNotificationRequest
     public string? Type { get; set; } // Mặc định: "System"
     public string? ReferenceType { get; set; }
     public int? ReferenceId { get; set; }
+    public bool SendViaApp { get; set; } = true;
+    public bool SendViaEmail { get; set; } = false;
 }

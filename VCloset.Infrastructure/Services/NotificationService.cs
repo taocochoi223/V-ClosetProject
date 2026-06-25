@@ -14,14 +14,16 @@ public class NotificationService : INotificationService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly INotificationHubService _hubService;
+    private readonly IEmailService _emailService;
 
-    public NotificationService(IUnitOfWork unitOfWork, INotificationHubService hubService)
+    public NotificationService(IUnitOfWork unitOfWork, INotificationHubService hubService, IEmailService emailService)
     {
         _unitOfWork = unitOfWork;
         _hubService = hubService;
+        _emailService = emailService;
     }
 
-    public async Task<NotificationResponseDto> SendNotificationAsync(int userId, string type, string title, string body, string? referenceType, int? referenceId)
+    public async Task<NotificationResponseDto> SendNotificationAsync(int userId, string type, string title, string body, string? referenceType, int? referenceId, bool sendViaApp = true, bool sendViaEmail = false)
     {
         var notification = new Notification
         {
@@ -59,6 +61,22 @@ public class NotificationService : INotificationService
         catch (Exception ex)
         {
             Console.WriteLine($"[WARNING] Failed to push Firebase notification to user {userId}: {ex.Message}");
+        }
+
+        if (sendViaEmail)
+        {
+            try
+            {
+                var user = await _unitOfWork.Users.FindAsync(u => u.InternalId == userId);
+                if (user != null && !string.IsNullOrEmpty(user.Email))
+                {
+                    await _emailService.SendEmailAsync(user.Email, title, body);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[WARNING] Failed to send email notification to user {userId}: {ex.Message}");
+            }
         }
 
         return dto;
@@ -151,7 +169,7 @@ public class NotificationService : INotificationService
         return true;
     }
 
-    public async Task SendBroadcastNotificationAsync(string type, string title, string body, string? referenceType, int? referenceId)
+    public async Task SendBroadcastNotificationAsync(string type, string title, string body, string? referenceType, int? referenceId, bool sendViaApp = true, bool sendViaEmail = false)
     {
         var users = await _unitOfWork.Users.FindAllAsync(u => u.Role == UserRole.Customer && u.IsActive);
 
@@ -207,6 +225,30 @@ public class NotificationService : INotificationService
         catch (Exception ex)
         {
             Console.WriteLine($"[WARNING] Failed to push Firebase broadcast: {ex.Message}");
+        }
+
+        if (sendViaEmail)
+        {
+            // Sending emails asynchronously to avoid blocking the main thread for too long
+            _ = Task.Run(async () =>
+            {
+                foreach (var user in users)
+                {
+                    if (!string.IsNullOrEmpty(user.Email))
+                    {
+                        try
+                        {
+                            await _emailService.SendEmailAsync(user.Email, title, body);
+                            // Simple delay to prevent SMTP throttling if using a basic provider
+                            await Task.Delay(50);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"[WARNING] Failed to send broadcast email to {user.Email}: {ex.Message}");
+                        }
+                    }
+                }
+            });
         }
     }
 
