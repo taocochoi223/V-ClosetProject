@@ -51,7 +51,35 @@ public class CouponService : ICouponService
         return MapToDto(coupon);
     }
 
+    public async Task<CouponDto> UpdateCouponAsync(Guid id, UpdateCouponRequest request)
+    {
+        var coupon = await _unitOfWork.Coupons.FindAsync(c => c.Id == id);
+        if (coupon == null)
+            throw new Exception("Không tìm thấy mã giảm giá.");
+
+        // Check if the new code already exists on another coupon
+        if (coupon.Code.ToLower() != request.Code.ToLower())
+        {
+            var existing = await _unitOfWork.Coupons.FindAsync(c => c.Code.ToLower() == request.Code.ToLower());
+            if (existing != null)
+                throw new Exception("Mã giảm giá đã tồn tại.");
+        }
+
+        coupon.Code = request.Code.ToUpper();
+        coupon.DiscountType = request.DiscountType;
+        coupon.DiscountValue = request.DiscountValue;
+        coupon.MaxUses = request.MaxUses;
+        coupon.ExpiresAt = request.ExpiresAt;
+        coupon.UpdatedAt = DateTime.UtcNow;
+
+        _unitOfWork.Coupons.Update(coupon);
+        await _unitOfWork.SaveChangesAsync();
+
+        return MapToDto(coupon);
+    }
+
     public async Task<bool> DeleteCouponAsync(Guid id)
+
     {
         var coupon = await _unitOfWork.Coupons.FindAsync(c => c.Id == id);
 
