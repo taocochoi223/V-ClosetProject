@@ -1,16 +1,20 @@
-using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using VCloset.Infrastructure.Security;
 using VCloset.Application.DTOs.Coupons;
 using VCloset.Application.Interfaces;
+
+
 
 namespace VCloset.API.Controllers;
 
 [Route("api/admin/coupons")]
 [ApiController]
 [Authorize(Roles = "Admin,Moderator")]
+[RequirePermission("coupon.manage")]
 public class AdminCouponsController : ControllerBase
+
 {
     private readonly ICouponService _couponService;
 

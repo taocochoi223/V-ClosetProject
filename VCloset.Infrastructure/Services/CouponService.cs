@@ -53,7 +53,8 @@ public class CouponService : ICouponService
 
     public async Task<bool> DeleteCouponAsync(Guid id)
     {
-        var coupon = await _unitOfWork.Coupons.GetByIdAsync(id);
+        var coupon = await _unitOfWork.Coupons.FindAsync(c => c.Id == id);
+
         if (coupon == null)
             throw new Exception("Không tìm thấy mã giảm giá.");
 
@@ -67,7 +68,8 @@ public class CouponService : ICouponService
 
     public async Task<CouponDto> ToggleCouponActiveAsync(Guid id)
     {
-        var coupon = await _unitOfWork.Coupons.GetByIdAsync(id);
+        var coupon = await _unitOfWork.Coupons.FindAsync(c => c.Id == id);
+
         if (coupon == null)
             throw new Exception("Không tìm thấy mã giảm giá.");
 
