@@ -351,7 +351,23 @@ public class NotificationService : INotificationService
             .Take(pageSize)
             .ToList();
 
-        return sortedNotifications.Select(MapToDto).ToList();
+        var userIdsList = sortedNotifications.Select(n => n.UserInternalId).Distinct().ToList();
+        var users = await _unitOfWork.Users.FindAllAsync(u => userIdsList.Contains(u.InternalId));
+        var userDict = users.ToDictionary(u => u.InternalId, u => u);
+
+        var result = new List<NotificationResponseDto>();
+        foreach (var n in sortedNotifications)
+        {
+            var dto = MapToDto(n);
+            if (userDict.TryGetValue(n.UserInternalId, out var user))
+            {
+                dto.UserGuid = user.Id;
+                dto.UserDisplayName = user.DisplayName;
+            }
+            result.Add(dto);
+        }
+
+        return result;
     }
 
     public async Task<bool> DeleteNotificationByAdminAsync(Guid notificationId)

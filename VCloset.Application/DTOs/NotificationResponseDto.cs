@@ -12,5 +12,7 @@ public class NotificationResponseDto
     public int? ReferenceId { get; set; }
     public bool IsRead { get; set; }
     public int UserInternalId { get; set; }
+    public Guid? UserGuid { get; set; }
+    public string? UserDisplayName { get; set; }
     public DateTime CreatedAt { get; set; }
 }
