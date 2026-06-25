@@ -98,9 +98,21 @@ public class PaymentsController : ControllerBase
                                     await _unitOfWork.PremiumSubscriptions.AddAsync(newPremium);
                                 }
                             }
+
+                            if (!string.IsNullOrEmpty(transaction.AppliedCouponCode))
+                            {
+                                var coupon = await _unitOfWork.Coupons.FindAsync(c => c.Code == transaction.AppliedCouponCode);
+                                if (coupon != null)
+                                {
+                                    coupon.CurrentUses += 1;
+                                    coupon.UpdatedAt = DateTime.UtcNow;
+                                    _unitOfWork.Coupons.Update(coupon);
+                                }
+                            }
                         }
                     }
                     else
+
                     {
                         transaction.Status = PaymentStatus.Failed;
                     }

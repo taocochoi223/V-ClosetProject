@@ -84,6 +84,9 @@ public partial class VClosetVersion30Context : DbContext
 
     public virtual DbSet<SystemSetting> SystemSettings { get; set; }
 
+    public virtual DbSet<Coupon> Coupons { get; set; }
+
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (!optionsBuilder.IsConfigured)
@@ -114,7 +117,8 @@ public partial class VClosetVersion30Context : DbContext
                              .MapEnum<BrandStatus>("brand_status")
                              .MapEnum<ChatRoomType>("chat_room_type")
                              .MapEnum<MessageType>("message_type")
-                             .MapEnum<PaymentStatus>("payment_status");
+                             .MapEnum<PaymentStatus>("payment_status")
+                             .MapEnum<DiscountType>("discount_type");
             var dataSource = dataSourceBuilder.Build();
             
             optionsBuilder.UseNpgsql(dataSource);
@@ -150,7 +154,29 @@ public partial class VClosetVersion30Context : DbContext
             .HasPostgresEnum("payment_status", new[] { "pending", "success", "failed", "cancelled", "expired" })
             .HasPostgresEnum("premium_plan", new[] { "monthly", "yearly" })
             .HasPostgresEnum("user_role", new[] { "customer", "admin", "moderator", "brand_partner" })
+            .HasPostgresEnum("discount_type", new[] { "percentage", "fixed_amount" })
             .HasPostgresExtension("pgcrypto");
+
+        modelBuilder.Entity<Coupon>(entity =>
+        {
+            entity.HasKey(e => e.InternalId).HasName("coupons_pkey");
+            entity.ToTable("coupons", tb => tb.HasComment("Bảng ghi nhận Mã giảm giá"));
+            entity.HasIndex(e => e.Id, "coupons_id_key").IsUnique();
+            entity.HasIndex(e => e.Code, "coupons_code_key").IsUnique();
+            
+            entity.Property(e => e.InternalId).HasColumnName("internal_id");
+            entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()").HasColumnName("id");
+            entity.Property(e => e.Code).HasMaxLength(50).HasColumnName("code");
+            entity.Property(e => e.DiscountType).HasColumnName("discount_type");
+            entity.Property(e => e.DiscountValue).HasPrecision(12, 2).HasColumnName("discount_value");
+            entity.Property(e => e.CurrentUses).HasDefaultValue(0).HasColumnName("current_uses");
+            entity.Property(e => e.MaxUses).HasColumnName("max_uses");
+            entity.Property(e => e.ExpiresAt).HasColumnName("expires_at");
+            entity.Property(e => e.IsActive).HasDefaultValue(true).HasColumnName("is_active");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("now()").HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("now()").HasColumnName("updated_at");
+        });
+
 
         modelBuilder.Entity<AdminPermission>(entity =>
         {
