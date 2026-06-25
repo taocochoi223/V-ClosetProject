@@ -348,4 +348,89 @@ public class AdminSubscriptionService : IAdminSubscriptionService
             ChurnRatePercentageChange = Math.Round(churnPercentageChange, 1)
         };
     }
+
+    public async Task<bool> GrantSubscriptionToUserAsync(GrantSubscriptionRequest request)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.InternalId == request.TargetUserId);
+        if (user == null || !user.IsActive)
+            throw new Exception("Không tìm thấy người dùng nhận gói hoặc tài khoản đã bị khóa.");
+
+        var plan = await _context.SubscriptionPlans.FirstOrDefaultAsync(p => p.Id == request.PlanId);
+        if (plan == null || !plan.IsActive)
+            throw new Exception("Không tìm thấy gói dịch vụ hoặc gói đã ngưng hoạt động.");
+
+        // Update or Create PremiumSubscription
+        var activeSub = await _context.PremiumSubscriptions
+            .FirstOrDefaultAsync(s => s.UserInternalId == request.TargetUserId && s.IsActive && (s.ExpiresAt == null || s.ExpiresAt > DateTime.UtcNow));
+
+        if (activeSub != null)
+        {
+            activeSub.ExpiresAt = activeSub.ExpiresAt.HasValue ? activeSub.ExpiresAt.Value.AddDays((double)(plan.DurationDays ?? 30)) : DateTime.UtcNow.AddDays((double)(plan.DurationDays ?? 30));
+            activeSub.SubscriptionPlanInternalId = plan.InternalId;
+            activeSub.PlanType = PremiumPlan.Monthly;
+            _context.PremiumSubscriptions.Update(activeSub);
+        }
+        else
+        {
+            _context.PremiumSubscriptions.Add(new PremiumSubscription
+            {
+                Id = Guid.NewGuid(),
+                UserInternalId = request.TargetUserId,
+                SubscriptionPlanInternalId = plan.InternalId,
+                PlanType = PremiumPlan.Monthly,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                StartedAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddDays((double)(plan.DurationDays ?? 30)),
+                PricePaid = 0,
+                Currency = "VND",
+                PaymentMethod = "SystemGift"
+            });
+        }
+
+        // Add Credits
+        var customerProfile = await _context.CustomerProfiles.FirstOrDefaultAsync(cp => cp.UserInternalId == request.TargetUserId);
+        if (customerProfile != null)
+        {
+            customerProfile.BgRemovalCredits += plan.GrantedBgCredits;
+            customerProfile.TryOnCredits += plan.GrantedTryOnCredits;
+            _context.CustomerProfiles.Update(customerProfile);
+        }
+
+        // Record transaction
+        _context.PaymentTransactions.Add(new PaymentTransaction
+        {
+            Id = Guid.NewGuid(),
+            UserInternalId = request.TargetUserId,
+            SubscriptionPlanInternalId = plan.InternalId,
+            Amount = 0,
+            Currency = "VND",
+            PaymentGateway = "SystemGift",
+            GatewayTransactionId = "GIFT-" + Guid.NewGuid().ToString("N").Substring(0, 8),
+            Status = PaymentStatus.Success,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        });
+
+        await _context.SaveChangesAsync();
+
+        // Send notification
+        string title = $"Chúc mừng! Bạn đã được tặng gói {plan.Name}";
+        string body = string.IsNullOrWhiteSpace(request.AdminNote) 
+            ? $"Quản trị viên đã tặng cho bạn gói {plan.Name} với thời hạn {plan.DurationDays} ngày." 
+            : $"Bạn nhận được gói {plan.Name} từ Quản trị viên. Lời nhắn: {request.AdminNote}";
+
+        await _notificationService.SendNotificationAsync(
+            user.InternalId,
+            "System",
+            title,
+            body,
+            "Subscription",
+            plan.InternalId,
+            sendViaApp: true,
+            sendViaEmail: true
+        );
+
+        return true;
+    }
 }

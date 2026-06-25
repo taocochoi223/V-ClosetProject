@@ -16,5 +16,6 @@ public interface IAdminSubscriptionService
     Task<PagedPremiumSubscriptionsResponse> GetPremiumSubscriptionsAsync(
         int page, int pageSize, string? search, bool? isActive, string? planType);
     Task<bool> RevokePremiumSubscriptionAsync(Guid subscriptionId, string? adminNote, int adminId);
+    Task<bool> GrantSubscriptionToUserAsync(GrantSubscriptionRequest request);
     Task<PremiumSubscriptionStatsResponse> GetSubscriptionStatsAsync();
 }
