@@ -222,6 +222,14 @@ public class SubscriptionService : ISubscriptionService
             if (coupon.MaxUses.HasValue && coupon.CurrentUses >= coupon.MaxUses.Value)
                 throw new Exception("Mã giảm giá đã hết lượt sử dụng.");
 
+            var hasUsed = await _unitOfWork.PaymentTransactions.FindAsync(
+                t => t.UserInternalId == userId && 
+                     t.Status == PaymentStatus.Success && 
+                     t.AppliedCouponCode != null &&
+                     t.AppliedCouponCode.ToLower() == coupon.Code.ToLower());
+            if (hasUsed != null)
+                throw new Exception("Bạn đã sử dụng mã giảm giá này rồi.");
+
             if (coupon.DiscountType == DiscountType.Percentage)
             {
                 decimal discount = plan.Price * (coupon.DiscountValue / 100m);

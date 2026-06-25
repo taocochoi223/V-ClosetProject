@@ -110,7 +110,7 @@ public class CouponService : ICouponService
         return MapToDto(coupon);
     }
 
-    public async Task<CheckCouponResponse> CheckCouponAsync(string code)
+    public async Task<CheckCouponResponse> CheckCouponAsync(string code, int userInternalId)
     {
         if (string.IsNullOrWhiteSpace(code))
             return new CheckCouponResponse { IsValid = false, Message = "Mã không được để trống" };
@@ -128,6 +128,14 @@ public class CouponService : ICouponService
 
         if (coupon.MaxUses.HasValue && coupon.CurrentUses >= coupon.MaxUses.Value)
             return new CheckCouponResponse { IsValid = false, Message = "Mã giảm giá đã hết lượt sử dụng" };
+
+        var hasUsed = await _unitOfWork.PaymentTransactions.FindAsync(
+            t => t.UserInternalId == userInternalId && 
+                 t.Status == PaymentStatus.Success && 
+                 t.AppliedCouponCode != null &&
+                 t.AppliedCouponCode.ToLower() == code.ToLower());
+        if (hasUsed != null)
+            return new CheckCouponResponse { IsValid = false, Message = "Bạn đã sử dụng mã giảm giá này rồi" };
 
         return new CheckCouponResponse
         {

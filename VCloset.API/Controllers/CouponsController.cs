@@ -25,7 +25,10 @@ public class CouponsController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Code))
             return BadRequest(new { message = "Vui lòng nhập mã giảm giá" });
 
-        var result = await _couponService.CheckCouponAsync(request.Code);
+        var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+
+        var result = await _couponService.CheckCouponAsync(request.Code, userId);
         return Ok(result);
     }
 }

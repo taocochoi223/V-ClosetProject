@@ -7,6 +7,7 @@ using VCloset.Application.DTOs.Admin.Requests;
 using VCloset.Application.Interfaces;
 using VCloset.Domain.Entities;
 using VCloset.Domain.Enums;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace VCloset.Infrastructure.Services;
 
@@ -15,12 +16,18 @@ public class NotificationService : INotificationService
     private readonly IUnitOfWork _unitOfWork;
     private readonly INotificationHubService _hubService;
     private readonly IEmailService _emailService;
+    private readonly Microsoft.Extensions.DependencyInjection.IServiceScopeFactory _scopeFactory;
 
-    public NotificationService(IUnitOfWork unitOfWork, INotificationHubService hubService, IEmailService emailService)
+    public NotificationService(
+        IUnitOfWork unitOfWork, 
+        INotificationHubService hubService, 
+        IEmailService emailService,
+        Microsoft.Extensions.DependencyInjection.IServiceScopeFactory scopeFactory)
     {
         _unitOfWork = unitOfWork;
         _hubService = hubService;
         _emailService = emailService;
+        _scopeFactory = scopeFactory;
     }
 
     public async Task<NotificationResponseDto> SendNotificationAsync(int userId, string type, string title, string body, string? referenceType, int? referenceId, bool sendViaApp = true, bool sendViaEmail = false)
@@ -72,9 +79,11 @@ public class NotificationService : INotificationService
                 {
                     _ = Task.Run(async () =>
                     {
+                        using var scope = _scopeFactory.CreateScope();
+                        var scopedEmailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
                         try
                         {
-                            await _emailService.SendSystemNotificationEmailAsync(user.Email, user.DisplayName, title, body);
+                            await scopedEmailService.SendSystemNotificationEmailAsync(user.Email, user.DisplayName, title, body);
                         }
                         catch (Exception ex)
                         {
@@ -242,13 +251,16 @@ public class NotificationService : INotificationService
             // Sending emails asynchronously to avoid blocking the main thread for too long
             _ = Task.Run(async () =>
             {
+                using var scope = _scopeFactory.CreateScope();
+                var scopedEmailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+
                 foreach (var user in users)
                 {
                     if (!string.IsNullOrEmpty(user.Email))
                     {
                         try
                         {
-                            await _emailService.SendSystemNotificationEmailAsync(user.Email, user.DisplayName, title, body);
+                            await scopedEmailService.SendSystemNotificationEmailAsync(user.Email, user.DisplayName, title, body);
                             // Simple delay to prevent SMTP throttling if using a basic provider
                             await Task.Delay(50);
                         }

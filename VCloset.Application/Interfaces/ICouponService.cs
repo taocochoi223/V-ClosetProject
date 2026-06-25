@@ -13,5 +13,5 @@ public interface ICouponService
     Task<bool> DeleteCouponAsync(Guid id);
 
     Task<CouponDto> ToggleCouponActiveAsync(Guid id);
-    Task<CheckCouponResponse> CheckCouponAsync(string code);
+    Task<CheckCouponResponse> CheckCouponAsync(string code, int userInternalId);
 }
