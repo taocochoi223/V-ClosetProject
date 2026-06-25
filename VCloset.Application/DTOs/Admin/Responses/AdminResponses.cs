@@ -54,8 +54,9 @@ public class PagedOutfitResponse
 public class AdminPaymentTransactionResponse
 {
     public Guid Id { get; set; }
-    public int UserInternalId { get; set; }
+    public Guid UserId { get; set; }
     public string UserDisplayName { get; set; } = null!;
+
     public string UserEmail { get; set; } = null!;
     public string SubscriptionPlanName { get; set; } = null!;
     public decimal Amount { get; set; }

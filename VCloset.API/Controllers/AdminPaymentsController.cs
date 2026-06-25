@@ -36,8 +36,9 @@ public class AdminPaymentsController : ControllerBase
         [FromQuery] int pageSize = 20,
         [FromQuery] string? gateway = null,
         [FromQuery] string? status = null,
-        [FromQuery] int? userInternalId = null,
+        [FromQuery] Guid? userId = null,
         [FromQuery] string? searchTerm = null)
+
     {
         try
         {
@@ -62,10 +63,11 @@ public class AdminPaymentsController : ControllerBase
                 }
             }
 
-            if (userInternalId.HasValue)
+            if (userId.HasValue)
             {
-                query = query.Where(t => t.UserInternalId == userInternalId.Value);
+                query = query.Where(t => t.UserInternal.Id == userId.Value);
             }
+
 
             // Tìm kiếm theo tên hiển thị hoặc email của người dùng
             if (!string.IsNullOrWhiteSpace(searchTerm))
@@ -85,8 +87,9 @@ public class AdminPaymentsController : ControllerBase
                 .Select(t => new AdminPaymentTransactionResponse
                 {
                     Id = t.Id,
-                    UserInternalId = t.UserInternalId,
+                    UserId = t.UserInternal.Id,
                     UserDisplayName = t.UserInternal.DisplayName,
+
                     UserEmail = t.UserInternal.Email,
                     SubscriptionPlanName = t.SubscriptionPlan != null ? t.SubscriptionPlan.Name : "N/A",
                     Amount = t.Amount,
