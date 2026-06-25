@@ -64,7 +64,10 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAdminUserService, AdminUserService>();
 builder.Services.AddScoped<IAdminModerationService, AdminModerationService>();
 builder.Services.AddScoped<IAdminBrandService, AdminBrandService>();
+builder.Services.AddScoped<IAdminSubscriptionService, AdminSubscriptionService>();
 builder.Services.AddScoped<ICampaignTrackingService, CampaignTrackingService>();
+builder.Services.AddScoped<ICouponService, CouponService>();
+
 builder.Services.AddScoped<IAdminDashboardService, AdminDashboardService>();
 builder.Services.AddScoped<IAffiliateProductService, AffiliateProductService>();
 builder.Services.AddScoped<IAdminPermissionService, AdminPermissionService>();

@@ -24,6 +24,9 @@ public partial class PaymentTransaction
 
     public PaymentStatus Status { get; set; }
 
+    public string? AppliedCouponCode { get; set; }
+
+
     public string? GatewayTransactionId { get; set; }
 
     public string? RawCallbackData { get; set; }

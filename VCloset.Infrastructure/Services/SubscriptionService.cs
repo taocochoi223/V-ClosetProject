@@ -195,7 +195,7 @@ public class SubscriptionService : ISubscriptionService
         return result;
     }
 
-    public async Task<VCloset.Application.DTOs.Payment.Responses.PaymentInitializationResponse> InitiatePurchaseAsync(int userId, Guid planId, string paymentGateway = "payos")
+    public async Task<VCloset.Application.DTOs.Payment.Responses.PaymentInitializationResponse> InitiatePurchaseAsync(int userId, Guid planId, string? couponCode = null, string paymentGateway = "payos")
     {
         paymentGateway = paymentGateway.ToLower();
         if (paymentGateway != "payos")
@@ -207,15 +207,45 @@ public class SubscriptionService : ISubscriptionService
         if (plan == null)
             throw new Exception("Gói dịch vụ không tồn tại hoặc đã ngừng cung cấp.");
 
+        decimal finalPrice = plan.Price;
+        string? appliedCoupon = null;
+
+        if (!string.IsNullOrWhiteSpace(couponCode))
+        {
+            var coupon = await _unitOfWork.Coupons.FindAsync(c => c.Code.ToLower() == couponCode.ToLower());
+            if (coupon == null || !coupon.IsActive)
+                throw new Exception("Mã giảm giá không hợp lệ.");
+
+            if (coupon.ExpiresAt.HasValue && coupon.ExpiresAt.Value < DateTime.UtcNow)
+                throw new Exception("Mã giảm giá đã hết hạn.");
+
+            if (coupon.MaxUses.HasValue && coupon.CurrentUses >= coupon.MaxUses.Value)
+                throw new Exception("Mã giảm giá đã hết lượt sử dụng.");
+
+            if (coupon.DiscountType == DiscountType.Percentage)
+            {
+                decimal discount = plan.Price * (coupon.DiscountValue / 100m);
+                finalPrice = plan.Price - discount;
+            }
+            else if (coupon.DiscountType == DiscountType.FixedAmount)
+            {
+                finalPrice = plan.Price - coupon.DiscountValue;
+            }
+
+            if (finalPrice < 0) finalPrice = 0;
+            appliedCoupon = coupon.Code.ToUpper();
+        }
+
         var transaction = new PaymentTransaction
         {
             Id                          = Guid.NewGuid(),
             UserInternalId              = userId,
             SubscriptionPlanInternalId  = plan.InternalId,
-            Amount                      = plan.Price,
+            Amount                      = finalPrice,
             Currency                    = plan.Currency,
             PaymentGateway              = paymentGateway,
             Status                      = PaymentStatus.Pending,
+            AppliedCouponCode           = appliedCoupon,
             CreatedAt                   = DateTime.UtcNow,
             UpdatedAt                   = DateTime.UtcNow
         };

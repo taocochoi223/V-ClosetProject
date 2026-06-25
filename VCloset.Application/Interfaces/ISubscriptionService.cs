@@ -16,7 +16,8 @@ public interface ISubscriptionService
     Task<IEnumerable<PaymentTransactionResponse>> GetMyTransactionsAsync(int userId);
 
     /// <summary>POST /api/subscriptions/purchase — Tạo pending payment (trả về link PayOS)</summary>
-    Task<VCloset.Application.DTOs.Payment.Responses.PaymentInitializationResponse> InitiatePurchaseAsync(int userId, System.Guid planId, string paymentGateway = "payos");
+    Task<VCloset.Application.DTOs.Payment.Responses.PaymentInitializationResponse> InitiatePurchaseAsync(int userId, System.Guid planId, string? couponCode = null, string paymentGateway = "payos");
+
 
     /// <summary>POST /api/subscriptions/ad-reward — Cộng 1 lượt credit khi xem ad</summary>
     Task<MySubscriptionResponse> ClaimAdRewardAsync(int userId, string rewardType);
