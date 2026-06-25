@@ -88,6 +88,24 @@ public class AdminPremiumSubscriptionsController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    /// <summary>
+    /// API tặng gói dịch vụ cho người dùng (bởi Admin).
+    /// </summary>
+    [RequirePermission("subscription.manage")]
+    [HttpPost("grant")]
+    public async Task<IActionResult> GrantSubscription([FromBody] VCloset.Application.DTOs.Subscriptions.Requests.GrantSubscriptionRequest request)
+    {
+        try
+        {
+            var result = await _adminSubscriptionService.GrantSubscriptionToUserAsync(request);
+            return Ok(new { success = result, message = "Đã tặng gói dịch vụ thành công." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }
 
 /// <summary>

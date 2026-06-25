@@ -119,21 +119,4 @@ public class AdminSubscriptionsController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
-
-    [HttpPost("grant")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> GrantSubscription([FromBody] GrantSubscriptionRequest request)
-    {
-        try
-        {
-            var result = await _adminSubscriptionService.GrantSubscriptionToUserAsync(request);
-            return Ok(new { success = result, message = "Đã tặng gói dịch vụ thành công." });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Lỗi khi tặng gói dịch vụ cho người dùng.");
-            return BadRequest(new { message = ex.Message });
-        }
-    }
 }
