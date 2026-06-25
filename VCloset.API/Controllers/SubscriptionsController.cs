@@ -97,8 +97,9 @@ public class SubscriptionsController : ControllerBase
             var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
 
-            var paymentResponse = await _subscriptionService.InitiatePurchaseAsync(userId, request.PlanId, request.PaymentGateway);
+            var paymentResponse = await _subscriptionService.InitiatePurchaseAsync(userId, request.PlanId, request.CouponCode, request.PaymentGateway);
             return Ok(new { 
+
                 payUrl = paymentResponse.PayUrl, 
                 deeplink = paymentResponse.Deeplink,
                 qrCodeUrl = paymentResponse.QrCodeUrl,

@@ -84,6 +84,10 @@ public class UnitOfWork : IUnitOfWork
     private IGenericRepository<SystemSetting>? _systemSettings;
     public IGenericRepository<SystemSetting> SystemSettings => _systemSettings ??= new GenericRepository<SystemSetting>(_context);
 
+    private IGenericRepository<Coupon>? _coupons;
+    public IGenericRepository<Coupon> Coupons => _coupons ??= new GenericRepository<Coupon>(_context);
+
+
     public async Task<int> SaveChangesAsync()
     {
         return await _context.SaveChangesAsync();

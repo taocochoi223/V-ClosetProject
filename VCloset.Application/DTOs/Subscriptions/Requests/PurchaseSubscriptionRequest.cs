@@ -13,4 +13,6 @@ public class PurchaseSubscriptionRequest
     /// Cổng thanh toán (payos). Mặc định là payos.
     /// </summary>
     public string PaymentGateway { get; set; } = "payos";
+    
+    public string? CouponCode { get; set; }
 }
