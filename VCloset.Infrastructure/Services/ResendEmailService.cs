@@ -192,4 +192,55 @@ public class ResendEmailService : IEmailService
         string html = GetBaseEmailTemplate(content);
         return await SendEmailAsync(toEmail, subject, html);
     }
+    public async Task<bool> SendPaymentReceiptEmailAsync(string toEmail, string customerName, string planName, decimal amount, string transactionId, DateTime paymentDate)
+    {
+        string subject = "V-Closet: Biên lai thanh toán thành công";
+        string content = $@"
+            <div style='text-align: center; margin-bottom: 20px;'>
+                <div style='background-color: #10B981; color: white; display: inline-block; padding: 10px 20px; border-radius: 50px; font-weight: bold; margin-bottom: 10px;'>
+                    ✔ Thanh toán thành công
+                </div>
+                <h2 style='color: #111827; margin-top: 0;'>Biên lai điện tử</h2>
+            </div>
+            <p style='font-size: 15px; line-height: 1.6;'>Chào <strong>{customerName}</strong>,</p>
+            <p style='font-size: 15px; line-height: 1.6;'>Cảm ơn bạn đã sử dụng dịch vụ của V-Closet. Giao dịch thanh toán của bạn đã được xác nhận thành công. Dưới đây là thông tin chi tiết:</p>
+            
+            <table style='width: 100%; border-collapse: collapse; margin: 25px 0; font-size: 14px;'>
+                <tr>
+                    <td style='padding: 12px; border-bottom: 1px solid #e5e7eb; color: #6b7280; width: 40%;'>Mã giao dịch</td>
+                    <td style='padding: 12px; border-bottom: 1px solid #e5e7eb; font-weight: bold; text-align: right;'>{transactionId}</td>
+                </tr>
+                <tr>
+                    <td style='padding: 12px; border-bottom: 1px solid #e5e7eb; color: #6b7280;'>Gói dịch vụ</td>
+                    <td style='padding: 12px; border-bottom: 1px solid #e5e7eb; font-weight: bold; text-align: right;'>{planName}</td>
+                </tr>
+                <tr>
+                    <td style='padding: 12px; border-bottom: 1px solid #e5e7eb; color: #6b7280;'>Số tiền thanh toán</td>
+                    <td style='padding: 12px; border-bottom: 1px solid #e5e7eb; font-weight: bold; text-align: right; color: #4a3728;'>{amount:N0} VNĐ</td>
+                </tr>
+                <tr>
+                    <td style='padding: 12px; border-bottom: 1px solid #e5e7eb; color: #6b7280;'>Thời gian</td>
+                    <td style='padding: 12px; border-bottom: 1px solid #e5e7eb; font-weight: bold; text-align: right;'>{paymentDate.AddHours(7):dd/MM/yyyy HH:mm:ss}</td>
+                </tr>
+            </table>
+            
+            <p style='color: #6b7280; font-size: 14px; text-align: center;'>Gói dịch vụ của bạn đã được kích hoạt. Hãy trải nghiệm ngay những tính năng cao cấp trên ứng dụng V-Closet!</p>";
+
+        string html = GetBaseEmailTemplate(content);
+        return await SendEmailAsync(toEmail, subject, html);
+    }
+
+    public async Task<bool> SendSystemNotificationEmailAsync(string toEmail, string displayName, string subject, string bodyContent)
+    {
+        string content = $@"
+            <h2 style='color: #4F46E5; text-align: center; margin-top: 0;'>Thông báo từ V-Closet</h2>
+            <p style='font-size: 15px; line-height: 1.6;'>Chào <span style='font-weight: bold;'>{displayName}</span>,</p>
+            <div style='background-color: #f9fafb; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #e5e7eb;'>
+                <p style='margin: 0; font-size: 15px; line-height: 1.6; white-space: pre-wrap;'>{bodyContent}</p>
+            </div>
+            <p style='color: #6b7280; font-size: 14px; text-align: center;'>Vui lòng mở ứng dụng hoặc truy cập website V-Closet để xem thêm chi tiết.</p>";
+
+        string html = GetBaseEmailTemplate(content);
+        return await SendEmailAsync(toEmail, subject, html);
+    }
 }

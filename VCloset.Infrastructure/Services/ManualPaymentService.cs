@@ -322,6 +322,28 @@ public class ManualPaymentService : IManualPaymentService
         {
             Console.WriteLine($"SignalR User Alert Error: {ex.Message}");
         }
+
+        // Send Email Receipt
+        try
+        {
+            var user = await _unitOfWork.Users.FindAsync(u => u.InternalId == transaction.UserInternalId);
+            if (user != null && !string.IsNullOrEmpty(user.Email))
+            {
+                string planNameStr = plan?.Name ?? "Nạp số dư thủ công";
+                await _emailService.SendPaymentReceiptEmailAsync(
+                    user.Email,
+                    user.DisplayName,
+                    planNameStr,
+                    transaction.Amount,
+                    $"MANUAL_{transaction.InternalId}",
+                    transaction.UpdatedAt
+                );
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to send receipt email: {ex.Message}");
+        }
     }
 
     /// <inheritdoc/>

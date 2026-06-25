@@ -70,7 +70,17 @@ public class NotificationService : INotificationService
                 var user = await _unitOfWork.Users.FindAsync(u => u.InternalId == userId);
                 if (user != null && !string.IsNullOrEmpty(user.Email))
                 {
-                    await _emailService.SendEmailAsync(user.Email, title, body);
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await _emailService.SendSystemNotificationEmailAsync(user.Email, user.DisplayName, title, body);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"[WARNING] Failed to send targeted email to {user.Email}: {ex.Message}");
+                        }
+                    });
                 }
             }
             catch (Exception ex)
@@ -238,7 +248,7 @@ public class NotificationService : INotificationService
                     {
                         try
                         {
-                            await _emailService.SendEmailAsync(user.Email, title, body);
+                            await _emailService.SendSystemNotificationEmailAsync(user.Email, user.DisplayName, title, body);
                             // Simple delay to prevent SMTP throttling if using a basic provider
                             await Task.Delay(50);
                         }

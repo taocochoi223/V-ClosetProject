@@ -16,12 +16,14 @@ public class PaymentsController : ControllerBase
     private readonly IUnitOfWork _unitOfWork;
     private readonly IPayOSPaymentService _payOSPaymentService;
     private readonly ITierConfigService _tierConfigService;
+    private readonly IEmailService _emailService;
 
-    public PaymentsController(IUnitOfWork unitOfWork, IPayOSPaymentService payOSPaymentService, ITierConfigService tierConfigService)
+    public PaymentsController(IUnitOfWork unitOfWork, IPayOSPaymentService payOSPaymentService, ITierConfigService tierConfigService, IEmailService emailService)
     {
         _unitOfWork = unitOfWork;
         _payOSPaymentService = payOSPaymentService;
         _tierConfigService = tierConfigService;
+        _emailService = emailService;
     }
 
 
@@ -108,6 +110,26 @@ public class PaymentsController : ControllerBase
                                     coupon.UpdatedAt = DateTime.UtcNow;
                                     _unitOfWork.Coupons.Update(coupon);
                                 }
+                            }
+                        }
+
+                        // Get user to send receipt
+                        var userForReceipt = await _unitOfWork.Users.FindAsync(u => u.InternalId == transaction.UserInternalId);
+                        if (userForReceipt != null && !string.IsNullOrEmpty(userForReceipt.Email))
+                        {
+                            try
+                            {
+                                await _emailService.SendPaymentReceiptEmailAsync(
+                                    userForReceipt.Email, 
+                                    userForReceipt.DisplayName, 
+                                    plan?.Name ?? "Gói dịch vụ", 
+                                    transaction.Amount, 
+                                    transaction.GatewayTransactionId ?? transaction.Id.ToString(), 
+                                    transaction.UpdatedAt);
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine("Failed to send receipt email: " + ex.Message);
                             }
                         }
                     }
