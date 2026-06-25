@@ -261,8 +261,8 @@ public class NotificationService : INotificationService
                         try
                         {
                             await scopedEmailService.SendSystemNotificationEmailAsync(user.Email, user.DisplayName, title, body);
-                            // Simple delay to prevent SMTP throttling if using a basic provider
-                            await Task.Delay(50);
+                            // Delay 550ms to prevent Resend Free Tier rate limits (max 2 emails/sec)
+                            await Task.Delay(550);
                         }
                         catch (Exception ex)
                         {
