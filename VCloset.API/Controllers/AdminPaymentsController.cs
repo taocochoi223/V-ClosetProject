@@ -133,16 +133,19 @@ public class AdminPaymentsController : ControllerBase
                 .Include(t => t.UserInternal)
                 .AsQueryable();
 
-            // Lọc theo khoảng ngày — chuyển về UTC để tránh lỗi PostgreSQL Kind=Unspecified
+            // Lọc theo khoảng ngày — xử lý múi giờ VN (UTC+7)
             if (fromDate.HasValue)
             {
-                var from = DateTime.SpecifyKind(fromDate.Value.Date, DateTimeKind.Utc);
-                query = query.Where(t => t.CreatedAt >= from);
+                var fromLocal = DateTime.SpecifyKind(fromDate.Value.Date, DateTimeKind.Unspecified);
+                var fromUtc = DateTime.SpecifyKind(fromLocal.AddHours(-7), DateTimeKind.Utc);
+                query = query.Where(t => t.CreatedAt >= fromUtc);
             }
             if (toDate.HasValue)
             {
-                var to = DateTime.SpecifyKind(toDate.Value.Date.AddDays(1), DateTimeKind.Utc); // bao gồm cả ngày kết thúc
-                query = query.Where(t => t.CreatedAt < to);
+                // Cộng 1 ngày để bao gồm cả ngày kết thúc (toLocal là 00:00:00 của ngày tiếp theo)
+                var toLocal = DateTime.SpecifyKind(toDate.Value.Date.AddDays(1), DateTimeKind.Unspecified);
+                var toUtc = DateTime.SpecifyKind(toLocal.AddHours(-7), DateTimeKind.Utc);
+                query = query.Where(t => t.CreatedAt < toUtc);
             }
 
             // Lọc theo cổng
@@ -178,8 +181,9 @@ public class AdminPaymentsController : ControllerBase
                 .ToList();
 
             // Doanh thu theo ngày (chỉ tính giao dịch thành công)
+            // Fix timezone: Chuyển CreatedAt (UTC) sang giờ VN (UTC+7) trước khi gom nhóm
             var dailyRevenue = paidList
-                .GroupBy(t => t.CreatedAt.Date)
+                .GroupBy(t => t.CreatedAt.AddHours(7).Date)
                 .Select(g => new RevenueDailyPointDto
                 {
                     Date = g.Key.ToString("yyyy-MM-dd"),
