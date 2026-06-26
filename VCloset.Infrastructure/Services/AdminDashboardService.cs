@@ -114,15 +114,15 @@ public class AdminDashboardService : IAdminDashboardService
             for (int i = 7; i >= 0; i--)
             {
                 var weekMonday = currentWeekMonday.AddDays(-7 * i);
-                var weekSunday = weekMonday.AddDays(6).AddHours(23).AddMinutes(59).AddSeconds(59);
-                var label = $"{weekMonday:dd/MM} - {weekSunday:dd/MM}";
+                var nextMonday = weekMonday.AddDays(7);
+                var label = $"{weekMonday:dd/MM} - {weekMonday.AddDays(6):dd/MM}";
 
                 var revenue = subscriptions
-                    .Where(s => s.StartedAt >= weekMonday && s.StartedAt <= weekSunday)
+                    .Where(s => s.StartedAt >= weekMonday && s.StartedAt < nextMonday)
                     .Sum(s => s.PricePaid);
 
                 var commission = conversions
-                    .Where(c => c.ConvertedAt >= weekMonday && c.ConvertedAt <= weekSunday)
+                    .Where(c => c.ConvertedAt >= weekMonday && c.ConvertedAt < nextMonday)
                     .Sum(c => c.CommissionAmount);
 
                 points.Add(new RevenueChartPoint
@@ -295,15 +295,23 @@ public class AdminDashboardService : IAdminDashboardService
         var csv = new StringBuilder();
         csv.AppendLine("Loại,Mô tả,Ngày,Số tiền (USD)");
 
+        string EscapeCsv(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return "";
+            return value.Replace("\"", "\"\"");
+        }
+
         foreach (var t in subscriptions)
         {
             var planName = t.SubscriptionPlan?.Name ?? "Unknown";
-            csv.AppendLine($"\"Premium\",\"Gói {planName} - {t.UserInternal?.Email ?? "N/A"}\",\"{t.CreatedAt:yyyy-MM-dd HH:mm:ss}\",{t.Amount}");
+            var email = t.UserInternal?.Email ?? "N/A";
+            csv.AppendLine($"\"Premium\",\"Gói {EscapeCsv(planName)} - {EscapeCsv(email)}\",\"{t.CreatedAt:yyyy-MM-dd HH:mm:ss}\",{t.Amount}");
         }
 
         foreach (var conv in conversions)
         {
-            csv.AppendLine($"\"Affiliate\",\"Đơn hàng Shopee #{conv.ShopeeOrderId ?? "N/A"}\",\"{conv.ConvertedAt:yyyy-MM-dd HH:mm:ss}\",{conv.CommissionAmount}");
+            var orderId = conv.ShopeeOrderId ?? "N/A";
+            csv.AppendLine($"\"Affiliate\",\"Đơn hàng Shopee #{EscapeCsv(orderId)}\",\"{conv.ConvertedAt:yyyy-MM-dd HH:mm:ss}\",{conv.CommissionAmount}");
         }
 
         return Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(csv.ToString())).ToArray();
