@@ -1,4 +1,4 @@
-﻿using VCloset.Domain.Enums;
+using VCloset.Domain.Enums;
 using System.ComponentModel.DataAnnotations.Schema;
 using System;
 using System.Collections.Generic;
@@ -42,5 +42,9 @@ public partial class WardrobeItem
 
     [Column("category")]
     public ClothingCategory Category { get; set; }
+
+    public int? ClosetInternalId { get; set; }
+
+    public virtual Closet? Closet { get; set; }
 }
 

@@ -148,6 +148,7 @@ else
 }
 
 builder.Services.AddScoped<IWardrobeService, WardrobeService>();
+builder.Services.AddScoped<IClosetService, ClosetService>();
 builder.Services.AddHttpClient<IBackgroundRemovalService, PhotoroomService>();
 builder.Services.AddHttpClient<IVirtualTryOnService, FashnTryOnService>();
 
