@@ -42,8 +42,10 @@ namespace VCloset.Infrastructure.Services
             try
             {
                 // Xác thực bằng chuỗi JSON
+#pragma warning disable CS0618 // Type or member is obsolete
                 GoogleCredential credential = GoogleCredential.FromJson(jsonKey)
                     .CreateScoped(AndroidPublisherService.Scope.Androidpublisher);
+#pragma warning restore CS0618 // Type or member is obsolete
 
                 var service = new AndroidPublisherService(new BaseClientService.Initializer()
                 {
