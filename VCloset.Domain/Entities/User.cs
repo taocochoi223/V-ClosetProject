@@ -86,6 +86,8 @@ public partial class User
 
     public virtual ICollection<WardrobeItem> WardrobeItems { get; set; } = new List<WardrobeItem>();
 
+    public virtual ICollection<Closet> Closets { get; set; } = new List<Closet>();
+
     public virtual ICollection<PaymentTransaction> PaymentTransactions { get; set; } = new List<PaymentTransaction>();
 
     [Column("role")]

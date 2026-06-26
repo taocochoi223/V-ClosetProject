@@ -35,4 +35,5 @@ public class WardrobeItemResponseDto
     public string? Brand { get; set; }
     public string? Notes { get; set; }
     public DateTime CreatedAt { get; set; }
+    public Guid? ClosetId { get; set; }
 }

@@ -80,6 +80,8 @@ public partial class VClosetVersion30Context : DbContext
 
     public virtual DbSet<WardrobeItem> WardrobeItems { get; set; }
 
+    public virtual DbSet<Closet> Closets { get; set; }
+
     public virtual DbSet<SubscriptionTierConfig> SubscriptionTierConfigs { get; set; }
 
     public virtual DbSet<SystemSetting> SystemSettings { get; set; }
@@ -1347,6 +1349,42 @@ public partial class VClosetVersion30Context : DbContext
             entity.HasOne(d => d.UserInternal).WithMany(p => p.WardrobeItems)
                 .HasForeignKey(d => d.UserInternalId)
                 .HasConstraintName("wardrobe_items_user_internal_id_fkey");
+
+            entity.Property(e => e.ClosetInternalId).HasColumnName("closet_internal_id");
+
+            entity.HasOne(d => d.Closet).WithMany(p => p.WardrobeItems)
+                .HasForeignKey(d => d.ClosetInternalId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("wardrobe_items_closet_internal_id_fkey");
+        });
+
+        modelBuilder.Entity<Closet>(entity =>
+        {
+            entity.HasKey(e => e.InternalId).HasName("closets_pkey");
+
+            entity.ToTable("closets");
+
+            entity.HasIndex(e => e.Id, "closets_id_key").IsUnique();
+            entity.HasIndex(e => e.UserInternalId, "idx_closets_user");
+
+            entity.Property(e => e.InternalId).HasColumnName("internal_id");
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("gen_random_uuid()")
+                .HasColumnName("id");
+            entity.Property(e => e.UserInternalId).HasColumnName("user_internal_id");
+            entity.Property(e => e.Name)
+                .HasMaxLength(255)
+                .HasColumnName("name");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("now()")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("now()")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.UserInternal).WithMany(p => p.Closets)
+                .HasForeignKey(d => d.UserInternalId)
+                .HasConstraintName("closets_user_internal_id_fkey");
         });
 
         modelBuilder.Entity<PaymentTransaction>(entity =>
