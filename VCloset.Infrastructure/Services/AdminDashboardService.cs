@@ -26,7 +26,11 @@ public class AdminDashboardService : IAdminDashboardService
     {
         var now = DateTime.UtcNow;
         var last24h = now.AddHours(-24);
-        var startOfThisMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        // Fix timezone cho Việt Nam (UTC+7)
+        var localNow = now.AddHours(7);
+        var startOfThisMonthLocal = new DateTime(localNow.Year, localNow.Month, 1, 0, 0, 0, DateTimeKind.Unspecified);
+        var startOfThisMonth = DateTime.SpecifyKind(startOfThisMonthLocal.AddHours(-7), DateTimeKind.Utc);
+        
         var startOfLastMonth = startOfThisMonth.AddMonths(-1);
 
         // KPI Card 1: Tổng người dùng (Tất cả người dùng từ đầu đến giờ, bao gồm active/inactive, các role)
@@ -37,11 +41,14 @@ public class AdminDashboardService : IAdminDashboardService
         var totalPremiumRevenue = await _context.PaymentTransactions
             .Where(t => t.Status == PaymentStatus.Success)
             .SumAsync(t => t.Amount);
+        var daysIntoMonth = (now - startOfThisMonth).TotalDays;
+        var previousMonthMtdEnd = startOfLastMonth.AddDays(daysIntoMonth);
+
         var revenueThisMonth = await _context.PaymentTransactions
             .Where(t => t.Status == PaymentStatus.Success && t.CreatedAt >= startOfThisMonth)
             .SumAsync(t => t.Amount);
         var revenueLastMonth = await _context.PaymentTransactions
-            .Where(t => t.Status == PaymentStatus.Success && t.CreatedAt >= startOfLastMonth && t.CreatedAt < startOfThisMonth)
+            .Where(t => t.Status == PaymentStatus.Success && t.CreatedAt >= startOfLastMonth && t.CreatedAt <= previousMonthMtdEnd)
             .SumAsync(t => t.Amount);
         var premiumGrowthPercent = revenueLastMonth > 0
             ? Math.Round((double)((revenueThisMonth - revenueLastMonth) / revenueLastMonth * 100), 1)

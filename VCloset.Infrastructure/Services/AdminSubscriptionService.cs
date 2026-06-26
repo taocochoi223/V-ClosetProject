@@ -282,7 +282,11 @@ public class AdminSubscriptionService : IAdminSubscriptionService
         var now = DateTime.UtcNow;
 
         // 1. Doanh thu tháng này và biến động
-        var startOfCurrentMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        // Fix timezone: Lấy mốc đầu tháng theo giờ VN (UTC+7) rồi chuyển lại UTC để truy vấn DB
+        var localNow = now.AddHours(7);
+        var startOfCurrentMonthLocal = new DateTime(localNow.Year, localNow.Month, 1, 0, 0, 0, DateTimeKind.Unspecified);
+        var startOfCurrentMonth = DateTime.SpecifyKind(startOfCurrentMonthLocal.AddHours(-7), DateTimeKind.Utc);
+        
         var startOfPreviousMonth = startOfCurrentMonth.AddMonths(-1);
         var daysIntoMonth = (now - startOfCurrentMonth).TotalDays;
         var previousMonthMtdEnd = startOfPreviousMonth.AddDays(daysIntoMonth);
