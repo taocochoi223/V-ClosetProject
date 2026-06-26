@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using VCloset.Domain.Enums;
@@ -19,13 +19,17 @@ namespace VCloset.Infrastructure.Migrations
                 type: "integer",
                 nullable: true);
 
-            migrationBuilder.AlterColumn<DiscountType>(
-                name: "discount_type",
-                table: "coupons",
-                type: "discount_type",
-                nullable: false,
-                oldClrType: typeof(int),
-                oldType: "integer");
+            migrationBuilder.Sql(@"
+                ALTER TABLE coupons 
+                ALTER COLUMN discount_type TYPE discount_type 
+                USING (
+                    CASE discount_type
+                        WHEN 1 THEN 'percentage'::discount_type
+                        WHEN 2 THEN 'fixed_amount'::discount_type
+                        ELSE 'percentage'::discount_type
+                    END
+                );
+            ");
 
             migrationBuilder.CreateTable(
                 name: "closets",
@@ -107,13 +111,17 @@ namespace VCloset.Infrastructure.Migrations
                 name: "closet_internal_id",
                 table: "wardrobe_items");
 
-            migrationBuilder.AlterColumn<int>(
-                name: "discount_type",
-                table: "coupons",
-                type: "integer",
-                nullable: false,
-                oldClrType: typeof(DiscountType),
-                oldType: "discount_type");
+            migrationBuilder.Sql(@"
+                ALTER TABLE coupons 
+                ALTER COLUMN discount_type TYPE integer 
+                USING (
+                    CASE discount_type
+                        WHEN 'percentage'::discount_type THEN 1
+                        WHEN 'fixed_amount'::discount_type THEN 2
+                        ELSE 1
+                    END
+                );
+            ");
 
             migrationBuilder.UpdateData(
                 table: "subscription_plans",
