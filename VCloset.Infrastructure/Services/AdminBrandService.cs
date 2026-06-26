@@ -433,9 +433,15 @@ public class AdminBrandService : IAdminBrandService
         // Kiểm tra trạng thái sản phẩm: Sản phẩm phải đang hoạt động
         if (!product.IsActive)
             throw new Exception("Sản phẩm tiếp thị liên kết này đang tạm ngưng hoạt động.");
+        // Kiểm tra xem sản phẩm này đã có chiến dịch quảng cáo nào đang chạy hay chưa
+        var hasActiveCampaign = await _context.SponsoredCampaigns
+            .AnyAsync(c => c.AffiliateProductInternalId == product.InternalId && c.IsActive && c.EndAt > DateTime.UtcNow);
+        if (hasActiveCampaign)
+            throw new Exception("Sản phẩm này đã có chiến dịch quảng cáo đang chạy.");
 
-
-
+        // Kiểm tra số dư tín dụng của đối tác có đủ để chạy chiến dịch này tối thiểu 1 ngày không
+        if (brand.CreditBalance < request.DailyBudget)
+            throw new Exception("Số dư tín dụng của thương hiệu không đủ để duy trì ngân sách ngày.");
         if (request.DisplayRank <= 0)
             throw new Exception("Thứ tự hiển thị phải lớn hơn 0.");
 
