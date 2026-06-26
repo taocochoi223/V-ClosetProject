@@ -16,3 +16,8 @@ public class CreateClosetRequestDto
 {
     public string Name { get; set; } = null!;
 }
+
+public class UpdateClosetRequestDto
+{
+    public string Name { get; set; } = null!;
+}

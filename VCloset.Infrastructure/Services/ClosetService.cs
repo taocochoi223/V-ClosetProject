@@ -91,4 +91,68 @@ public class ClosetService : IClosetService
             CreatedAt = closet.CreatedAt
         };
     }
+
+    public async Task<ClosetDto> UpdateClosetAsync(int userInternalId, Guid closetId, UpdateClosetRequestDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(dto.Name))
+        {
+            throw new ArgumentException("Tên tủ đồ không được để trống.");
+        }
+
+        var closet = await _context.Closets
+            .FirstOrDefaultAsync(c => c.Id == closetId && c.UserInternalId == userInternalId);
+
+        if (closet == null)
+        {
+            throw new KeyNotFoundException("Không tìm thấy tủ đồ.");
+        }
+
+        // Check if closet name already exists for this user (except this closet itself)
+        var nameExists = await _context.Closets
+            .AnyAsync(c => c.UserInternalId == userInternalId && c.Id != closetId && c.Name.ToLower() == dto.Name.Trim().ToLower());
+        if (nameExists)
+        {
+            throw new InvalidOperationException("Bạn đã có một tủ đồ tên này rồi.");
+        }
+
+        closet.Name = dto.Name.Trim();
+        closet.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        // Get count and thumbnails
+        var items = await _context.WardrobeItems
+            .Where(w => w.UserInternalId == userInternalId && w.ClosetInternalId == closet.InternalId && w.IsActive)
+            .OrderByDescending(w => w.CreatedAt)
+            .ToListAsync();
+
+        var thumbnailUrls = items
+            .Select(w => w.RemovedBgUrl ?? w.OriginalImageUrl)
+            .Where(url => !string.IsNullOrEmpty(url))
+            .Take(3)
+            .ToList();
+
+        return new ClosetDto
+        {
+            Id = closet.Id,
+            Name = closet.Name,
+            ItemCount = items.Count,
+            ThumbnailUrls = thumbnailUrls,
+            CreatedAt = closet.CreatedAt
+        };
+    }
+
+    public async Task DeleteClosetAsync(int userInternalId, Guid closetId)
+    {
+        var closet = await _context.Closets
+            .FirstOrDefaultAsync(c => c.Id == closetId && c.UserInternalId == userInternalId);
+
+        if (closet == null)
+        {
+            throw new KeyNotFoundException("Không tìm thấy tủ đồ.");
+        }
+
+        _context.Closets.Remove(closet);
+        await _context.SaveChangesAsync();
+    }
 }
