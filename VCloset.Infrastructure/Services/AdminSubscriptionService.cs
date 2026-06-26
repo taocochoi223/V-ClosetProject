@@ -284,13 +284,16 @@ public class AdminSubscriptionService : IAdminSubscriptionService
         // 1. Doanh thu tháng này và biến động
         var startOfCurrentMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
         var startOfPreviousMonth = startOfCurrentMonth.AddMonths(-1);
+        var daysIntoMonth = (now - startOfCurrentMonth).TotalDays;
+        var previousMonthMtdEnd = startOfPreviousMonth.AddDays(daysIntoMonth);
 
         var currentMonthRevenue = await _context.PaymentTransactions
             .Where(t => t.Status == PaymentStatus.Success && t.CreatedAt >= startOfCurrentMonth && t.CreatedAt <= now)
             .SumAsync(t => t.Amount);
 
+        // Sử dụng so sánh Month-to-Date (cùng thời điểm của tháng trước) để không bị lệch số liệu đầu tháng
         var previousMonthRevenue = await _context.PaymentTransactions
-            .Where(t => t.Status == PaymentStatus.Success && t.CreatedAt >= startOfPreviousMonth && t.CreatedAt < startOfCurrentMonth)
+            .Where(t => t.Status == PaymentStatus.Success && t.CreatedAt >= startOfPreviousMonth && t.CreatedAt <= previousMonthMtdEnd)
             .SumAsync(t => t.Amount);
 
         double revenuePercentageChange = previousMonthRevenue == 0 
