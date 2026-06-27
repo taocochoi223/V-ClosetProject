@@ -73,12 +73,29 @@ public class PaymentsController : ControllerBase
 
                                 if (existingPremium != null)
                                 {
-                                    if (existingPremium.ExpiresAt.HasValue)
+                                    DateTime newExpiresAt = existingPremium.ExpiresAt.HasValue && existingPremium.ExpiresAt.Value > DateTime.UtcNow 
+                                        ? existingPremium.ExpiresAt.Value.AddDays(plan.DurationDays.Value) 
+                                        : DateTime.UtcNow.AddDays(plan.DurationDays.Value);
+
+                                    existingPremium.IsActive = false; // Vô hiệu hoá gói cũ (lịch sử)
+                                    _unitOfWork.PremiumSubscriptions.Update(existingPremium);
+
+                                    var newPremium = new PremiumSubscription
                                     {
-                                        existingPremium.ExpiresAt = existingPremium.ExpiresAt.Value > DateTime.UtcNow 
-                                            ? existingPremium.ExpiresAt.Value.AddDays(plan.DurationDays.Value) 
-                                            : DateTime.UtcNow.AddDays(plan.DurationDays.Value);
-                                    }
+                                        Id = Guid.NewGuid(),
+                                        UserInternalId = transaction.UserInternalId,
+                                        SubscriptionPlanInternalId = plan.InternalId,
+                                        PlanType = plan.DurationDays >= 365 ? PremiumPlan.Yearly : PremiumPlan.Monthly,
+                                        PricePaid = transaction.Amount,
+                                        Currency = transaction.Currency,
+                                        PaymentMethod = "payos",
+                                        PaymentRef = webhookData.Reference,
+                                        StartedAt = DateTime.UtcNow,
+                                        ExpiresAt = newExpiresAt,
+                                        IsActive = true,
+                                        CreatedAt = DateTime.UtcNow
+                                    };
+                                    await _unitOfWork.PremiumSubscriptions.AddAsync(newPremium);
                                 }
                                 else
                                 {

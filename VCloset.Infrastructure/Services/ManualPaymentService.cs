@@ -253,13 +253,30 @@ public class ManualPaymentService : IManualPaymentService
 
                 if (existingPremium != null)
                 {
-                    // Kéo dài subscription hiện tại
-                    if (existingPremium.ExpiresAt.HasValue)
+                    // Vô hiệu hoá gói hiện tại và tạo gói mới kế thừa thời gian
+                    DateTime newExpiresAt = existingPremium.ExpiresAt.HasValue && existingPremium.ExpiresAt.Value > DateTime.UtcNow
+                        ? existingPremium.ExpiresAt.Value.AddDays(plan.DurationDays.Value)
+                        : DateTime.UtcNow.AddDays(plan.DurationDays.Value);
+
+                    existingPremium.IsActive = false;
+                    _unitOfWork.PremiumSubscriptions.Update(existingPremium);
+
+                    var newPremium = new PremiumSubscription
                     {
-                        existingPremium.ExpiresAt = existingPremium.ExpiresAt.Value > DateTime.UtcNow
-                            ? existingPremium.ExpiresAt.Value.AddDays(plan.DurationDays.Value)
-                            : DateTime.UtcNow.AddDays(plan.DurationDays.Value);
-                    }
+                        Id                        = Guid.NewGuid(),
+                        UserInternalId            = transaction.UserInternalId,
+                        SubscriptionPlanInternalId = plan.InternalId,
+                        PlanType                  = plan.DurationDays >= 365 ? PremiumPlan.Yearly : PremiumPlan.Monthly,
+                        PricePaid                 = transaction.Amount,
+                        Currency                  = transaction.Currency,
+                        PaymentMethod             = GatewayName,
+                        PaymentRef                = transaction.Id.ToString(),
+                        StartedAt                 = DateTime.UtcNow,
+                        ExpiresAt                 = newExpiresAt,
+                        IsActive                  = true,
+                        CreatedAt                 = DateTime.UtcNow
+                    };
+                    await _unitOfWork.PremiumSubscriptions.AddAsync(newPremium);
                 }
                 else
                 {
