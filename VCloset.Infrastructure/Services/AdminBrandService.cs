@@ -153,7 +153,7 @@ public class AdminBrandService : IAdminBrandService
                 TotalSpent = c.TotalSpent,
                 ImpressionCount = c.ImpressionCount,
                 ClickCount = c.ClickCount,
-                IsActive = c.IsActive,
+                IsActive = c.IsActive && c.EndAt > DateTime.UtcNow,
                 StartAt = c.StartAt,
                 EndAt = c.EndAt,
                 CreatedAt = c.CreatedAt
@@ -314,7 +314,7 @@ public class AdminBrandService : IAdminBrandService
                                  TotalSpent = c.TotalSpent,
                                  ImpressionCount = c.ImpressionCount,
                                  ClickCount = c.ClickCount,
-                                 IsActive = c.IsActive,
+                                 IsActive = c.IsActive && c.EndAt > DateTime.UtcNow,
                                  StartAt = c.StartAt,
                                  EndAt = c.EndAt,
                                  CreatedAt = c.CreatedAt
@@ -385,9 +385,9 @@ public class AdminBrandService : IAdminBrandService
     {
         var campaigns = await _context.SponsoredCampaigns.ToListAsync();
         
-        int activeCount = campaigns.Count(c => c.IsActive);
+        int activeCount = campaigns.Count(c => c.IsActive && c.EndAt > DateTime.UtcNow);
         int totalCount = campaigns.Count;
-        decimal totalDailyBudget = campaigns.Where(c => c.IsActive).Sum(c => c.DailyBudget);
+        decimal totalDailyBudget = campaigns.Where(c => c.IsActive && c.EndAt > DateTime.UtcNow).Sum(c => c.DailyBudget);
         decimal totalSpent = campaigns.Sum(c => c.TotalSpent);
         int totalImpressions = campaigns.Sum(c => c.ImpressionCount);
         int totalClicks = campaigns.Sum(c => c.ClickCount);
