@@ -181,13 +181,33 @@ public class ResendEmailService : IEmailService
         string content = $@"
             <h2 style='color: #dc2626; text-align: center; margin-top: 0;'>Thông báo tạm ngưng tài khoản</h2>
             <p style='font-size: 15px; line-height: 1.6;'>Chào <span style='font-weight: bold;'>{displayName}</span>,</p>
-            <p style='font-size: 15px; line-height: 1.6;'>Chúng tôi rất tiếc phải thông báo rằng tài khoản V-Closet của bạn hiện tại đã bị vô hiệu hóa (inActive) bởi Quản trị viên do vi phạm Điều khoản dịch vụ hoặc theo yêu cầu bảo mật hệ thống.</p>
+            <p style='font-size: 15px; line-height: 1.6;'>Chúng tôi rất tiếc phải thông báo rằng tài khoản V-Closet của bạn hiện tại đã bị vô hiệu hóa (inActive).</p>
             
             <div style='background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; margin: 25px 0;'>
                 <p style='margin: 0; color: #991b1b; font-size: 14px;'>Tài khoản của bạn sẽ tạm thời không thể đăng nhập hoặc sử dụng các dịch vụ thử đồ AI tại V-Closet.</p>
             </div>
             
             <p style='color: #4b5563; font-size: 14px; text-align: center;'>Nếu bạn cho rằng đây là một sự nhầm lẫn, vui lòng liên hệ với Đội ngũ hỗ trợ của chúng tôi để được giải đáp.</p>";
+
+        string html = GetBaseEmailTemplate(content);
+        return await SendEmailAsync(toEmail, subject, html);
+    }
+
+    public async Task<bool> SendAccountReactivatedEmailAsync(string toEmail, string displayName)
+    {
+        string subject = "V-Closet: Tài khoản của bạn đã được kích hoạt lại";
+        string content = $@"
+            <h2 style='color: #10b981; text-align: center; margin-top: 0;'>Tài khoản đã được kích hoạt</h2>
+            <p style='font-size: 15px; line-height: 1.6;'>Chào <span style='font-weight: bold;'>{displayName}</span>,</p>
+            <p style='font-size: 15px; line-height: 1.6;'>Chúng tôi vui mừng thông báo tài khoản V-Closet của bạn đã được kích hoạt lại thành công.</p>
+            
+            <div style='background-color: #f0fdf4; border-left: 4px solid #10b981; padding: 15px; margin: 25px 0;'>
+                <p style='margin: 0; color: #065f46; font-size: 14px;'>Bây giờ bạn đã có thể đăng nhập bình thường và tiếp tục trải nghiệm các tính năng thử đồ AI tuyệt vời tại V-Closet.</p>
+            </div>
+            
+            <div style='text-align: center; margin-top: 30px;'>
+                <a href='https://vcloset.vn' style='background-color: #4F46E5; color: #ffffff; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 6px; display: inline-block;'>Đăng nhập ngay</a>
+            </div>";
 
         string html = GetBaseEmailTemplate(content);
         return await SendEmailAsync(toEmail, subject, html);

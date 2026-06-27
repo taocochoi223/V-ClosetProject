@@ -12,11 +12,13 @@ public class UserService : IUserService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IStorageService _storageService;
+    private readonly IEmailService _emailService;
 
-    public UserService(IUnitOfWork unitOfWork, IStorageService storageService)
+    public UserService(IUnitOfWork unitOfWork, IStorageService storageService, IEmailService emailService)
     {
         _unitOfWork = unitOfWork;
         _storageService = storageService;
+        _emailService = emailService;
     }
 
     public async Task<UserProfileResponse?> GetMyProfileAsync(int userId)
@@ -260,6 +262,10 @@ public class UserService : IUserService
 
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync();
+
+        // Gửi email thông báo tự vô hiệu hoá tài khoản
+        await _emailService.SendAccountDeactivatedEmailAsync(user.Email, user.DisplayName);
+
         return true;
     }
 

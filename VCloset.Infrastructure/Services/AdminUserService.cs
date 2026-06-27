@@ -420,6 +420,8 @@ public class AdminUserService : IAdminUserService
         {
             query = query.Where(u =>
             {
+                if (u.InternalId == callerAdminId) return true;
+                
                 if (u.Role == UserRole.Customer || u.Role == UserRole.BrandPartner)
                     return true;
 
@@ -611,6 +613,9 @@ public class AdminUserService : IAdminUserService
             UserId = targetUser.Id,
             DisplayName = targetUser.DisplayName
         });
+
+        // Gửi email thông báo tài khoản được kích hoạt lại
+        await _emailService.SendAccountReactivatedEmailAsync(targetUser.Email, targetUser.DisplayName);
     }
 
     public async Task ResetPermissionsToDefaultAsync(int adminUserId, Guid targetUserId)

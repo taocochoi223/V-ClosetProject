@@ -10,6 +10,7 @@ public interface IEmailService
     Task<bool> SendNewAccountEmailAsync(string toEmail, string displayName, string tempPassword);
     Task<bool> SendAdminPaymentNotificationAsync(string toEmail, string senderName, string senderEmail, string planName, decimal amount, string currency, string userNote, DateTime createdAt);
     Task<bool> SendAccountDeactivatedEmailAsync(string toEmail, string displayName);
+    Task<bool> SendAccountReactivatedEmailAsync(string toEmail, string displayName);
     Task<bool> SendPaymentReceiptEmailAsync(string toEmail, string customerName, string planName, decimal amount, string transactionId, DateTime paymentDate);
     Task<bool> SendSystemNotificationEmailAsync(string toEmail, string displayName, string subject, string bodyContent);
 }
