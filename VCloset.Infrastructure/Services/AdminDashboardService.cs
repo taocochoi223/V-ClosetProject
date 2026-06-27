@@ -33,9 +33,14 @@ public class AdminDashboardService : IAdminDashboardService
         
         var startOfLastMonth = startOfThisMonth.AddMonths(-1);
 
-        // KPI Card 1: Tổng người dùng (Tất cả người dùng từ đầu đến giờ, bao gồm active/inactive, các role)
-        var totalUserCount = await _context.Users.CountAsync();
-        var newUsersLast24h = await _context.Users.CountAsync(u => u.CreatedAt >= last24h);
+        // KPI Card 1: Tổng người dùng (Chỉ đếm Customer trên UI chính)
+        var totalUserCount = await _context.Users.CountAsync(u => u.Role == UserRole.Customer);
+        var newUsersLast24h = await _context.Users.CountAsync(u => u.Role == UserRole.Customer && u.CreatedAt >= last24h);
+        
+        var totalCustomerCount = totalUserCount; // Dùng chung kết quả
+        var totalAdminCount = await _context.Users.CountAsync(u => u.Role == UserRole.Admin);
+        var totalModeratorCount = await _context.Users.CountAsync(u => u.Role == UserRole.Moderator);
+        var totalBrandPartnerCount = await _context.Users.CountAsync(u => u.Role == UserRole.BrandPartner);
 
         // KPI Card 2: Doanh thu Premium
         var totalPremiumRevenue = await _context.PaymentTransactions
@@ -82,6 +87,10 @@ public class AdminDashboardService : IAdminDashboardService
         {
             TotalUserCount = totalUserCount,
             NewUsersLast24h = newUsersLast24h,
+            TotalCustomerCount = totalCustomerCount,
+            TotalAdminCount = totalAdminCount,
+            TotalModeratorCount = totalModeratorCount,
+            TotalBrandPartnerCount = totalBrandPartnerCount,
             TotalPremiumRevenue = totalPremiumRevenue,
             PremiumRevenueGrowthPercent = (decimal)premiumGrowthPercent,
             TotalAffiliateCommission = totalAffiliateCommission,
