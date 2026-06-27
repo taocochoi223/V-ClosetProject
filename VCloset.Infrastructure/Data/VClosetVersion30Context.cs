@@ -1243,9 +1243,11 @@ public partial class VClosetVersion30Context : DbContext
                 .HasColumnName("id");
             entity.Property(e => e.IsActive)
                 .HasDefaultValue(true)
+                .ValueGeneratedNever()
                 .HasColumnName("is_active");
             entity.Property(e => e.IsEmailVerified)
                 .HasDefaultValue(false)
+                .ValueGeneratedNever()
                 .HasColumnName("is_email_verified");
             entity.Property(e => e.PasswordHash)
                 .HasMaxLength(255)
@@ -1286,6 +1288,7 @@ public partial class VClosetVersion30Context : DbContext
                 .HasColumnName("created_at");
             entity.Property(e => e.IsLifted)
                 .HasDefaultValue(false)
+                .ValueGeneratedNever()
                 .HasColumnName("is_lifted");
             entity.Property(e => e.LiftReason).HasColumnName("lift_reason");
             entity.Property(e => e.LiftedAt).HasColumnName("lifted_at");
