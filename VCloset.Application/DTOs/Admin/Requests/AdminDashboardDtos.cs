@@ -8,6 +8,12 @@ public class DashboardMetricsResponse
     // KPI Card 1: Tổng người dùng
     public int TotalUserCount { get; set; }
     public int NewUsersLast24h { get; set; }
+    
+    // User Role Breakdown
+    public int TotalCustomerCount { get; set; }
+    public int TotalAdminCount { get; set; }
+    public int TotalModeratorCount { get; set; }
+    public int TotalBrandPartnerCount { get; set; }
 
     // KPI Card 2: Doanh thu Premium
     public decimal TotalPremiumRevenue { get; set; }
