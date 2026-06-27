@@ -103,7 +103,7 @@ public class PaymentsController : ControllerBase
 
                             if (!string.IsNullOrEmpty(transaction.AppliedCouponCode))
                             {
-                                var coupon = await _unitOfWork.Coupons.FindAsync(c => c.Code == transaction.AppliedCouponCode);
+                                var coupon = await _unitOfWork.Coupons.FindAsync(c => c.Code.ToLower() == transaction.AppliedCouponCode.ToLower());
                                 if (coupon != null)
                                 {
                                     coupon.CurrentUses += 1;

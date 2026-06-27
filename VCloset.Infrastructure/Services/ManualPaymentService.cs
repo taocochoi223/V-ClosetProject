@@ -284,6 +284,17 @@ public class ManualPaymentService : IManualPaymentService
             }
         }
 
+        if (!string.IsNullOrEmpty(transaction.AppliedCouponCode))
+        {
+            var coupon = await _unitOfWork.Coupons.FindAsync(c => c.Code.ToLower() == transaction.AppliedCouponCode.ToLower());
+            if (coupon != null)
+            {
+                coupon.CurrentUses += 1;
+                coupon.UpdatedAt = DateTime.UtcNow;
+                _unitOfWork.Coupons.Update(coupon);
+            }
+        }
+
         await _unitOfWork.SaveChangesAsync();
 
         // Cấu hình thông điệp thông báo tuỳ biến
