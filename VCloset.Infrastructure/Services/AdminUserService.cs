@@ -130,9 +130,9 @@ public class AdminUserService : IAdminUserService
         if (activeBan != null)
             throw new Exception($"Người dùng này đang bị ban '{activeBan.BanType}'. Hãy gỡ ban trước.");
 
-        var validBanTypes = new[] { "chat", "post", "all" };
+        var validBanTypes = new[] { "chat", "post", "account" };
         if (!validBanTypes.Contains(request.BanType.ToLower()))
-            throw new Exception("BanType không hợp lệ. Các giá trị hợp lệ: chat, post, all.");
+            throw new Exception("BanType không hợp lệ. Các giá trị hợp lệ: chat, post, account.");
 
         var banLog = new UserBanLog
         {
@@ -203,19 +203,6 @@ public class AdminUserService : IAdminUserService
         targetUser.IsActive = false;
         targetUser.UpdatedAt = DateTime.UtcNow;
         _unitOfWork.Users.Update(targetUser);
-
-        // Lưu vết Admin khoá (để phân biệt với tự khoá)
-        var banLog = new UserBanLog
-        {
-            Id = Guid.NewGuid(),
-            UserInternalId = targetUser.InternalId,
-            BannedByInternal = adminUserId,
-            BanType = "deactivate",
-            Reason = "Admin vô hiệu hoá tài khoản",
-            IsLifted = false,
-            CreatedAt = DateTime.UtcNow
-        };
-        await _unitOfWork.UserBanLogs.AddAsync(banLog);
 
         await _unitOfWork.SaveChangesAsync();
 
