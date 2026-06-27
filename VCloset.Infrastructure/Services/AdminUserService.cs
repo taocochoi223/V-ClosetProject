@@ -202,8 +202,21 @@ public class AdminUserService : IAdminUserService
 
         targetUser.IsActive = false;
         targetUser.UpdatedAt = DateTime.UtcNow;
-
         _unitOfWork.Users.Update(targetUser);
+
+        // Lưu vết Admin khoá (để phân biệt với tự khoá)
+        var banLog = new UserBanLog
+        {
+            Id = Guid.NewGuid(),
+            UserInternalId = targetUser.InternalId,
+            BannedByInternal = adminUserId,
+            BanType = "deactivate",
+            Reason = "Admin vô hiệu hoá tài khoản",
+            IsLifted = false,
+            CreatedAt = DateTime.UtcNow
+        };
+        await _unitOfWork.UserBanLogs.AddAsync(banLog);
+
         await _unitOfWork.SaveChangesAsync();
 
         await _notificationHubService.SendAdminUserUpdateAlertAsync(new {
@@ -606,6 +619,18 @@ public class AdminUserService : IAdminUserService
         targetUser.UpdatedAt = DateTime.UtcNow;
 
         _unitOfWork.Users.Update(targetUser);
+
+        // Gỡ vết Admin khoá (nếu có)
+        var activeDeactivateLogs = await _unitOfWork.UserBanLogs.FindAllAsync(b => b.UserInternalId == targetUser.InternalId && b.BanType == "deactivate" && !b.IsLifted);
+        foreach(var log in activeDeactivateLogs)
+        {
+            log.IsLifted = true;
+            log.LiftedByInternal = adminUserId;
+            log.LiftedAt = DateTime.UtcNow;
+            log.LiftReason = "Admin kích hoạt lại tài khoản";
+            _unitOfWork.UserBanLogs.Update(log);
+        }
+
         await _unitOfWork.SaveChangesAsync();
 
         await _notificationHubService.SendAdminUserUpdateAlertAsync(new {

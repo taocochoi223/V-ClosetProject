@@ -556,5 +556,35 @@ public class AuthService : IAuthService
         }
         return (false, "free");
     }
+
+    public async Task<string> RequestReactivationAsync(string email)
+    {
+        var user = await _unitOfWork.Users.FindAsync(u => u.Email == email);
+        if (user == null || user.IsActive)
+        {
+            return "OK_SILENT"; // Bảo mật: Không tiết lộ email có tồn tại hay không
+        }
+
+        // Kiểm tra xem có vết khoá của Admin không
+        var activeDeactivateLogs = await _unitOfWork.UserBanLogs.FindAllAsync(b => b.UserInternalId == user.InternalId && b.BanType == "deactivate" && !b.IsLifted);
+        if (activeDeactivateLogs.Any())
+        {
+            // Bị Admin khoá -> Gửi thông báo cho Admin (hoặc chỉ trả về câu thông báo chờ duyệt)
+            // Ở đây tạm thời gửi email SystemNotification cho 1 admin tổng, hoặc chỉ báo chờ duyệt
+            return "ADMIN_LOCKED";
+        }
+        else
+        {
+            // Tự khoá -> Tự động mở lại
+            user.IsActive = true;
+            user.UpdatedAt = DateTime.UtcNow;
+            _unitOfWork.Users.Update(user);
+            await _unitOfWork.SaveChangesAsync();
+
+            // Gửi email chúc mừng
+            await _emailService.SendAccountReactivatedEmailAsync(user.Email, user.DisplayName);
+            return "AUTO_REACTIVATED";
+        }
+    }
 }
 

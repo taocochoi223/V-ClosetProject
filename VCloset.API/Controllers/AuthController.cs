@@ -195,4 +195,31 @@ public class AuthController : ControllerBase
             return BadRequest(ex.Message);
         }
     }
+
+    /// <summary>
+    /// API Yêu cầu mở lại tài khoản (Request Reactivation)
+    /// </summary>
+    [HttpPost("request-reactivation")]
+    public async Task<IActionResult> RequestReactivation([FromBody] ForgotPasswordRequest request)
+    {
+        try
+        {
+            var result = await _authService.RequestReactivationAsync(request.Email);
+            if (result == "ADMIN_LOCKED")
+            {
+                return Ok(new { message = "Tài khoản của bạn đã bị khoá bởi Admin. Yêu cầu mở lại đã được ghi nhận. Vui lòng chờ Ban quản trị xét duyệt." });
+            }
+            else if (result == "AUTO_REACTIVATED")
+            {
+                return Ok(new { message = "Tài khoản của bạn đã được mở lại thành công. Vui lòng đăng nhập để sử dụng tiếp." });
+            }
+            
+            // Trường hợp OK_SILENT (Không tồn tại hoặc đang active)
+            return Ok(new { message = "Yêu cầu đã được xử lý. Vui lòng kiểm tra lại trạng thái tài khoản." });
+        }
+        catch (System.Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }

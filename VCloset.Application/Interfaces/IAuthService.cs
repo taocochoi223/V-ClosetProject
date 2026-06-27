@@ -16,4 +16,5 @@ public interface IAuthService
     Task<bool> ChangePasswordAsync(int userId, ChangePasswordRequest request);
     Task<AuthResponse> RefreshTokenAsync(RefreshTokenRequest request);
     Task<bool> LogoutAsync(int userId, string refreshToken);
+    Task<string> RequestReactivationAsync(string email);
 }
