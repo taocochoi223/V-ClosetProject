@@ -10,7 +10,7 @@ public interface IWardrobeService
 {
     Task<WardrobeItemResponseDto> CreateItemAsync(int userInternalId, CreateWardrobeItemDto dto);
     Task<WardrobeItemResponseDto> GetItemByIdAsync(int userInternalId, Guid itemId);
-    Task<List<WardrobeItemResponseDto>> GetItemsAsync(int userInternalId, ClothingCategory? category = null, string? color = null);
+    Task<List<WardrobeItemResponseDto>> GetItemsAsync(int userInternalId, ClothingCategory? category = null, string? color = null, Guid? closetId = null);
     Task<WardrobeItemResponseDto> UpdateItemAsync(int userInternalId, Guid itemId, UpdateWardrobeItemDto dto);
     Task DeleteItemAsync(int userInternalId, Guid itemId);
 }

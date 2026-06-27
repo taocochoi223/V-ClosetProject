@@ -135,27 +135,19 @@ public class AdminBrandService : IAdminBrandService
         await _context.SaveChangesAsync();
     }
 
-    // 4. Lấy danh sách toàn bộ chiến dịch quảng cáo
     public async Task<List<CampaignSummaryResponse>> GetCampaignsAsync()
     {
-        var campaigns = await _context.SponsoredCampaigns
+        return await _context.SponsoredCampaigns
+            .Include(c => c.BrandInternal)
+            .Include(c => c.AffiliateProductInternal)
             .OrderBy(c => c.DisplayRank)
             .ThenByDescending(c => c.CreatedAt)
-            .ToListAsync();
-
-        var summaries = new List<CampaignSummaryResponse>();
-
-        foreach (var c in campaigns)
-        {
-            var brand = await _context.BrandProfiles.FirstOrDefaultAsync(b => b.InternalId == c.BrandInternalId);
-            var product = await _context.AffiliateProducts.FirstOrDefaultAsync(p => p.InternalId == c.AffiliateProductInternalId);
-
-            summaries.Add(new CampaignSummaryResponse
+            .Select(c => new CampaignSummaryResponse
             {
                 CampaignId = c.Id,
-                BrandName = brand?.BrandName ?? "Không xác định",
-                ProductName = product?.Name ?? "Không xác định",
-                ProductImageUrl = product?.ImageUrl ?? "https://shopee.vn/favicon.ico",
+                BrandName = c.BrandInternal != null ? c.BrandInternal.BrandName : "Không xác định",
+                ProductName = c.AffiliateProductInternal != null ? c.AffiliateProductInternal.Name : "Không xác định",
+                ProductImageUrl = c.AffiliateProductInternal != null ? c.AffiliateProductInternal.ImageUrl : "https://shopee.vn/favicon.ico",
                 DisplayRank = c.DisplayRank,
                 DailyBudget = c.DailyBudget,
                 TotalSpent = c.TotalSpent,
@@ -165,10 +157,8 @@ public class AdminBrandService : IAdminBrandService
                 StartAt = c.StartAt,
                 EndAt = c.EndAt,
                 CreatedAt = c.CreatedAt
-            });
-        }
-
-        return summaries;
+            })
+            .ToListAsync();
     }
 
     // 5. Ngừng khẩn cấp chiến dịch quảng cáo vi phạm
@@ -433,9 +423,15 @@ public class AdminBrandService : IAdminBrandService
         // Kiểm tra trạng thái sản phẩm: Sản phẩm phải đang hoạt động
         if (!product.IsActive)
             throw new Exception("Sản phẩm tiếp thị liên kết này đang tạm ngưng hoạt động.");
+        // Kiểm tra xem sản phẩm này đã có chiến dịch quảng cáo nào đang chạy hay chưa
+        var hasActiveCampaign = await _context.SponsoredCampaigns
+            .AnyAsync(c => c.AffiliateProductInternalId == product.InternalId && c.IsActive && c.EndAt > DateTime.UtcNow);
+        if (hasActiveCampaign)
+            throw new Exception("Sản phẩm này đã có chiến dịch quảng cáo đang chạy.");
 
-
-
+        // Kiểm tra số dư tín dụng của đối tác có đủ để chạy chiến dịch này tối thiểu 1 ngày không
+        if (brand.CreditBalance < request.DailyBudget)
+            throw new Exception("Số dư tín dụng của thương hiệu không đủ để duy trì ngân sách ngày.");
         if (request.DisplayRank <= 0)
             throw new Exception("Thứ tự hiển thị phải lớn hơn 0.");
 

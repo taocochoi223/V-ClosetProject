@@ -76,6 +76,7 @@ public class WardrobeService : IWardrobeService
     public async Task<WardrobeItemResponseDto> GetItemByIdAsync(int userInternalId, Guid itemId)
     {
         var item = await _context.WardrobeItems
+            .Include(w => w.Closet)
             .FirstOrDefaultAsync(w => w.Id == itemId && w.UserInternalId == userInternalId && w.IsActive);
 
         if (item == null) throw new Exception("Không tìm thấy món đồ.");
@@ -83,10 +84,21 @@ public class WardrobeService : IWardrobeService
         return MapToDto(item);
     }
 
-    public async Task<List<WardrobeItemResponseDto>> GetItemsAsync(int userInternalId, ClothingCategory? category = null, string? color = null)
+    public async Task<List<WardrobeItemResponseDto>> GetItemsAsync(int userInternalId, ClothingCategory? category = null, string? color = null, Guid? closetId = null)
     {
         var query = _context.WardrobeItems
+            .Include(w => w.Closet)
             .Where(w => w.UserInternalId == userInternalId && w.IsActive);
+
+        if (closetId.HasValue)
+        {
+            var closetInternalId = await _context.Closets
+                .Where(c => c.Id == closetId.Value && c.UserInternalId == userInternalId)
+                .Select(c => (int?)c.InternalId)
+                .FirstOrDefaultAsync();
+
+            query = query.Where(w => w.ClosetInternalId == closetInternalId);
+        }
 
         if (category.HasValue)
         {
@@ -160,7 +172,8 @@ public class WardrobeService : IWardrobeService
             ColorTags = item.ColorTags ?? new List<string>(),
             Brand = item.Brand,
             Notes = item.Notes,
-            CreatedAt = item.CreatedAt
+            CreatedAt = item.CreatedAt,
+            ClosetId = item.Closet?.Id
         };
     }
 }

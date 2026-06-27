@@ -26,7 +26,11 @@ public class AdminDashboardService : IAdminDashboardService
     {
         var now = DateTime.UtcNow;
         var last24h = now.AddHours(-24);
-        var startOfThisMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        // Fix timezone cho Việt Nam (UTC+7)
+        var localNow = now.AddHours(7);
+        var startOfThisMonthLocal = new DateTime(localNow.Year, localNow.Month, 1, 0, 0, 0, DateTimeKind.Unspecified);
+        var startOfThisMonth = DateTime.SpecifyKind(startOfThisMonthLocal.AddHours(-7), DateTimeKind.Utc);
+        
         var startOfLastMonth = startOfThisMonth.AddMonths(-1);
 
         // KPI Card 1: Tổng người dùng (Tất cả người dùng từ đầu đến giờ, bao gồm active/inactive, các role)
@@ -37,11 +41,14 @@ public class AdminDashboardService : IAdminDashboardService
         var totalPremiumRevenue = await _context.PaymentTransactions
             .Where(t => t.Status == PaymentStatus.Success)
             .SumAsync(t => t.Amount);
+        var daysIntoMonth = (now - startOfThisMonth).TotalDays;
+        var previousMonthMtdEnd = startOfLastMonth.AddDays(daysIntoMonth);
+
         var revenueThisMonth = await _context.PaymentTransactions
             .Where(t => t.Status == PaymentStatus.Success && t.CreatedAt >= startOfThisMonth)
             .SumAsync(t => t.Amount);
         var revenueLastMonth = await _context.PaymentTransactions
-            .Where(t => t.Status == PaymentStatus.Success && t.CreatedAt >= startOfLastMonth && t.CreatedAt < startOfThisMonth)
+            .Where(t => t.Status == PaymentStatus.Success && t.CreatedAt >= startOfLastMonth && t.CreatedAt <= previousMonthMtdEnd)
             .SumAsync(t => t.Amount);
         var premiumGrowthPercent = revenueLastMonth > 0
             ? Math.Round((double)((revenueThisMonth - revenueLastMonth) / revenueLastMonth * 100), 1)
@@ -114,15 +121,15 @@ public class AdminDashboardService : IAdminDashboardService
             for (int i = 7; i >= 0; i--)
             {
                 var weekMonday = currentWeekMonday.AddDays(-7 * i);
-                var weekSunday = weekMonday.AddDays(6).AddHours(23).AddMinutes(59).AddSeconds(59);
-                var label = $"{weekMonday:dd/MM} - {weekSunday:dd/MM}";
+                var nextMonday = weekMonday.AddDays(7);
+                var label = $"{weekMonday:dd/MM} - {weekMonday.AddDays(6):dd/MM}";
 
                 var revenue = subscriptions
-                    .Where(s => s.StartedAt >= weekMonday && s.StartedAt <= weekSunday)
+                    .Where(s => s.StartedAt >= weekMonday && s.StartedAt < nextMonday)
                     .Sum(s => s.PricePaid);
 
                 var commission = conversions
-                    .Where(c => c.ConvertedAt >= weekMonday && c.ConvertedAt <= weekSunday)
+                    .Where(c => c.ConvertedAt >= weekMonday && c.ConvertedAt < nextMonday)
                     .Sum(c => c.CommissionAmount);
 
                 points.Add(new RevenueChartPoint
@@ -295,15 +302,23 @@ public class AdminDashboardService : IAdminDashboardService
         var csv = new StringBuilder();
         csv.AppendLine("Loại,Mô tả,Ngày,Số tiền (USD)");
 
+        string EscapeCsv(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return "";
+            return value.Replace("\"", "\"\"");
+        }
+
         foreach (var t in subscriptions)
         {
             var planName = t.SubscriptionPlan?.Name ?? "Unknown";
-            csv.AppendLine($"\"Premium\",\"Gói {planName} - {t.UserInternal?.Email ?? "N/A"}\",\"{t.CreatedAt:yyyy-MM-dd HH:mm:ss}\",{t.Amount}");
+            var email = t.UserInternal?.Email ?? "N/A";
+            csv.AppendLine($"\"Premium\",\"Gói {EscapeCsv(planName)} - {EscapeCsv(email)}\",\"{t.CreatedAt:yyyy-MM-dd HH:mm:ss}\",{t.Amount}");
         }
 
         foreach (var conv in conversions)
         {
-            csv.AppendLine($"\"Affiliate\",\"Đơn hàng Shopee #{conv.ShopeeOrderId ?? "N/A"}\",\"{conv.ConvertedAt:yyyy-MM-dd HH:mm:ss}\",{conv.CommissionAmount}");
+            var orderId = conv.ShopeeOrderId ?? "N/A";
+            csv.AppendLine($"\"Affiliate\",\"Đơn hàng Shopee #{EscapeCsv(orderId)}\",\"{conv.ConvertedAt:yyyy-MM-dd HH:mm:ss}\",{conv.CommissionAmount}");
         }
 
         return Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(csv.ToString())).ToArray();

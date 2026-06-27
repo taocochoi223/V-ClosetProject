@@ -122,12 +122,44 @@ public class WardrobeController : ControllerBase
     /// Hỗ trợ lọc theo loại quần áo (ClothingCategory) và màu sắc (Color).
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> GetItems([FromQuery] ClothingCategory? category, [FromQuery] string? color)
+    public async Task<IActionResult> GetItems([FromQuery] ClothingCategory? category, [FromQuery] string? color, [FromQuery] Guid? closetId)
     {
         var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
-        var items = await _wardrobeService.GetItemsAsync(userId, category, color);
+        var items = await _wardrobeService.GetItemsAsync(userId, category, color, closetId);
         return Ok(items);
+    }
+
+    /// <summary>
+    /// API gán món đồ vào tủ đồ tự chọn (hoặc bỏ gán bằng cách truyền null).
+    /// </summary>
+    [HttpPut("{itemId}/assign-closet")]
+    public async Task<IActionResult> AssignItemToCloset(Guid itemId, [FromQuery] Guid? closetId)
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+
+        var item = await _context.WardrobeItems
+            .FirstOrDefaultAsync(w => w.Id == itemId && w.UserInternalId == userId && w.IsActive);
+        if (item == null) return NotFound(new { error = "Không tìm thấy món đồ." });
+
+        if (closetId.HasValue)
+        {
+            var closet = await _context.Closets
+                .FirstOrDefaultAsync(c => c.Id == closetId.Value && c.UserInternalId == userId);
+            if (closet == null) return BadRequest(new { error = "Tủ đồ không tồn tại hoặc không thuộc quyền sở hữu của bạn." });
+
+            item.ClosetInternalId = closet.InternalId;
+        }
+        else
+        {
+            item.ClosetInternalId = null;
+        }
+
+        item.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return Ok(new { success = true });
     }
 
     /// <summary>
