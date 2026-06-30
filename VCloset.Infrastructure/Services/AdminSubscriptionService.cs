@@ -163,8 +163,12 @@ public class AdminSubscriptionService : IAdminSubscriptionService
 
         if (!string.IsNullOrWhiteSpace(planType))
         {
-            var pType = planType.ToLower() == "yearly" ? PremiumPlan.Yearly : PremiumPlan.Monthly;
-            query = query.Where(ps => ps.PlanType == pType);
+            var planTypeLower = planType.Trim().ToLower();
+            if (planTypeLower == "yearly")
+                query = query.Where(ps => ps.PlanType == PremiumPlan.Yearly);
+            else if (planTypeLower == "monthly")
+                query = query.Where(ps => ps.PlanType == PremiumPlan.Monthly);
+            // Nếu không phải "yearly" hay "monthly" thì không filter (bỏ qua giá trị không hợp lệ)
         }
 
         if (!string.IsNullOrWhiteSpace(search))
@@ -180,7 +184,8 @@ public class AdminSubscriptionService : IAdminSubscriptionService
         var totalCount = await query.CountAsync();
 
         var items = await query
-            .OrderByDescending(ps => ps.CreatedAt)
+            .OrderByDescending(ps => ps.ExpiresAt ?? DateTime.MinValue)
+            .ThenByDescending(ps => ps.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(ps => new PremiumSubscriptionListItem
@@ -375,6 +380,9 @@ public class AdminSubscriptionService : IAdminSubscriptionService
             activeSub.ExpiresAt = activeSub.ExpiresAt.HasValue ? activeSub.ExpiresAt.Value.AddDays((double)(plan.DurationDays ?? 30)) : DateTime.UtcNow.AddDays((double)(plan.DurationDays ?? 30));
             activeSub.SubscriptionPlanInternalId = plan.InternalId;
             activeSub.PlanType = PremiumPlan.Monthly;
+            activeSub.PaymentMethod = "SystemGift"; // Đánh dấu là được tặng/đền bù
+            activeSub.PaymentRef = "GRANT-" + Guid.NewGuid().ToString("N").Substring(0, 8);
+            // Lưu ý: không update CreatedAt để giữ lịch sử, sort theo ExpiresAt nếu cần
             _context.PremiumSubscriptions.Update(activeSub);
         }
         else

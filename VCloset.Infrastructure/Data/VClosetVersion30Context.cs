@@ -1037,6 +1037,7 @@ public partial class VClosetVersion30Context : DbContext
                 .HasColumnName("id");
             entity.Property(e => e.IsActive)
                 .HasDefaultValue(true)
+                .ValueGeneratedNever()
                 .HasColumnName("is_active");
             entity.Property(e => e.PaymentMethod)
                 .HasMaxLength(50)
