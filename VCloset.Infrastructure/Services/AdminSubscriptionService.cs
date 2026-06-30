@@ -184,8 +184,7 @@ public class AdminSubscriptionService : IAdminSubscriptionService
         var totalCount = await query.CountAsync();
 
         var items = await query
-            .OrderByDescending(ps => ps.ExpiresAt ?? DateTime.MinValue)
-            .ThenByDescending(ps => ps.CreatedAt)
+            .OrderByDescending(ps => ps.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(ps => new PremiumSubscriptionListItem
