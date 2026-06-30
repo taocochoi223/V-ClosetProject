@@ -84,8 +84,15 @@ public class AuthController : ControllerBase
     [HttpPost("forgot-password")]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
     {
-        var result = await _authService.ForgotPasswordAsync(request);
-        return Ok("Nếu email tồn tại trên hệ thống, một mã xác thực OTP đã được gửi đi.");
+        try
+        {
+            var result = await _authService.ForgotPasswordAsync(request);
+            return Ok(new { message = "Nếu email tồn tại trên hệ thống, một mã xác thực OTP đã được gửi đi." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     /// <summary>

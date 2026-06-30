@@ -177,6 +177,19 @@ public class AuthService : IAuthService
         if (user == null || !user.IsActive) 
             return false;
 
+        // Thêm cooldown 1 phút để tránh spam
+        var cooldownKey = $"FORGOT_PW_COOLDOWN:{request.Email}";
+        var lastRequestStr = await _cache.GetStringAsync(cooldownKey);
+        if (!string.IsNullOrEmpty(lastRequestStr))
+        {
+            throw new Exception("Vui lòng đợi 1 phút trước khi yêu cầu lại.");
+        }
+
+        await _cache.SetStringAsync(cooldownKey, "1", new DistributedCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1)
+        });
+
         var otpCode = new Random().Next(100000, 999999).ToString();
 
         var cacheOptions = new DistributedCacheEntryOptions
@@ -309,6 +322,19 @@ public class AuthService : IAuthService
         var user = await _unitOfWork.Users.FindAsync(u => u.Email == request.Email);
         if (user == null) throw new Exception("Tài khoản không tồn tại");
         if (user.IsEmailVerified) throw new Exception("Tài khoản đã được kích hoạt");
+
+        // Thêm cooldown 1 phút để tránh spam
+        var cooldownKey = $"RESEND_OTP_COOLDOWN:{request.Email}";
+        var lastRequestStr = await _cache.GetStringAsync(cooldownKey);
+        if (!string.IsNullOrEmpty(lastRequestStr))
+        {
+            throw new Exception("Vui lòng đợi 1 phút trước khi yêu cầu lại.");
+        }
+
+        await _cache.SetStringAsync(cooldownKey, "1", new DistributedCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1)
+        });
 
         var otp = new Random().Next(100000, 999999).ToString();
         await _cache.SetStringAsync($"OTP:{request.Email}", otp, new DistributedCacheEntryOptions
