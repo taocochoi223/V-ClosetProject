@@ -242,7 +242,7 @@ public class AdminDashboardService : IAdminDashboardService
             alerts.Add(new SystemAlertResponse
             {
                 Type = "success",
-                Message = $"{recentPremiumTxCount} giao dịch Premium thành công trong 24h qua. Tổng doanh thu: ${totalRevenue24h:N2}.",
+                Message = $"{recentPremiumTxCount} giao dịch Premium thành công trong 24h qua. Tổng doanh thu: {totalRevenue24h:N0} đ.",
                 CreatedAt = now.AddHours(-1)
             });
         }
