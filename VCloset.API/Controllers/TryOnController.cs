@@ -78,7 +78,8 @@ public class TryOnController : ControllerBase
                 request.ModelImageUrl,
                 request.GarmentImageUrl,
                 request.Category,
-                request.RestoreBackground
+                request.RestoreBackground,
+                request.GenerationMode
             );
 
             await _context.SaveChangesAsync();
@@ -102,7 +103,8 @@ public class TryOnController : ControllerBase
         IFormFile? modelFile,
         IFormFile garmentFile,
         [FromForm] string category = "auto",
-        [FromForm] bool restoreBackground = true)
+        [FromForm] bool restoreBackground = true,
+        [FromForm] string generationMode = "fast")
     {
         var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
@@ -136,7 +138,7 @@ public class TryOnController : ControllerBase
             }
 
             // 3. Gọi Fashn AI
-            var predictionId = await _tryOnService.RunTryOnAsync(modelUrl, garmentUrl, category, restoreBackground);
+            var predictionId = await _tryOnService.RunTryOnAsync(modelUrl, garmentUrl, category, restoreBackground, generationMode);
             
             await _context.SaveChangesAsync();
             return Ok(new { predictionId });
@@ -191,7 +193,8 @@ public class TryOnController : ControllerBase
                 modelUrl,
                 wardrobeItem.OriginalImageUrl,
                 request.Category,
-                request.RestoreBackground
+                request.RestoreBackground,
+                request.GenerationMode
             );
 
             await _context.SaveChangesAsync();
@@ -270,6 +273,7 @@ public class DirectTryOnRequest
     public string GarmentImageUrl { get; set; } = null!;
     public string Category { get; set; } = "auto";
     public bool RestoreBackground { get; set; } = true;
+    public string GenerationMode { get; set; } = "fast";
 }
 
 public class WardrobeTryOnRequest
@@ -278,4 +282,5 @@ public class WardrobeTryOnRequest
     public string? ModelImageUrl { get; set; }
     public string Category { get; set; } = "auto";
     public bool RestoreBackground { get; set; } = true;
+    public string GenerationMode { get; set; } = "fast";
 }

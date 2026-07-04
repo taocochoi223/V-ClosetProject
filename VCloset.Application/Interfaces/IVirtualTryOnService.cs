@@ -11,8 +11,9 @@ public interface IVirtualTryOnService
     /// <param name="productImageUrl">URL ảnh quần áo</param>
     /// <param name="category">Phân loại: auto, tops, bottoms, one-pieces</param>
     /// <param name="restoreBackground">Giữ lại hậu cảnh của hình ảnh người mẫu</param>
+    /// <param name="generationMode">Chế độ tạo ảnh: fast, balanced, quality</param>
     /// <returns>Prediction ID để kiểm tra trạng thái</returns>
-    Task<string> RunTryOnAsync(string modelImageUrl, string productImageUrl, string category = "auto", bool restoreBackground = true);
+    Task<string> RunTryOnAsync(string modelImageUrl, string productImageUrl, string category = "auto", bool restoreBackground = true, string generationMode = "fast");
 
     /// <summary>
     /// Kiểm tra trạng thái xử lý thử đồ ảo.
