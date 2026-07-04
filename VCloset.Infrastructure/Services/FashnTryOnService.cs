@@ -27,13 +27,14 @@ public class FashnTryOnService : IVirtualTryOnService
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
     }
 
-    public async Task<string> RunTryOnAsync(string modelImageUrl, string productImageUrl, string category = "auto", bool restoreBackground = true)
+    public async Task<string> RunTryOnAsync(string modelImageUrl, string productImageUrl, string category = "auto", bool restoreBackground = true, string generationMode = "fast")
     {
         var mappedCategory = MapCategory(category);
 
         var payload = new FashnRunRequest
         {
             ModelName = "tryon-max",
+            GenerationMode = generationMode,
             Inputs = new FashnInputs
             {
                 ModelImage = modelImageUrl,
@@ -123,6 +124,9 @@ public class FashnTryOnService : IVirtualTryOnService
     {
         [JsonPropertyName("model_name")]
         public string ModelName { get; set; } = "tryon-max";
+
+        [JsonPropertyName("generation_mode")]
+        public string GenerationMode { get; set; } = "fast";
 
         [JsonPropertyName("inputs")]
         public FashnInputs Inputs { get; set; } = null!;
